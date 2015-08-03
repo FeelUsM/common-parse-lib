@@ -1,4 +1,4 @@
-//(c) FeelUs
+п»ї//(c) FeelUs
 #ifndef MYSTREAM_H
 #define MYSTREAM_H
 
@@ -7,28 +7,28 @@
 //=============================================================================
 /*
 todo
-проверить отличие перегрузки и специализации
-полноценный stream_ifw без ускорений unused
-чтоб stream_buffer использовал аллокатор
-специализировать для него str.h
-избрести(design) алгоритмы парсинга
-потестировать на деле
+РїСЂРѕРІРµСЂРёС‚СЊ РѕС‚Р»РёС‡РёРµ РїРµСЂРµРіСЂСѓР·РєРё Рё СЃРїРµС†РёР°Р»РёР·Р°С†РёРё
+РїРѕР»РЅРѕС†РµРЅРЅС‹Р№ stream_ifw Р±РµР· СѓСЃРєРѕСЂРµРЅРёР№ unused
+С‡С‚РѕР± stream_buffer РёСЃРїРѕР»СЊР·РѕРІР°Р» Р°Р»Р»РѕРєР°С‚РѕСЂ
+СЃРїРµС†РёР°Р»РёР·РёСЂРѕРІР°С‚СЊ РґР»СЏ РЅРµРіРѕ str.h
+РёР·Р±СЂРµСЃС‚Рё(design) Р°Р»РіРѕСЂРёС‚РјС‹ РїР°СЂСЃРёРЅРіР°
+РїРѕС‚РµСЃС‚РёСЂРѕРІР°С‚СЊ РЅР° РґРµР»Рµ
 -----------------------
-изучить интерфейс стандартных потоков
-изучить устройство потоков stlport
-написать реализацию strin
+РёР·СѓС‡РёС‚СЊ РёРЅС‚РµСЂС„РµР№СЃ СЃС‚Р°РЅРґР°СЂС‚РЅС‹С… РїРѕС‚РѕРєРѕРІ
+РёР·СѓС‡РёС‚СЊ СѓСЃС‚СЂРѕР№СЃС‚РІРѕ РїРѕС‚РѕРєРѕРІ stlport
+РЅР°РїРёСЃР°С‚СЊ СЂРµР°Р»РёР·Р°С†РёСЋ strin
 -----------------------
-написать остальные потоки
-написать алгоритмы простого вывода
-	и чтобы с stdio & stdout было все хорошо
-	добавить capacity, unused, advance, distance
-	перекодировку, многобайтовые строки
-попробовать адаптировать обычные строки или написать свои
-	написать для них все специализации
-допилить вывод (всякие манипуляторы), локали не использовать
-перекодировку, автоматически от локали...
-а еще c++11...
-а еще тестировать...
+РЅР°РїРёСЃР°С‚СЊ РѕСЃС‚Р°Р»СЊРЅС‹Рµ РїРѕС‚РѕРєРё
+РЅР°РїРёСЃР°С‚СЊ Р°Р»РіРѕСЂРёС‚РјС‹ РїСЂРѕСЃС‚РѕРіРѕ РІС‹РІРѕРґР°
+	Рё С‡С‚РѕР±С‹ СЃ stdio & stdout Р±С‹Р»Рѕ РІСЃРµ С…РѕСЂРѕС€Рѕ
+	РґРѕР±Р°РІРёС‚СЊ capacity, unused, advance, distance
+	РїРµСЂРµРєРѕРґРёСЂРѕРІРєСѓ, РјРЅРѕРіРѕР±Р°Р№С‚РѕРІС‹Рµ СЃС‚СЂРѕРєРё
+РїРѕРїСЂРѕР±РѕРІР°С‚СЊ Р°РґР°РїС‚РёСЂРѕРІР°С‚СЊ РѕР±С‹С‡РЅС‹Рµ СЃС‚СЂРѕРєРё РёР»Рё РЅР°РїРёСЃР°С‚СЊ СЃРІРѕРё
+	РЅР°РїРёСЃР°С‚СЊ РґР»СЏ РЅРёС… РІСЃРµ СЃРїРµС†РёР°Р»РёР·Р°С†РёРё
+РґРѕРїРёР»РёС‚СЊ РІС‹РІРѕРґ (РІСЃСЏРєРёРµ РјР°РЅРёРїСѓР»СЏС‚РѕСЂС‹), Р»РѕРєР°Р»Рё РЅРµ РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊ
+РїРµСЂРµРєРѕРґРёСЂРѕРІРєСѓ, Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРё РѕС‚ Р»РѕРєР°Р»Рё...
+Р° РµС‰Рµ c++11...
+Р° РµС‰Рµ С‚РµСЃС‚РёСЂРѕРІР°С‚СЊ...
 -----------------------
 */
 //#include <deque>
@@ -59,7 +59,7 @@ struct _stream_buffer
 	int iterator_counter;
 	int nomber;
 	basic_stream_ifw<T,Alloc> * mybase;
-	//можно добавить конструктор и деструктор, но всем(т.е. мне) похуй
+	//РјРѕР¶РЅРѕ РґРѕР±Р°РІРёС‚СЊ РєРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ Рё РґРµСЃС‚СЂСѓРєС‚РѕСЂ, РЅРѕ РІСЃРµРј(С‚.Рµ. РјРЅРµ) РїРѕС…СѓР№
 	void alloc(int bs)
 	{
 		begin=Alloc().allocate(bs);
@@ -93,7 +93,7 @@ private:
 	typedef basic_stream_ifw<T,Alloc> my_t;
 	typedef _stream_buffer<T,Alloc>	Buf;
 		//DATA DEFINES
-	size_type _buffer_size;//обязательно >0
+	size_type _buffer_size;//РѕР±СЏР·Р°С‚РµР»СЊРЅРѕ >0
 	list<Buf> bufs;
 	FILE * _file;
 	bool _atend;//if true end is (--_buf.end())->end
@@ -102,9 +102,9 @@ private:
 	stream_ifw(const my_t &);
 		//PRIVATE MEMBERS
 	typename list<Buf>::iterator addbuf()
-	//читает новый буфер, и настраивает его номер
-	//если прочитано 0 - уничтожет этот буфер, возвращает bufs.end() //это означает конец файла
-	//иначе возвращает ук-тель(итератор) на этот буфер
+	//С‡РёС‚Р°РµС‚ РЅРѕРІС‹Р№ Р±СѓС„РµСЂ, Рё РЅР°СЃС‚СЂР°РёРІР°РµС‚ РµРіРѕ РЅРѕРјРµСЂ
+	//РµСЃР»Рё РїСЂРѕС‡РёС‚Р°РЅРѕ 0 - СѓРЅРёС‡С‚РѕР¶РµС‚ СЌС‚РѕС‚ Р±СѓС„РµСЂ, РІРѕР·РІСЂР°С‰Р°РµС‚ bufs.end() //СЌС‚Рѕ РѕР·РЅР°С‡Р°РµС‚ РєРѕРЅРµС† С„Р°Р№Р»Р°
+	//РёРЅР°С‡Рµ РІРѕР·РІСЂР°С‰Р°РµС‚ СѓРє-С‚РµР»СЊ(РёС‚РµСЂР°С‚РѕСЂ) РЅР° СЌС‚РѕС‚ Р±СѓС„РµСЂ
 	{	bufs.push_back(Buf());
 		typename list<Buf>::iterator pb=--bufs.end(), ppb=pb;
 		pb->iterator_counter=0;
@@ -112,7 +112,7 @@ private:
 		pb->alloc(_buffer_size);
 		int readed = fread(pb->begin,sizeof(T),_buffer_size,_file);
 		if(readed!=_buffer_size)
-		{//добрались до конца
+		{//РґРѕР±СЂР°Р»РёСЃСЊ РґРѕ РєРѕРЅС†Р°
 			if(!feof(_file))	throw "some error in reading file";
 			_atend=true;
 			pb->end=pb->begin+readed;
@@ -126,7 +126,7 @@ private:
 		return pb;
 	}
 	void del_it_from_buf(typename list<Buf>::iterator itbuf)
-	//если надо - удаляет буфер
+	//РµСЃР»Рё РЅР°РґРѕ - СѓРґР°Р»СЏРµС‚ Р±СѓС„РµСЂ
 	{
 		if(--itbuf->iterator_counter==0 && itbuf==bufs.begin())
 		{
@@ -140,23 +140,23 @@ public:	//PUBLIC MEMBERS
 		,_buffer_size(Alloc().init_page_size()) 
 		,_atend(false)
 	{}
-	//нет итераторов - нет буферов
-	//=> перед концом области, где объявлены и контейнер и итераторы
-	//все итераторы должны дойти до конца (контейнер и итераторы уничтожаются в произвольном порядке)
-	//итерторы дошедшие до конца с потоком не связаны
+	//РЅРµС‚ РёС‚РµСЂР°С‚РѕСЂРѕРІ - РЅРµС‚ Р±СѓС„РµСЂРѕРІ
+	//=> РїРµСЂРµРґ РєРѕРЅС†РѕРј РѕР±Р»Р°СЃС‚Рё, РіРґРµ РѕР±СЉСЏРІР»РµРЅС‹ Рё РєРѕРЅС‚РµР№РЅРµСЂ Рё РёС‚РµСЂР°С‚РѕСЂС‹
+	//РІСЃРµ РёС‚РµСЂР°С‚РѕСЂС‹ РґРѕР»Р¶РЅС‹ РґРѕР№С‚Рё РґРѕ РєРѕРЅС†Р° (РєРѕРЅС‚РµР№РЅРµСЂ Рё РёС‚РµСЂР°С‚РѕСЂС‹ СѓРЅРёС‡С‚РѕР¶Р°СЋС‚СЃСЏ РІ РїСЂРѕРёР·РІРѕР»СЊРЅРѕРј РїРѕСЂСЏРґРєРµ)
+	//РёС‚РµСЂС‚РѕСЂС‹ РґРѕС€РµРґС€РёРµ РґРѕ РєРѕРЅС†Р° СЃ РїРѕС‚РѕРєРѕРј РЅРµ СЃРІСЏР·Р°РЅС‹
 	~stream_ifw()
 	{
 		assert(bufs.empty());
-		//если потом начнут разрушаться итераторы - это пиздец
+		//РµСЃР»Рё РїРѕС‚РѕРј РЅР°С‡РЅСѓС‚ СЂР°Р·СЂСѓС€Р°С‚СЊСЃСЏ РёС‚РµСЂР°С‚РѕСЂС‹ - СЌС‚Рѕ РїРёР·РґРµС†
 	}
-	//пустых буферов не бывает
+	//РїСѓСЃС‚С‹С… Р±СѓС„РµСЂРѕРІ РЅРµ Р±С‹РІР°РµС‚
 	iterator buf_first()
 	{
-		if(bufs.empty())//при самом старте
+		if(bufs.empty())//РїСЂРё СЃР°РјРѕРј СЃС‚Р°СЂС‚Рµ
 			addbuf();
 		iterator it;
 		if((it.itbuf=bufs.begin()) != bufs.end())
-		{//вдруг при самом старте прочли 0 элементов или 
+		{//РІРґСЂСѓРі РїСЂРё СЃР°РјРѕРј СЃС‚Р°СЂС‚Рµ РїСЂРѕС‡Р»Рё 0 СЌР»РµРјРµРЅС‚РѕРІ РёР»Рё 
 			it.pointer=it.itbuf->begin;
 			it.endbuf=it.itbuf->end;
 			++it.itbuf->iterator_counter;
@@ -165,11 +165,11 @@ public:	//PUBLIC MEMBERS
 	}
 	iterator buf_last()
 	{
-		if(bufs.empty())//при самом старте
+		if(bufs.empty())//РїСЂРё СЃР°РјРѕРј СЃС‚Р°СЂС‚Рµ
 			addbuf();
 		iterator it;
 		if(bufs.begin() != (it.buf=bufs.end()))
-		{//вдруг при самом старте прочли 0 элементов или 
+		{//РІРґСЂСѓРі РїСЂРё СЃР°РјРѕРј СЃС‚Р°СЂС‚Рµ РїСЂРѕС‡Р»Рё 0 СЌР»РµРјРµРЅС‚РѕРІ РёР»Рё 
 			--it.buf;
 			it.pointer=it.itbuf->end-1;
 			it.endbuf=it.itbuf->end;
@@ -210,7 +210,7 @@ class _stream_ifw_const_iterator
 	typedef _stream_ifw_const_iterator<T,Alloc> my_t;
 		//DATA
 	T * pointer;//==0 <=> atend
-	T * endbuf;//==0 <=> не связан ни с каким буфером
+	T * endbuf;//==0 <=> РЅРµ СЃРІСЏР·Р°РЅ РЅРё СЃ РєР°РєРёРј Р±СѓС„РµСЂРѕРј
 	typename list<Buf>::iterator itbuf;
 public:
 		//CONSTRUCTION, DESTRUCTION
@@ -223,7 +223,7 @@ public:
 		itbuf->iterator_counter++;
 	}
 	my_t & operator=(const my_t & r)
-	{//можно оптимизировать
+	{//РјРѕР¶РЅРѕ РѕРїС‚РёРјРёР·РёСЂРѕРІР°С‚СЊ
 		this->~_stream_ifw_const_iterator();
 		pointer=r.pointer;
 		endbuf=r.endbuf;
@@ -245,14 +245,14 @@ public:
 		//MOVING
 	my_t & operator++()
 	{	// ++myInstance. 
-		if(++pointer ==endbuf)//конец внутри буфера
+		if(++pointer ==endbuf)//РєРѕРЅРµС† РІРЅСѓС‚СЂРё Р±СѓС„РµСЂР°
 		{
 			stream_ifw<T,Alloc> * mybase=itbuf->mybase;
 			typename list<Buf>::iterator oldbuf=itbuf++;
 			if(itbuf==mybase->bufs.end())
-				if(mybase->atend)//конец буферов и конец файла
+				if(mybase->atend)//РєРѕРЅРµС† Р±СѓС„РµСЂРѕРІ Рё РєРѕРЅРµС† С„Р°Р№Р»Р°
 					this->~_stream_ifw_const_iterator();
-				else if((itbuf=mybase->addbuf())==mybase->bufs.end())//конец буферов и оказался конец файла
+				else if((itbuf=mybase->addbuf())==mybase->bufs.end())//РєРѕРЅРµС† Р±СѓС„РµСЂРѕРІ Рё РѕРєР°Р·Р°Р»СЃСЏ РєРѕРЅРµС† С„Р°Р№Р»Р°
 					this->~_stream_ifw_const_iterator();
 				else
 					goto normal_next_buffer;
@@ -305,10 +305,10 @@ class _stream_ifw_iterator
 		//private TYPEDEFS
 	typedef _stream_buffer<T,Alloc>	Buf;
 	typedef _stream_ifw_iterator<T,Alloc> my_t;
-//далее копия с const_iterator'а, с удаленными const в разделе ACCESS и CONSTRUCTION и во всех вызовах деструкторов 
+//РґР°Р»РµРµ РєРѕРїРёСЏ СЃ const_iterator'Р°, СЃ СѓРґР°Р»РµРЅРЅС‹РјРё const РІ СЂР°Р·РґРµР»Рµ ACCESS Рё CONSTRUCTION Рё РІРѕ РІСЃРµС… РІС‹Р·РѕРІР°С… РґРµСЃС‚СЂСѓРєС‚РѕСЂРѕРІ 
 		//DATA
 	T * pointer;//==0 <=> atend
-	T * endbuf;//==0 <=> не связан ни с каким буфером
+	T * endbuf;//==0 <=> РЅРµ СЃРІСЏР·Р°РЅ РЅРё СЃ РєР°РєРёРј Р±СѓС„РµСЂРѕРј
 	typename list<Buf>::iterator itbuf;
 public:
 		//CONSTRUCTION, DESTRUCTION
@@ -321,7 +321,7 @@ public:
 		itbuf->iterator_counter++;
 	}
 	my_t & operator=(const my_t & r)
-	{//можно оптимизировать
+	{//РјРѕР¶РЅРѕ РѕРїС‚РёРјРёР·РёСЂРѕРІР°С‚СЊ
 		this->~_stream_ifw_iterator();
 		pointer=r.pointer;
 		endbuf=r.endbuf;
@@ -343,14 +343,14 @@ public:
 		//MOVING
 	my_t & operator++()
 	{	// ++myInstance. 
-		if(++pointer ==endbuf)//конец внутри буфера
+		if(++pointer ==endbuf)//РєРѕРЅРµС† РІРЅСѓС‚СЂРё Р±СѓС„РµСЂР°
 		{
 			stream_ifw<T,Alloc> * mybase=itbuf->mybase;
 			typename list<Buf>::iterator oldbuf=itbuf++;
 			if(itbuf==mybase->bufs.end())
-				if(mybase->_atend)//конец буферов и конец файла
+				if(mybase->_atend)//РєРѕРЅРµС† Р±СѓС„РµСЂРѕРІ Рё РєРѕРЅРµС† С„Р°Р№Р»Р°
 					this->~_stream_ifw_iterator();
-				else if((itbuf=mybase->addbuf())==mybase->bufs.end())//конец буферов и оказался конец файла
+				else if((itbuf=mybase->addbuf())==mybase->bufs.end())//РєРѕРЅРµС† Р±СѓС„РµСЂРѕРІ Рё РѕРєР°Р·Р°Р»СЃСЏ РєРѕРЅРµС† С„Р°Р№Р»Р°
 					this->~_stream_ifw_iterator();
 				else
 					goto normal_next_buffer;
