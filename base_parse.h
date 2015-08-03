@@ -1,4 +1,9 @@
-
+/*
+ * это для того, что бы  не писать типа
+ * if(!(errcode=read::smpt(...)))
+ * а писать rif(errcode=read::smth(...))
+ * по моему так удобней
+ */
 #define rif(expr) if(!(expr))
 #define rwhile(expr) while(!(expr))
 
