@@ -1,3 +1,4 @@
+#include <stdio.h>//для EOF
 /*
  * это для того, что бы  не писать типа
  * if(!(errcode=read::smpt(...)))
@@ -24,7 +25,7 @@ class is{
 	static bool lower(ch_t c)	{	return c>='a' && c<='z';	}
 	static bool alpha(ch_t c)	{	return c>='a' && c<='z' || c>='A' && c<='Z';	}
 	static bool digit(ch_t c)	{	return c>='0' && c<='9';	}
-	static bool xdigit(ch_t c)	{	return c>='0' && c<='9' || c>='a' && <='f' || c>='A' && c<='F';	}
+	static bool xdigit(ch_t c)	{	return c>='0' && c<='9' || c>='a' && c<='f' || c>='A' && c<='F';	}
 	static bool alnum(ch_t c)	{	return alpha(c) || digit(c);	}
 	static bool punct(ch_t c)	{	return c>='!' && c<='/' || c>=':' && c<='@' || c>='[' && c<='`' || c>='{' && c<='~';	}
 	static bool graph(ch_t c)	{	return c>='!' && c<='~';	}
@@ -48,7 +49,7 @@ bool atend(it_t);
  * а для "пользовательских" итераторов каждый пользователь будет это специализировать в своем коде
  */
 template<typename ch_t>
-bool atend<const ch_t *>(const ch_t * pc)
+bool atend(const ch_t * pc)
 {	return !*pc;	}
 
 namespace read{
@@ -68,7 +69,7 @@ int read::fix_length		(it*, n)			.{n}
 int read::fix_length		(it*, n, pstr*)
 int read::fix_char			(it*, c)			c
 int read::until_char		(it*, c)			.*c
-int read::until_char		(it*, c, pstr*)
+int read::until_char		(it*, c, pstr*)				OK
 int read::until_eof			(it*)				.*$
 int read::until_eof			(it*,    pstr*)
 int read::charclass			(it*, cf)			[ ]
@@ -155,7 +156,11 @@ int read::ifloat				(it*, flt_t*)
 	 */
 	template<typename it_t, typename ch_t, typename str_t>
 	int 
-	until_char(it_t * pit, ch_t ch, str_t * pstr);
+	until_char(it_t * pit, ch_t ch, str_t * pstr){
+		while(!atend(*pit) && **pit!=ch)
+			(*pstr)+=*(*pit)++;
+		return atend(*pit) ? EOF : 0;
+	}
 	
 	/*
 	 * until_eof(it_t * pit)
@@ -289,15 +294,15 @@ int read::ifloat				(it*, flt_t*)
 
 	template<typename it_t, typename pattern_t>
 	int 
-	until_pattern(it_t * pit, const pattent_t & pattern);
+	until_pattern(it_t * pit, const pattern_t & pattern);
 	
 	template<typename it_t, typename pattern_t, typename str_t>
 	int 
-	until_pattern(it_t * pit, const pattent_t & pattern, str_t * pstr);
+	until_pattern(it_t * pit, const pattern_t & pattern, str_t * pstr);
 
 	template<typename it_t, typename pattern_t, typename str_t, typename rez_t>
 	int 
-	until_pattern(it_t * pit, const pattent_t & pattern, str_t * pstr, rez_t * rez);
+	until_pattern(it_t * pit, const pattern_t & pattern, str_t * pstr, rez_t * rez);
 	
 //=======================================
 
