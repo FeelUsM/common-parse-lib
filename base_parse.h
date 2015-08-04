@@ -5,8 +5,8 @@
  * а писать rif(errcode=read::smth(...))
  * по моему так удобней
  */
-#define rif(expr) if(!(expr))
-#define rwhile(expr) while(!(expr))
+#define r_if(expr) if(!(expr))
+#define r_while(expr) while(!(expr))
 
 /*
  * === стандартные КЛАССЫ СИМВОЛОВ ===
@@ -18,6 +18,7 @@
  */
 template<typename ch_t>
 class is{
+public:
 	static bool cntr(ch_t c)	{	return c>=0 && c<0x20 || c==0x7f;	}
 	static bool blank(ch_t c)	{	return c==' ' || c=='\t';	}
 	static bool space(ch_t c)	{	return c==' ' || c=='\t' || c=='\n' || c=='\r' || c=='\f' || c=='\v';	}
@@ -49,7 +50,7 @@ bool atend(it_t);
  * а для "пользовательских" итераторов каждый пользователь будет это специализировать в своем коде
  */
 template<typename ch_t>
-bool atend(const ch_t * pc)
+bool atend(ch_t * pc)
 {	return !*pc;	}
 
 namespace read{
@@ -129,11 +130,16 @@ int read::ifloat				(it*, flt_t*)
 	 */
 	template<typename it_t, typename ch_t>
 	int 
-	fix_char(it_t * pit, ch_t c);
+	fix_char(it_t * pit, ch_t c){
+		if(atend(*pit))	return EOF;
+		if(**pit!=c)	return 1;
+		(*pit)++;
+		return 0;
+	}
 	
-	/*
-	 * until_char(it_t * pit, ch_t ch)
-	 * сдвигает указатель до тех пор, пока не встретится заданный символ
+	/**
+	 * @name until_char(it_t * pit, ch_t ch)
+	 * @description сдвигает указатель до тех пор, пока не встретится заданный символ
 	 *
 	 * если встретился конец файла (до того, как встретился заданный символ), 
 	 * возвращает EOF
@@ -193,7 +199,29 @@ int read::ifloat				(it*, flt_t*)
 	 */
 	template<typename it_t, typename class_t>
 	int 
-	charclass(it_t * pit, const class_t & is);
+	charclass(it_t * pit, const class_t & is){
+		if(atend(*pit))	return EOF;
+		if(!is(**pit))	return 1;
+		(*pit)++;
+		return 0;
+	}
+	
+	/*
+	 * charclass(it_t * pit, const class_t & is)
+	 * если is(.) возвращает true от указываемого итератором символа, то сдвигает итератор на 1 позицию
+	 *
+	 * если итератор в состоянии atend(), возвращает EOF
+	 * если is(.) возвращает false от указываемого итератором символа, то возвращает 1, и итератор не двигает
+	 */
+	template<typename it_t, typename class_t, typename ch_t>
+	int 
+	charclass(it_t * pit, const class_t & is, ch_t * ch){
+		if(atend(*pit))	return EOF;
+		if(!is(**pit))	return 1;
+		(*ch)=**pit;
+		(*pit)++;
+		return 0;
+	}
 	
 	/*
 	 * while_charclass(it_t * pit, const class_t & is)
@@ -220,7 +248,15 @@ int read::ifloat				(it*, flt_t*)
 	 */
 	template<typename it_t, typename class_t, typename str_t>
 	int 
-	while_charclass(it_t * pit, const class_t & is, str_t * pstr);
+	while_charclass(it_t * pit, const class_t & is, str_t * pstr){
+					//printf("hello from read::while_charclass()\n");
+		while(!atend(*pit)){
+					//printf("[%c]\n",**pit);
+			if(!is(**pit))	return 0;
+			(*pstr)+=*(*pit)++;
+		}
+		return EOF;
+	}
 
 	/*
 	 * until_charclass(it_t * pit, const class_t & is)
