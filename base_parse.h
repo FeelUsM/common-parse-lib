@@ -75,25 +75,25 @@ func_obj    err pf(it*) //наподобие int read::spc(it*)
 func_obj    err pf(it*, rez*)
 
 len - кол-во символов, добавлненных в *pstr
-                                                                возвращаемое значение в случае
+                                                                возвращаемое значение в случае	реализованность
 название                    аргументы           рег.выр.        если EOF    если не EOF     статистика использования
-int read::until_eof         (it*)               .*$             0           0               1
-int read::until_eof         (it*,    pstr*)     .*$             len         len
+int read::until_eof         (it*)               .*$             0           0               1	OK
+int read::until_eof         (it*,    pstr*)     .*$             len         len					OK
 
-int read::fix_length        (it*, n)            .{n}            -1          0
-int read::fix_length        (it*, n, pstr*)     .{n}            -(1+len)    0
-int read::fix_char          (it*, c)            c               -1          0 или 1         2
-int read::fix_str           (it*, s)            str             -1          0 или 1         1
-int read::charclass         (it*, cf)           [ ]             -1          0 или 1
-int read::charclass         (it*, cf, ch*)      [ ]             -1          0 или 1
-int read::charclass         (it*, cf, pstr*)    [ ]             -1          0 или 1         1
+int read::fix_length        (it*, n)            .{n}            -1          0					OK
+int read::fix_length        (it*, n, pstr*)     .{n}            -(1+len)    0					OK
+int read::fix_char          (it*, c)            c               -1          0 или 1         2	OK
+int read::fix_str           (it*, s)            str             -1          0 или 1         1	OK
+int read::charclass         (it*, cf)           [ ]             -1          0 или 1				OK
+int read::charclass         (it*, cf, ch*)      [ ]             -1          0 или 1				OK
+int read::charclass         (it*, cf, pstr*)    [ ]             -1          0 или 1         1	OK
 
-int read::until_char        (it*, c)            .*c             -(1+len)    len
-int read::until_char        (it*, c, pstr*)     .*c             -(1+len)    len
-int read::until_charclass   (it*, cf)           .*[ ]           -(1+len)    len
-int read::until_charclass   (it*, cf, pstr*)    .*[ ]           -(1+len)    len
-int read::while_charclass   (it*, cf)           [ ]*            -(1+len)    len
-int read::while_charclass   (it*, cf, pstr*)    [ ]*            -(1+len)    len             1
+int read::until_char        (it*, c)            .*c             -(1+len)    len					OK
+int read::until_charclass   (it*, cf)           .*[ ]           -(1+len)    len					OK
+int read::while_charclass   (it*, cf)           [ ]*            -(1+len)    len					OK
+int read::until_char        (it*, c, pstr*)     .*c             -(1+len)    len					OK
+int read::until_charclass   (it*, cf, pstr*)    .*[ ]           -(1+len)    len					OK
+int read::while_charclass   (it*, cf, pstr*)    [ ]*            -(1+len)    len             1	OK
 
 int read::until_str         (it*, s)            .*str           -(1+len)    len
 int read::until_str         (it*, s, pstr*)     .*str           -(1+len)    len
@@ -180,8 +180,7 @@ struct basic_read{
     fix_length(it_t * pit, size_t n, str_t * pstr){
         for(size_t i=0; i<n; i++, (*pit)++)
             if(atend(*pit))
-                if(i==0)    return -1;
-                else        return i;
+                return -(1+i);
             else
                 (*pstr)+=**pit;
         return 0;
@@ -281,33 +280,70 @@ struct basic_read{
 //======================= until_char, until_charclass, while_charclass
     /*
      * until_char(it_t * pit, ch_t ch)
-     * сдвигает указатель до тех пор, пока не встретится заданный символ
+     * сдвигает указатель до тех пор, пока (не встретится заданный символ) или конец файла
+     * until_charclass(it_t * pit, const class_t & is)
+     * сдвигает указатель до тех пор, пока (is(.) возвращает false) или не встретился конец файла
+     * while_charclass(it_t * pit, const class_t & is)
+     * сдвигает указатель до тех пор, пока (is(.) возвращает true) или не встретился конец файла
      *
-     * если встретился конец файла (до того, как встретился заданный символ), 
-     * возвращает -1
+     * если встретился конец файла - возвращает -(1 + размер считанного)
      * и итератор указывает на конец файла
+	 * если встретился заданный символ - возвращает размер считанного
+     * и итератор указывает на заданный символ
      */
     static
     int 
     until_char(it_t * pit, ch_t ch){
+        int i=0;
         while(!atend(*pit))
             if(**pit==ch)
-                return 0;
-            else
+                return i;
+            else{
                 (*pit)++;
-        return -1;
+				i++;
+			}
+        return -(1+i);
     }
 
+    template<typename class_t> static
+    int 
+    until_charclass(it_t * pit, const class_t & is){
+        int i=0;
+        while(!atend(*pit))
+            if(is(**pit))
+                return i;
+            else{
+                (*pit)++;
+				i++;
+			}
+        return -(1+i);
+    }
+    
+    template<typename class_t> static
+    int 
+    while_charclass(it_t * pit, const class_t & is){
+        int i=0;
+        while(!atend(*pit))
+            if(!is(**pit))
+                return i;
+            else{
+                (*pit)++;
+				i++;
+			}
+        return -(1+i);
+    }
+    
     /*
      * until_char(it_t * pit, ch_t ch, str_t * pstr)
      * считывает строку, до тех пор пока не встретится заданный символ или конец файла
+     * until_charclass(it_t * pit, const class_t & is, str_t * pstr)
+     * считывает строку, пока is(.) возвращает false от указываемого итератором символа или не встретился конец файла
+     * while_charclass(it_t * pit, const class_t & is, str_t * pstr)
+     * считывает строку, пока is(.) возвращает true от указываемого итератором символа или не встретился конец файла
      *
-     * если встретился конец файла, 
-     * возвращает - (1+число помещенных в строку символов)
+     * если встретился конец файла - возвращает -(1+число помещенных в строку символов)
      * и итератор указывает на конец файла
-     *
-     * если встретился заданный символ, 
-     * возвращает + число помещенных в строку символов
+     * если встретился заданный символ - возвращает + число помещенных в строку символов
      * и итератор указывает на заданный символ
      *
      * если требуется прочитать 1 (а не 0) или более символов - проверяйте размер считанного
@@ -316,78 +352,43 @@ struct basic_read{
     int 
     until_char(it_t * pit, ch_t ch, str_t * pstr){
         int i=0;
-        while(!atend(*pit) && **pit!=ch){
-            (*pstr)+=*(*pit)++;
-            i++;
-        }
-        return atend(*pit) ? -(1+i) : i;
+        while(!atend(*pit))
+            if(**pit==ch)
+                return i;
+            else{
+                (*pstr)+=*(*pit)++;
+				i++;
+			}
+        return -(1+i);
     }
     
-    /*
-     * while_charclass(it_t * pit, const class_t & is)
-     * сдвигает итератор, пока is(.) возвращает true от указываемого итератором символа
-     * 
-     * если встретился конец файла до того как is(.) вернул false
-     * возвращает -1
-     * и итератор указывает на конец файла
-     */
-    template<typename class_t> static
+    template<typename class_t, typename str_t> static
     int 
-    while_charclass(it_t * pit, const class_t & is){
-        while(!atend(*pit)){
-            if(!is(**pit))  return 0;
-            (*pit)++;
-        }
-        return -1;
+    until_charclass(it_t * pit, const class_t & is, str_t * pstr){
+        int i=0;
+        while(!atend(*pit))
+            if(is(**pit))
+                return i;
+            else{
+                (*pstr)+=*(*pit)++;
+				i++;
+			}
+        return -(1+i);
     }
-    
-    /*
-     * while_charclass(it_t * pit, const class_t & is, str_t * pstr)
-     * считывает строку, пока is(.) возвращает true от указываемого итератором символа
-     * 
-     * если встретился конец файла до того как is(.) вернул false
-     * возвращает -1
-     * и итератор указывает на конец файла
-     * в строку помещается все до конца файла
-     *
-     * если требуется прочитать 1 (а не 0) или более символов - проверяйте размер строки
-     */
+
     template<typename class_t, typename str_t> static
     int 
     while_charclass(it_t * pit, const class_t & is, str_t * pstr){
-        while(!atend(*pit)){
-            if(!is(**pit))  return 0;
-            (*pstr)+=*(*pit)++;
-        }
-        return -1;
+        int i=0;
+        while(!atend(*pit))
+            if(!is(**pit))
+                return i;
+            else{
+                (*pstr)+=*(*pit)++;
+				i++;
+			}
+        return -(1+i);
     }
-
-    /*
-     * until_charclass(it_t * pit, const class_t & is)
-     * сдвигает итератор, пока is(.) возвращает false от указываемого итератором символа
-     * 
-     * если встретился конец файла до того как is(.) вернул true
-     * возвращает -1
-     * и итератор указывает на конец файла
-     */
-    template<typename class_t> static
-    int 
-    until_charclass(it_t * pit, const class_t & is);
-    
-    /*
-     * until_charclass(it_t * pit, const class_t & is, str_t * pstr)
-     * считывает строку, пока is(.) возвращает false от указываемого итератором символа
-     * 
-     * если встретился конец файла до того как is(.) вернул true
-     * возвращает -1
-     * и итератор указывает на конец файла
-     * в строку помещается все до конца файла
-     *
-     * если требуется прочитать 1 (а не 0) или более символов - проверяйте размер строки
-     */
-    template<typename class_t, typename str_t> static
-    int 
-    until_charclass(it_t * pit, const class_t & is, str_t * pstr);
 
 //======================= until_str, until_pattern
     /*
