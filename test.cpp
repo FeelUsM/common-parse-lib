@@ -2,53 +2,54 @@
 #include <stdio.h>
 #include "base_parse.h"
 
-#define r_ifnot(expr) if(expr)
-#define r_whilenot(expr) while(expr)
-//int r_ifnot;
-#define a b;
-int a;
-
 
 template<typename it_t, typename str_t>
-const char * read_identify(it_t * pit, str_t * pstr){
+struct example_read{
 	typedef typename str_t::value_type ch_t;
-	ch_t ch;
-						printf("read_identify: before read::charclass(alpha)\n");
-	//r_ifnot
-	if(read::charclass(pit,is<ch_t>::alpha,&ch))
-		return "ожидался символ";
-	(*pstr)+=ch;
-						//printf("read_identify: before read::while_charclass(alnum)\n");
-	str_t s1;
-	read::while_charclass(pit,is<ch_t>::alnum,&s1);
-	(*pstr)+=s1;
-	return 0;
-}
+	typedef basic_read<ch_t,it_t> read;
 
-template<typename it_t, typename str_t>
-const char * read_tag(it_t * pit, str_t * pstr){
-						//printf("read_tag: before read::fix_char('<')\n");
-	//r_ifnot
-	if(read::fix_char(pit,'<'))
-		return "ожидался символ '<'";
-						//printf("read_tag: before read_identify()\n");
-	const char * error;
-	//r_ifnot
-	if(error=read_identify(pit,pstr))
-		return error;
-						//printf("read_tag: before read::fix_char('>')\n");
-	//r_ifnot
-	if(read::fix_char(pit,'>'))
-		return "ожидался символ '>'";
-}
+	static
+	const char * 
+	identify(it_t * pit, str_t * pstr){
+		r_ifnot(read::charclass(pit,is<ch_t>::alpha,pstr))
+			return "ожидалась буква";
+		read::while_charclass(pit,is<ch_t>::alnum,pstr);
+			//EOF или нет - игнорируем
+		return 0;
+	}
+
+	static
+	const char * 
+	tag(it_t * pit, str_t * pstr){
+		r_ifnot(read::fix_char(pit,'<'))
+			return "ожидался символ '<'";
+		const char * error;
+		r_ifnot(error=identify(pit,pstr))
+			return error;
+		r_ifnot(read::fix_char(pit,'>'))
+			return "ожидался символ '>'";
+		return 0;
+	}
+};
+
 
 int main()
 {
-	char s[]="<sdfghj>";
-	const char * p=s;
-	std::string str;
+	using std::string;
+	typedef basic_read<char,const char*> read;
+	typedef example_read<const char*,string> read_ex;
+
+	char file_string[]="<sdfghj>";
+	const char * p=file_string;
+	string str;
 	
-	read_tag(&p,&str);
+	const char * err;
+	r_ifnot(err=read_ex::tag(&p,&str)){
+		printf("на позиции %d произошла ошибка: %s\n",p-file_string,err);
+		return -1;
+	}
+	read::until_eof(&p);//в конце все итераторы должны дойти до канца файла
 	
-	printf("%s\n",str.c_str());
+	printf("результат: %s\n",str.c_str());
+	return 0;
 }
