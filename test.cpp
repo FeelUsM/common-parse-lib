@@ -37,14 +37,14 @@ int main()
 {
 	using std::string;
 	typedef basic_read<char,const char*> read;
-	typedef example_read<const char*,string> read_ex;
+	typedef example_read<const char*,string> ex_read;
 
 	char file_string[]="<sdfghj>";
 	const char * p=file_string;
 	string str;
 	
 	const char * err;
-	r_ifnot(err=read_ex::tag(&p,&str)){
+	r_ifnot(err=ex_read::tag(&p,&str)){
 		printf("на позиции %d произошла ошибка: %s\n",p-file_string,err);
 		return -1;
 	}

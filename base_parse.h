@@ -75,31 +75,31 @@ func_obj    err pf(it*) //наподобие int read::spc(it*)
 func_obj    err pf(it*, rez*)
 
 len - кол-во символов, добавлненных в *pstr
-                                                                возвращаемое значение в случае	реализованность
+                                                                возвращаемое значение в случае  реализованность
 название                    аргументы           рег.выр.        если EOF    если не EOF     статистика использования
-int read::until_eof         (it*)               .*$             0           0               1	OK
-int read::until_eof         (it*,    pstr*)     .*$             len         len					OK
+int read::until_eof         (it*)               .*$             0           0               1   OK
+int read::until_eof         (it*,    pstr*)     .*$             len         len                 OK
 
-int read::fix_length        (it*, n)            .{n}            -1          0					OK
-int read::fix_length        (it*, n, pstr*)     .{n}            -(1+len)    0					OK
-int read::fix_char          (it*, c)            c               -1          0 или 1         2	OK
-int read::fix_str           (it*, s)            str             -1          0 или 1         1	OK
-int read::charclass         (it*, cf)           [ ]             -1          0 или 1				OK
-int read::charclass         (it*, cf, ch*)      [ ]             -1          0 или 1				OK
-int read::charclass         (it*, cf, pstr*)    [ ]             -1          0 или 1         1	OK
+int read::fix_length        (it*, n)            .{n}            -1          0                   OK
+int read::fix_length        (it*, n, pstr*)     .{n}            -(1+len)    0                   OK
+int read::fix_char          (it*, c)            c               -1          0 или 1         2   OK
+int read::fix_str           (it*, s)            str             -1          0 или 1         1   OK
+int read::charclass         (it*, cf)           [ ]             -1          0 или 1             OK
+int read::charclass         (it*, cf, ch*)      [ ]             -1          0 или 1             OK
+int read::charclass         (it*, cf, pstr*)    [ ]             -1          0 или 1         1   OK
 
-int read::until_char        (it*, c)            .*c             -(1+len)    len					OK
-int read::until_charclass   (it*, cf)           .*[ ]           -(1+len)    len					OK
-int read::while_charclass   (it*, cf)           [ ]*            -(1+len)    len					OK
-int read::until_char        (it*, c, pstr*)     .*c             -(1+len)    len					OK
-int read::until_charclass   (it*, cf, pstr*)    .*[ ]           -(1+len)    len					OK
-int read::while_charclass   (it*, cf, pstr*)    [ ]*            -(1+len)    len             1	OK
+int read::until_char        (it*, c)            .*c             -(1+len)    len                 OK
+int read::until_charclass   (it*, cf)           .*[ ]           -(1+len)    len                 OK
+int read::while_charclass   (it*, cf)           [ ]*            -(1+len)    len                 OK
+int read::until_char        (it*, c, pstr*)     .*c             -(1+len)    len                 OK
+int read::until_charclass   (it*, cf, pstr*)    .*[ ]           -(1+len)    len                 OK
+int read::while_charclass   (it*, cf, pstr*)    [ ]*            -(1+len)    len             1   OK
 
-int read::until_str         (it*, s)            .*str           -(1+len)    len
-int read::until_str         (it*, s, pstr*)     .*str           -(1+len)    len
-int read::until_pattern     (it*, pf)           .*( )           -(1+len)    len
-int read::until_pattern     (it*, pf, pstr*)    .*( )           -(1+len)    len
-int read::until_pattern     (it*, pf, pstr*, rez*)  .*( )       -(1+len)    len
+int read::until_str         (it*, s)            .*str           -(1+len)    len                 OK
+int read::until_str         (it*, s, pstr*)     .*str           -(1+len)    len                 OK
+int read::until_pattern     (it*, pf)           .*( )           -(1+len)    len                 OK
+int read::until_pattern     (it*, pf, pstr*)    .*( )           -(1+len)    len                 OK
+int read::until_pattern     (it*, pf, pstr*, rez*)  .*( )       -(1+len)    len                 OK
 
 int read::spc               (it*)               [:space:]       
 int read::_int              (it*, int ss, int_t*)   [0-"$(($ss-1))"]+
@@ -288,7 +288,7 @@ struct basic_read{
      *
      * если встретился конец файла - возвращает -(1 + размер считанного)
      * и итератор указывает на конец файла
-	 * если встретился заданный символ - возвращает размер считанного
+     * если встретился заданный символ - возвращает размер считанного
      * и итератор указывает на заданный символ
      */
     static
@@ -300,8 +300,8 @@ struct basic_read{
                 return i;
             else{
                 (*pit)++;
-				i++;
-			}
+                i++;
+            }
         return -(1+i);
     }
 
@@ -314,8 +314,8 @@ struct basic_read{
                 return i;
             else{
                 (*pit)++;
-				i++;
-			}
+                i++;
+            }
         return -(1+i);
     }
     
@@ -328,8 +328,8 @@ struct basic_read{
                 return i;
             else{
                 (*pit)++;
-				i++;
-			}
+                i++;
+            }
         return -(1+i);
     }
     
@@ -357,8 +357,8 @@ struct basic_read{
                 return i;
             else{
                 (*pstr)+=*(*pit)++;
-				i++;
-			}
+                i++;
+            }
         return -(1+i);
     }
     
@@ -371,8 +371,8 @@ struct basic_read{
                 return i;
             else{
                 (*pstr)+=*(*pit)++;
-				i++;
-			}
+                i++;
+            }
         return -(1+i);
     }
 
@@ -385,50 +385,103 @@ struct basic_read{
                 return i;
             else{
                 (*pstr)+=*(*pit)++;
-				i++;
-			}
+                i++;
+            }
         return -(1+i);
     }
 
 //======================= until_str, until_pattern
     /*
-     * until_str(it_t * pit, const ch_t * s)
-     * сдвигает указатель до тех пор, пока с него не будет нчинаться строка s
+     * until_str(it_t * pit, const ch_t * s[, str_t * pstr])
+     * считывает символы в строку pstr до тех пор, пока с очередного не будет начинаться строка s
+     * итератор указывает на следующий символ после конца найденной строки или на конец файла
      *
-     * если встречается конец файла при попытке прочитать строку
-     * возвращает -1
-     * итератор указывает на начало неудачно прочитанной строки, т.е. на конец файла минус длина строки плюс 1
-     */
-    static
-    int 
-    until_str(it_t * pit, const ch_t * s);
-
-    /*
-     * until_str(it_t * pit, const ch_t * s, str_t * pstr)
-     * считывает символы в строку pstr до тех пор, пока с очередного не будет нчинаться строка s
-     *
-     * если встречается конец файла при попытке прочитать строку s из файла
-     * возвращает -1
-     * итератор указывает на начало неудачно прочитанной строки, т.е. на конец файла минус длина строки плюс 1
-     * в строку pstr помещается все до этого итератора
+     * если встретился конец файла - возвращает -(1+число помещенных в строку символов)
+     * если встретился заданный символ - возвращает + число помещенных в строку символов
      *
      * если требуется прочитать 1 (а не 0) или более символов - проверяйте размер строки
      */
+    static
+    int 
+    until_str(it_t * pit, const ch_t * s){
+        int i=0;
+        for(;;){
+            it_t lit = *pit;
+            int err;
+            r_if(err=/*read::*/fix_str(&lit,s)){//если прочитал фиксированную строку
+                (*pit)=lit;
+                return err>0 ? i : -(1+i);
+            }
+            (*pit)++;
+            i++;
+        }
+    }
+
     template<typename str_t> static
     int 
-    until_str(it_t * pit, const ch_t * s, str_t * pstr);
+    until_str(it_t * pit, const ch_t * s, str_t * pstr){
+        int i=0;
+        for(;;){
+            it_t lit = *pit;
+            int err;
+            r_if(err=/*read::*/fix_str(&lit,s)){//если прочитал фиксированную строку
+                (*pit)=lit;
+                return err>0 ? i : -(1+i);
+            }
+            (*pstr)+=*(*pit)++;
+            i++;
+        }
+    }
 
+    /*
+     * until_pattern(it_t * pit, const pattern_t & pattern[, str_t * pstr[, rez_t * rez]])
+     * считывает символы в строку pstr до тех пор, пока с очередного не будет начинаться последовательноть
+     *     удовлетворяющая (возвращает 0) функциональному объекту pattern(it_t * pit[, rez_t * rez])
+     *     или он не окажетсяконцом файла
+     * итератор указывает на следующий символ после конца найденной последовательности или на конец файла
+     *
+     * если встретился конец файла - возвращает -(1+число помещенных в строку символов)
+     * если встретился заданный символ - возвращает + число помещенных в строку символов
+     *
+     * если требуется прочитать 1 (а не 0) или более символов - проверяйте размер строки
+     */
     template<typename pattern_t> static
     int 
-    until_pattern(it_t * pit, const pattern_t & pattern);
+    until_pattern(it_t * pit, const pattern_t & read_pattern){
+        int i=0;
+        for(;!atend(*pit);(*pit)++, i++){
+            it_t lit = *pit;
+            r_if(read_pattern(&lit))
+                return i;
+        }
+        return -(1+i);
+    }
     
     template<typename pattern_t, typename str_t> static
     int 
-    until_pattern(it_t * pit, const pattern_t & pattern, str_t * pstr);
+    until_pattern(it_t * pit, const pattern_t & pattern, str_t * pstr){
+        int i=0;
+        for(;!atend(*pit);(*pit)++, i++){
+            it_t lit = *pit;
+            r_if(read_pattern(&lit))
+                return i;
+            (*pstr)=**pit;
+        }
+        return -(1+i);
+    }
 
     template<typename pattern_t, typename str_t, typename rez_t> static
     int 
-    until_pattern(it_t * pit, const pattern_t & pattern, str_t * pstr, rez_t * rez);
+    until_pattern(it_t * pit, const pattern_t & pattern, str_t * pstr, rez_t * rez){
+        int i=0;
+        for(;!atend(*pit);(*pit)++, i++){
+            it_t lit = *pit;
+            r_if(read_pattern(&lit,rez))
+                return i;
+            (*pstr)=**pit;
+        }
+        return -(1+i);
+    }
     
 //======================= spc, _int, dec, hex, oct, bin, cfloat, ifloat, rus_cfloat, rus_ifloat
 
