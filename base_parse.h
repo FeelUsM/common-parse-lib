@@ -173,7 +173,7 @@ int read::until_eof         (it*,    pstr*)     .*$             len         len 
 
 int read::fix_length        (it*, n)            .{n}            -1          0                   OK
 int read::fix_length        (it*, n, pstr*)     .{n}            -(1+len)    0                   OK
-int read::fix_char          (it*, c)            c               -1          0 или 1         2   OK
+int read::fix_char          (it*, c)            c               -1          0 или 1         8   OK
 int read::fix_str           (it*, s)            str             -1          0 или 1         1   OK
 int read::charclass         (it*, is)           [ ]             -1          0 или 1             OK
 int read::charclass         (it*, is)           [ ]             -1          0 или 1             OK
@@ -207,13 +207,13 @@ int read::until_pattern     (it*, pf, pstr*)    .*( )           -(1+len)    len 
 int read::until_pattern     (it*, pf, pstr*, rez*)  .*( )       -(1+len)    len                 OK
 
 int read::spc               (it*)               [:space:]       
-int read::spcs              (it*)               [:space:]*       
+int read::spcs              (it*)               [:space:]*       							4
 
 int_t может быть : long, long long, unsigned long, unsigned long long
 flt_t может быть : float, double, long double
                                                                 переполнение неудача
 int read::_int          (it*, int ss, int_t*)   [0-"$(($ss-1))"]+   -1      1                       OK      OK
-int read::dec               (it*, int_t*)       [0-9]+              -1      1                       OK      OK
+int read::dec               (it*, int_t*)       [0-9]+              -1      1               1       OK      OK
 int read::hex               (it*, int_t*)       [:xdigit:]+         -1      1                       OK      OK
 int read::oct               (it*, int_t*)       [0-7]+              -1      1                       OK      OK
 int read::bin               (it*, int_t*)       [01]+               -1      1                       OK      OK
@@ -820,9 +820,9 @@ int read::rus_ifloat        (it*, flt_t*)
      *     and return -1
      * перед вызовом errno должно быть установлено в 0 (оно для каждого потока свое)
      */
-    template<typename it_t, typename int_t> inline
-    int 
-    read_int(it_t * pit, int ss, int_t * prez);
+    //template<typename it_t, typename int_t> inline
+    //int 
+    //read_int(it_t * pit, int ss, int_t * prez);
 //todo оптимизировать, чтобы не заморачивался с пробелами
 #if 1 //реализации read_int (внутри #if чтобы был один уровень вложенности для свертывания (в notepad++) )
 #define def_read_int(ch_t, int_t, func) \
@@ -836,21 +836,25 @@ int read::rus_ifloat        (it*, flt_t*)
             *prez=0;\
             return 1;\
         }\
+		errno=0;\
         *prez=func(*ps,const_cast<ch_t**>(ps),ss);\
         if(*ps==s)  return 1;\
-        if(errno){\
-            errno=0;\
-            return -1;\
-        }\
+        if(errno)   return -1;\
         return 0;\
     }
+//todo: добавить условную компиляцию: проверять совпадает ли int и long
+    def_read_int(char,      int,               strtol)
+    def_read_int(char,      unsigned int,      strtoul)
+    def_read_int(wchar_t,   int,               wcstol)
+    def_read_int(wchar_t,   unsigned int,      wcstoul)
+
     def_read_int(char,      long,               strtol)
-    def_read_int(char,      long long,          strtoll)
     def_read_int(char,      unsigned long,      strtoul)
+    def_read_int(char,      long long,          strtoll)
     def_read_int(char,      unsigned long long, strtoull)
     def_read_int(wchar_t,   long,               wcstol)
-    def_read_int(wchar_t,   long long,          wcstoll)
     def_read_int(wchar_t,   unsigned long,      wcstoul)
+    def_read_int(wchar_t,   long long,          wcstoll)
     def_read_int(wchar_t,   unsigned long long, wcstoull)
 #undef def_read_int
 #endif
@@ -858,25 +862,25 @@ int read::rus_ifloat        (it*, flt_t*)
     template<typename it_t, typename int_t> inline
     int 
     read_dec(it_t * pit, int_t * prez){
-        return _int(pit,10,prez);
+        return read_int(pit,10,prez);
     }
     
     template<typename it_t, typename int_t> inline
     int 
     read_hex(it_t * pit, int_t * prez){
-        return _int(pit,16,prez);
+        return read_int(pit,16,prez);
     }
     
     template<typename it_t, typename int_t> inline
     int 
     read_oct(it_t * pit, int_t * prez){
-        return _int(pit,8,prez);
+        return read_int(pit,8,prez);
     }
     
     template<typename it_t, typename int_t> inline
     int 
     read_bin(it_t * pit, int_t * prez){
-        return _int(pit,2,prez);
+        return read_int(pit,2,prez);
     }
     
     //при чтении точка обязательна, если нет экспоненты
