@@ -3,6 +3,7 @@
 #include "base_parse.h"
 
 using namespace str;
+using namespace std;
 
 template<typename it_t, typename str_t>
 struct example_read{
@@ -41,7 +42,7 @@ const char * read_expr(const char **pit, double * prez){
 	const char * err;
 	read_spcs(pit);
 	r_if(read_fix_char(pit,'(')){
-		r_ifnot(err=read_sum(pit,prez))
+		r_ifnot(err = read_sum(pit,prez))
 			return err;
 		read_spcs(pit);
 		r_ifnot(read_fix_char(pit,')'))
@@ -116,25 +117,25 @@ int main()
 	typedef basic_read<char,const char*> read;
 	typedef example_read<const char*,string> ex_read;
 
-	char file_string[]="<sdfghj>";
-	const char * p=file_string;
+	string file_string="<sdfghj>";
+	const char * p=file_string.c_str();
 	string str;
 	
 	const char * err;
 	r_ifnot(err=ex_read::tag(&p,&str)){
-		printf("на позиции %d произошла ошибка: %s\n",p-file_string,err);
+		printf("на позиции %d произошла ошибка: %s\n",p-file_string.c_str(),err);
 		return -1;
 	}
 	read::until_eof(&p);//в конце все итераторы должны дойти до канца файла
 	printf("результат: %s\n",str.c_str());
 	
 	
-	char str_expression[]="5+84/(51)";
-	printf("вычисляем выражение %s\n",str_expression);
-	p=str_expression;
+	string str_expression="5+84/(51)";
+	printf("вычисляем выражение %s\n",str_expression.c_str());
+	p=str_expression.c_str();
 	double rez;
 	r_ifnot(err=read_sum(&p,&rez)){
-		printf("на позиции %d произошла ошибка: %s\n",p-str_expression,err);
+		printf("на позиции %d произошла ошибка: %s\n",p-str_expression.c_str(),err);
 		return -1;
 	}
 	read::until_eof(&p);//в конце все итераторы должны дойти до канца файла

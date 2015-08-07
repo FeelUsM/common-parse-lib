@@ -6,9 +6,9 @@
 #include <stdlib.h> //для strtol, strtoll, strtoul, strtoull, strtof, strtod, strtold
 #include <wchar.h>  //для wcstol, wcstoll, wcstoul, wcstoull, wcstof, wcstod, wcstold
 #include <iterator> //для iterator_traits<it_t>::value_type
+namespace str{
 using std::iterator_traits;  
 
-namespace str{
 
 /*
  * === стандартные КЛАССЫ СИМВОЛОВ ===
