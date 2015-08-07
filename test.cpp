@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include "base_parse.h"
 
+using namespace str;
 
 template<typename it_t, typename str_t>
 struct example_read{
@@ -11,9 +12,10 @@ struct example_read{
 	static
 	const char * 
 	identify(it_t * pit, str_t * pstr){
-		r_ifnot(read::charclass(pit,is<ch_t>::alpha,pstr))
+		//typedef 
+		r_ifnot(read::charclass(pit,is_alpha<ch_t>,pstr))
 			return "ожидалась буква";
-		read::while_charclass(pit,is<ch_t>::alnum,pstr);
+		read::while_charclass(pit,is_alnum<ch_t>,pstr);
 			//EOF или нет - игнорируем
 		return 0;
 	}
