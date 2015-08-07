@@ -2,6 +2,7 @@
 #ifndef BASE_PARSE_H
 #define BASE_PARSE_H
 
+#include <errno.h>
 #include <stdlib.h>	//для strtol, strtoll, strtoul, strtoull, strtof, strtod, strtold
 #include <wchar.h>	//для wcstol, wcstoll, wcstoul, wcstoull, wcstof, wcstod, wcstold
 //#include <iterator> //для iterator_traits<it_t>::value_type
@@ -46,6 +47,74 @@ template<typename ch_t> inline bool is_graph(ch_t c)   {   return c>='!' && c<='
 template<typename ch_t> inline bool is_print(ch_t c)   {   return c>=' ' && c<='~';    }
 
 /*
+ * когда в функции read_while_charclass и until_charclass попадает объект span
+ * они вызывают функции стандартной библиотеки strspn, strcspn, wcsspn, wcscspn
+ * т.е. span - строка набора символов
+ * для консистентности read_charclass и read_charclass_c также могут принимать это объект
+ */
+template<typename ch_t>
+struct span{
+	const ch_t * s;
+	span(const ch_t * ss) :s(ss) {}
+};
+/*
+ * при больших множествах идущих друг за другом символов (например span("abcdefghijklnABCDEFGHIJK")) проверять, 
+ * равен ли заданный символ одному из данного множества, неоптимально
+ * оптимальнее задавать дипозоны парами символов (bispan("anAK\0"))
+ * т.о. происходит проверка, что заданный символ x: bs[0]<=x && x<=bs[1] || bs[2]<=x && x<=bs[3] || bs[4]<=x && x<=bs[5] || ....
+ * для задания отдельного символа - указываются одинаковые символы как нижняя и верхняя граница
+ * символов в строке должно быть четное кол-во, если это не так может произойти что угодно
+ * поэтому на всякий случай лучше будет, если строка будет заканчиваться двумя нулевыми символами 
+ * "sdfghj\0" - один ваш, один проставляется компилятором
+ * также в связи с тем, что ch_t может быть как signed, так и unsigned
+ * не желательно, что бы диапозоны пересекали точку 0 и точку изменения знака
+ */
+template<typename ch_t>
+struct bispan{
+	const ch_t * s;
+	bispan(const ch_t * ss) :s(ss) {}
+};
+
+template<typename ch_t> inline bispan<ch_t> 	spn_cntr() ;
+template<typename ch_t> inline span <ch_t>	spn_blank();
+template<typename ch_t> inline span <ch_t>	spn_space();
+template<typename ch_t> inline bispan <ch_t>	spn_upper();
+template<typename ch_t> inline bispan<ch_t> 	spn_lower();
+template<typename ch_t> inline bispan<ch_t> 	spn_alpha();
+template<typename ch_t> inline bispan<ch_t> 	spn_digit();
+template<typename ch_t> inline bispan<ch_t> 	spn_xdigit();
+template<typename ch_t> inline bispan<ch_t> 	spn_alnum();
+template<typename ch_t> inline bispan<ch_t> 	spn_punct();
+template<typename ch_t> inline bispan<ch_t> 	spn_graph();
+template<typename ch_t> inline bispan<ch_t> 	spn_print();
+
+template<> inline bispan<char> 	spn_cntr  <char>()   {   return bispan<char>("\1\x20\x7f\x7f\0");   }
+template<> inline span 	<char>	spn_blank <char>()   {   return span<char>(" \t");   }
+template<> inline span 	<char>	spn_space <char>()   {   return span<char>(" \t\n\r\f\v");   }
+template<> inline bispan<char> 	spn_upper <char>()   {   return bispan<char>("AZ\0");    }
+template<> inline bispan<char> 	spn_lower <char>()   {   return bispan<char>("az\0");    }
+template<> inline bispan<char> 	spn_alpha <char>()   {   return bispan<char>("azAZ\0");    }
+template<> inline bispan<char> 	spn_digit <char>()   {   return bispan<char>("09\0");    }
+template<> inline bispan<char> 	spn_xdigit<char>()   {   return bispan<char>("09afAF\0");    }
+template<> inline bispan<char> 	spn_alnum <char>()   {   return bispan<char>("azAZ09\0");    }
+template<> inline bispan<char> 	spn_punct <char>()   {   return bispan<char>("!/:@[`{~\0");    }
+template<> inline bispan<char> 	spn_graph <char>()   {   return bispan<char>("!~\0"); }
+template<> inline bispan<char> 	spn_print <char>()   {   return bispan<char>(" ~\0"); }
+
+template<> inline bispan<wchar_t> 	spn_cntr  <wchar_t>()   {   return bispan<wchar_t>(L"\1\x20\x7f\x7f\0");   }
+template<> inline span 	<wchar_t>	spn_blank <wchar_t>()   {   return span  <wchar_t>(L" \t");   }
+template<> inline span 	<wchar_t>	spn_space <wchar_t>()   {   return span  <wchar_t>(L" \t\n\r\f\v");   }
+template<> inline bispan<wchar_t> 	spn_upper <wchar_t>()   {   return bispan<wchar_t>(L"AZ\0");    }
+template<> inline bispan<wchar_t> 	spn_lower <wchar_t>()   {   return bispan<wchar_t>(L"az\0");    }
+template<> inline bispan<wchar_t> 	spn_alpha <wchar_t>()   {   return bispan<wchar_t>(L"azAZ\0");    }
+template<> inline bispan<wchar_t> 	spn_digit <wchar_t>()   {   return bispan<wchar_t>(L"09\0");    }
+template<> inline bispan<wchar_t> 	spn_xdigit<wchar_t>()   {   return bispan<wchar_t>(L"09afAF\0");    }
+template<> inline bispan<wchar_t> 	spn_alnum <wchar_t>()   {   return bispan<wchar_t>(L"azAZ09\0");    }
+template<> inline bispan<wchar_t> 	spn_punct <wchar_t>()   {   return bispan<wchar_t>(L"!/:@[`{~\0");    }
+template<> inline bispan<wchar_t> 	spn_graph <wchar_t>()   {   return bispan<wchar_t>(L"!~\0"); }
+template<> inline bispan<wchar_t> 	spn_print <wchar_t>()   {   return bispan<wchar_t>(L" ~\0"); }
+
+/*
  * для всех итераторов или указателей по строкам
  * необходим "метод" atend(it)
  * это как тоже самое что и it!=container.end()
@@ -85,11 +154,13 @@ bool atend(ch_t * pc)
 size_t      n
 ch_t        c
 ch_t *      s
-func_obj    bool cf(c)  //наподобие bool isspace(c)
+func_obj    bool is(c)  //наподобие bool isspace(c)
+span    	spn  //см выше
+bispan    	bspn  //см выше
 func_obj    err pf(it*) //наподобие int read::spc(it*)
 func_obj    err pf(it*, rez*)
-
-len - кол-во символов, добавлненных в *pstr
+																									специализация для
+len - кол-во символов, добавлненных в *pstr															char	wchar_t	char16_t	char_32_t
                                                                 возвращаемое значение в случае  реализованность
 название                    аргументы           рег.выр.        если EOF    если не EOF     статистика использования
 int read::until_eof         (it*)               .*$             0           0               1   OK
@@ -99,16 +170,30 @@ int read::fix_length        (it*, n)            .{n}            -1          0   
 int read::fix_length        (it*, n, pstr*)     .{n}            -(1+len)    0                   OK
 int read::fix_char          (it*, c)            c               -1          0 или 1         2   OK
 int read::fix_str           (it*, s)            str             -1          0 или 1         1   OK
-int read::charclass         (it*, cf)           [ ]             -1          0 или 1             OK
-int read::charclass         (it*, cf, pstr*)    [ ]             -1          0 или 1         1   OK
-int read::charclass_c       (it*, cf, ch*)      [ ]             -1          0 или 1             OK
+int read::charclass         (it*, is)           [ ]             -1          0 или 1             OK
+int read::charclass         (it*, is)           [ ]             -1          0 или 1             
+int read::charclass         (it*, is)           [ ]             -1          0 или 1             
+int read::charclass         (it*, is, pstr*)    [ ]             -1          0 или 1         1   OK
+int read::charclass         (it*, spn, pstr*)   [ ]             -1          0 или 1            
+int read::charclass         (it*, bspn, pstr*)  [ ]             -1          0 или 1            
+int read::charclass_c       (it*, is, ch*)      [ ]             -1          0 или 1             OK
+int read::charclass_c       (it*, spn, ch*)     [ ]             -1          0 или 1             
+int read::charclass_c       (it*, bspn, ch*)    [ ]             -1          0 или 1             
 
 int read::until_char        (it*, c)            .*c             -(1+len)    len                 OK
-int read::until_charclass   (it*, cf)           .*[ ]           -(1+len)    len                 OK
-int read::while_charclass   (it*, cf)           [ ]*            -(1+len)    len                 OK
+int read::until_charclass   (it*, is)           .*[ ]           -(1+len)    len                 OK
+int read::until_charclass   (it*, spn)          .*[ ]           -(1+len)    len                 
+int read::until_charclass   (it*, bspn)         .*[ ]           -(1+len)    len                 
+int read::while_charclass   (it*, is)           [ ]*            -(1+len)    len                 OK
+int read::while_charclass   (it*, spn)          [ ]*            -(1+len)    len                 
+int read::while_charclass   (it*, bspn)         [ ]*            -(1+len)    len                 
 int read::until_char        (it*, c, pstr*)     .*c             -(1+len)    len                 OK
-int read::until_charclass   (it*, cf, pstr*)    .*[ ]           -(1+len)    len                 OK
-int read::while_charclass   (it*, cf, pstr*)    [ ]*            -(1+len)    len             1   OK
+int read::until_charclass   (it*, is, pstr*)    .*[ ]           -(1+len)    len                 OK
+int read::until_charclass   (it*, spn, pstr*)   .*[ ]           -(1+len)    len                 
+int read::until_charclass   (it*, bspn, pstr*)  .*[ ]           -(1+len)    len                 
+int read::while_charclass   (it*, is, pstr*)    [ ]*            -(1+len)    len             1   OK
+int read::while_charclass   (it*, spn, pstr*)   [ ]*            -(1+len)    len                
+int read::while_charclass   (it*, bspn, pstr*)  [ ]*            -(1+len)    len                
 
 int read::until_str         (it*, s)            .*str           -(1+len)    len                 OK
 int read::until_str         (it*, s, pstr*)     .*str           -(1+len)    len                 OK
@@ -117,14 +202,20 @@ int read::until_pattern     (it*, pf, pstr*)    .*( )           -(1+len)    len 
 int read::until_pattern     (it*, pf, pstr*, rez*)  .*( )       -(1+len)    len                 OK
 
 int read::spc               (it*)               [:space:]       
-int read::spcs               (it*)               [:space:]*       
-int read::_int              (it*, int ss, int_t*)   [0-"$(($ss-1))"]+
-int read::dec               (it*, int_t*)       [0-9]+
-int read::hex               (it*, int_t*)       [:xdigit:]+
-int read::oct               (it*, int_t*)       [0-7]+
-int read::bin               (it*, int_t*)       [01]+
+int read::spcs              (it*)               [:space:]*       
+
+int_t может быть : long, long long, unsigned long, unsigned long long
+flt_t может быть : float, double, long double
+																переполнение неудача
+int read::_int          (it*, int ss, int_t*)   [0-"$(($ss-1))"]+	-1		1						OK		OK
+int read::dec               (it*, int_t*)       [0-9]+				-1		1						OK		OK
+int read::hex               (it*, int_t*)       [:xdigit:]+			-1		1						OK		OK
+int read::oct               (it*, int_t*)       [0-7]+				-1		1						OK		OK
+int read::bin               (it*, int_t*)       [01]+				-1		1						OK		OK
 int read::cfloat            (it*, flt_t*)   
 int read::ifloat            (it*, flt_t*)
+int read::rus_cfloat        (it*, flt_t*)   
+int read::rus_ifloat        (it*, flt_t*)
 */
 
 //======================= until_eof
@@ -507,10 +598,49 @@ int read::ifloat            (it*, flt_t*)
     template<typename it_t> inline
     int 
     read_spcs(it_t * it);
-    
+
+	/*
+	 * On success, the function returns (as rez) the converted integral number as a int_t value.
+	 * If no valid conversion could be performed, a zero value is returned (as rez) and return 1.
+	 * If the value read is out of the range of representable values by a int_t, 
+	 * the function returns (as rez) LONG_MAX or LONG_MIN (зависит от int_t) (defined in <climits>), 
+	 *     and return -1
+	 * перед вызовом errno должно быть установлено в 0 (оно для каждого потока свое)
+	 */
     template<typename it_t, typename int_t> inline
     int 
     read_int(it_t * pit, int ss, int_t * prez);
+//todo оптимизировать, чтобы не заморачивался с пробелами
+#if 1 //реализации read_int (внутри #if чтобы был один уровень вложенности для свертывания (в notepad++) )
+#define def_read_int(ch_t, int_t, func) \
+	inline \
+	int\
+	read_int(const ch_t ** ps, int ss, int_t * prez)\
+	{\
+		const ch_t * s = *ps;\
+		r_if(read_spc(ps)){\
+			*ps=s;\
+			*prez=0;\
+			return 1;\
+		}\
+		*prez=func(*ps,const_cast<ch_t**>(ps),ss);\
+		if(*ps==s)	return 1;\
+		if(errno){\
+			errno=0;\
+			return -1;\
+		}\
+		return 0;\
+	}
+	def_read_int(char,		long,				strtol)
+	def_read_int(char,		long long,			strtoll)
+	def_read_int(char,		unsigned long,		strtoul)
+	def_read_int(char,		unsigned long long,	strtoull)
+	def_read_int(wchar_t,	long,				wcstol)
+	def_read_int(wchar_t,	long long,			wcstoll)
+	def_read_int(wchar_t,	unsigned long,		wcstoul)
+	def_read_int(wchar_t,	unsigned long long,	wcstoull)
+#undef def_read_int
+#endif
     
     template<typename it_t, typename int_t> inline
     int 
