@@ -13,9 +13,9 @@ struct example_read{
 	const char * 
 	identify(it_t * pit, str_t * pstr){
 		//typedef 
-		r_ifnot(read::charclass(pit,is_alpha<ch_t>,pstr))
+		r_ifnot(read_charclass(pit,spn_alpha<ch_t>(),pstr))
 			return "ожидалась буква";
-		read::while_charclass(pit,is_alnum<ch_t>,pstr);
+		read_while_charclass(pit,spn_alnum<ch_t>(),pstr);
 			//EOF или нет - игнорируем
 		return 0;
 	}

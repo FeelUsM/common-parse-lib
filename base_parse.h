@@ -3,10 +3,10 @@
 #define BASE_PARSE_H
 
 #include <errno.h>
-#include <stdlib.h>	//для strtol, strtoll, strtoul, strtoull, strtof, strtod, strtold
-#include <wchar.h>	//для wcstol, wcstoll, wcstoul, wcstoull, wcstof, wcstod, wcstold
-//#include <iterator> //для iterator_traits<it_t>::value_type
-//using std::iterator_traits;  
+#include <stdlib.h> //для strtol, strtoll, strtoul, strtoull, strtof, strtod, strtold
+#include <wchar.h>  //для wcstol, wcstoll, wcstoul, wcstoull, wcstof, wcstod, wcstold
+#include <iterator> //для iterator_traits<it_t>::value_type
+using std::iterator_traits;  
 
 namespace str{
 
@@ -54,8 +54,8 @@ template<typename ch_t> inline bool is_print(ch_t c)   {   return c>=' ' && c<='
  */
 template<typename ch_t>
 struct span{
-	const ch_t * s;
-	span(const ch_t * ss) :s(ss) {}
+    const ch_t * s;
+    span(const ch_t * ss) :s(ss) {}
 };
 /*
  * при больших множествах идущих друг за другом символов (например span("abcdefghijklnABCDEFGHIJK")) проверять, 
@@ -71,48 +71,53 @@ struct span{
  */
 template<typename ch_t>
 struct bispan{
-	const ch_t * s;
-	bispan(const ch_t * ss) :s(ss) {}
+    const ch_t * s;
+    bispan(const ch_t * ss) :s(ss) {}
 };
 
-template<typename ch_t> inline bispan<ch_t> 	spn_cntr() ;
-template<typename ch_t> inline span <ch_t>	spn_blank();
-template<typename ch_t> inline span <ch_t>	spn_space();
-template<typename ch_t> inline bispan <ch_t>	spn_upper();
-template<typename ch_t> inline bispan<ch_t> 	spn_lower();
-template<typename ch_t> inline bispan<ch_t> 	spn_alpha();
-template<typename ch_t> inline bispan<ch_t> 	spn_digit();
-template<typename ch_t> inline bispan<ch_t> 	spn_xdigit();
-template<typename ch_t> inline bispan<ch_t> 	spn_alnum();
-template<typename ch_t> inline bispan<ch_t> 	spn_punct();
-template<typename ch_t> inline bispan<ch_t> 	spn_graph();
-template<typename ch_t> inline bispan<ch_t> 	spn_print();
+template<typename ch_t> inline bispan<ch_t>     spn_cntr() ;
+template<typename ch_t> inline span <ch_t>  spn_blank();
+template<typename ch_t> inline span <ch_t>  spn_space();
+template<typename ch_t> inline bispan <ch_t>    spn_upper();
+template<typename ch_t> inline bispan<ch_t>     spn_lower();
+template<typename ch_t> inline bispan<ch_t>     spn_alpha();
+template<typename ch_t> inline bispan<ch_t>     spn_digit();
+template<typename ch_t> inline bispan<ch_t>     spn_xdigit();
+template<typename ch_t> inline bispan<ch_t>     spn_alnum();
+template<typename ch_t> inline bispan<ch_t>     spn_punct();
+template<typename ch_t> inline bispan<ch_t>     spn_graph();
+template<typename ch_t> inline bispan<ch_t>     spn_print();
 
-template<> inline bispan<char> 	spn_cntr  <char>()   {   return bispan<char>("\1\x20\x7f\x7f\0");   }
-template<> inline span 	<char>	spn_blank <char>()   {   return span<char>(" \t");   }
-template<> inline span 	<char>	spn_space <char>()   {   return span<char>(" \t\n\r\f\v");   }
-template<> inline bispan<char> 	spn_upper <char>()   {   return bispan<char>("AZ\0");    }
-template<> inline bispan<char> 	spn_lower <char>()   {   return bispan<char>("az\0");    }
-template<> inline bispan<char> 	spn_alpha <char>()   {   return bispan<char>("azAZ\0");    }
-template<> inline bispan<char> 	spn_digit <char>()   {   return bispan<char>("09\0");    }
-template<> inline bispan<char> 	spn_xdigit<char>()   {   return bispan<char>("09afAF\0");    }
-template<> inline bispan<char> 	spn_alnum <char>()   {   return bispan<char>("azAZ09\0");    }
-template<> inline bispan<char> 	spn_punct <char>()   {   return bispan<char>("!/:@[`{~\0");    }
-template<> inline bispan<char> 	spn_graph <char>()   {   return bispan<char>("!~\0"); }
-template<> inline bispan<char> 	spn_print <char>()   {   return bispan<char>(" ~\0"); }
+/*
+ * использовать следующие функции так: 
+ * read_charclass(pit,spn_smth<тип>())
+ * не забывайте скобочки после spn_smth<тип>
+ */
+template<> inline bispan<char>  spn_cntr  <char>()   {   return bispan<char>("\1\x20\x7f\x7f\0");   }
+template<> inline span  <char>  spn_blank <char>()   {   return span<char>(" \t");   }
+template<> inline span  <char>  spn_space <char>()   {   return span<char>(" \t\n\r\f\v");   }
+template<> inline bispan<char>  spn_upper <char>()   {   return bispan<char>("AZ\0");    }
+template<> inline bispan<char>  spn_lower <char>()   {   return bispan<char>("az\0");    }
+template<> inline bispan<char>  spn_alpha <char>()   {   return bispan<char>("azAZ\0");    }
+template<> inline bispan<char>  spn_digit <char>()   {   return bispan<char>("09\0");    }
+template<> inline bispan<char>  spn_xdigit<char>()   {   return bispan<char>("09afAF\0");    }
+template<> inline bispan<char>  spn_alnum <char>()   {   return bispan<char>("azAZ09\0");    }
+template<> inline bispan<char>  spn_punct <char>()   {   return bispan<char>("!/:@[`{~\0");    }
+template<> inline bispan<char>  spn_graph <char>()   {   return bispan<char>("!~\0"); }
+template<> inline bispan<char>  spn_print <char>()   {   return bispan<char>(" ~\0"); }
 
-template<> inline bispan<wchar_t> 	spn_cntr  <wchar_t>()   {   return bispan<wchar_t>(L"\1\x20\x7f\x7f\0");   }
-template<> inline span 	<wchar_t>	spn_blank <wchar_t>()   {   return span  <wchar_t>(L" \t");   }
-template<> inline span 	<wchar_t>	spn_space <wchar_t>()   {   return span  <wchar_t>(L" \t\n\r\f\v");   }
-template<> inline bispan<wchar_t> 	spn_upper <wchar_t>()   {   return bispan<wchar_t>(L"AZ\0");    }
-template<> inline bispan<wchar_t> 	spn_lower <wchar_t>()   {   return bispan<wchar_t>(L"az\0");    }
-template<> inline bispan<wchar_t> 	spn_alpha <wchar_t>()   {   return bispan<wchar_t>(L"azAZ\0");    }
-template<> inline bispan<wchar_t> 	spn_digit <wchar_t>()   {   return bispan<wchar_t>(L"09\0");    }
-template<> inline bispan<wchar_t> 	spn_xdigit<wchar_t>()   {   return bispan<wchar_t>(L"09afAF\0");    }
-template<> inline bispan<wchar_t> 	spn_alnum <wchar_t>()   {   return bispan<wchar_t>(L"azAZ09\0");    }
-template<> inline bispan<wchar_t> 	spn_punct <wchar_t>()   {   return bispan<wchar_t>(L"!/:@[`{~\0");    }
-template<> inline bispan<wchar_t> 	spn_graph <wchar_t>()   {   return bispan<wchar_t>(L"!~\0"); }
-template<> inline bispan<wchar_t> 	spn_print <wchar_t>()   {   return bispan<wchar_t>(L" ~\0"); }
+template<> inline bispan<wchar_t>   spn_cntr  <wchar_t>()   {   return bispan<wchar_t>(L"\1\x20\x7f\x7f\0");   }
+template<> inline span  <wchar_t>   spn_blank <wchar_t>()   {   return span  <wchar_t>(L" \t");   }
+template<> inline span  <wchar_t>   spn_space <wchar_t>()   {   return span  <wchar_t>(L" \t\n\r\f\v");   }
+template<> inline bispan<wchar_t>   spn_upper <wchar_t>()   {   return bispan<wchar_t>(L"AZ\0");    }
+template<> inline bispan<wchar_t>   spn_lower <wchar_t>()   {   return bispan<wchar_t>(L"az\0");    }
+template<> inline bispan<wchar_t>   spn_alpha <wchar_t>()   {   return bispan<wchar_t>(L"azAZ\0");    }
+template<> inline bispan<wchar_t>   spn_digit <wchar_t>()   {   return bispan<wchar_t>(L"09\0");    }
+template<> inline bispan<wchar_t>   spn_xdigit<wchar_t>()   {   return bispan<wchar_t>(L"09afAF\0");    }
+template<> inline bispan<wchar_t>   spn_alnum <wchar_t>()   {   return bispan<wchar_t>(L"azAZ09\0");    }
+template<> inline bispan<wchar_t>   spn_punct <wchar_t>()   {   return bispan<wchar_t>(L"!/:@[`{~\0");    }
+template<> inline bispan<wchar_t>   spn_graph <wchar_t>()   {   return bispan<wchar_t>(L"!~\0"); }
+template<> inline bispan<wchar_t>   spn_print <wchar_t>()   {   return bispan<wchar_t>(L" ~\0"); }
 
 /*
  * для всех итераторов или указателей по строкам
@@ -155,12 +160,12 @@ size_t      n
 ch_t        c
 ch_t *      s
 func_obj    bool is(c)  //наподобие bool isspace(c)
-span    	spn  //см выше
-bispan    	bspn  //см выше
+span        spn  //см выше
+bispan      bspn  //см выше
 func_obj    err pf(it*) //наподобие int read::spc(it*)
 func_obj    err pf(it*, rez*)
-																									специализация для
-len - кол-во символов, добавлненных в *pstr															char	wchar_t	char16_t	char_32_t
+                                                                                                    специализация для
+len - кол-во символов, добавлненных в *pstr                                                         char    wchar_t char16_t    char_32_t
                                                                 возвращаемое значение в случае  реализованность
 название                    аргументы           рег.выр.        если EOF    если не EOF     статистика использования
 int read::until_eof         (it*)               .*$             0           0               1   OK
@@ -171,29 +176,29 @@ int read::fix_length        (it*, n, pstr*)     .{n}            -(1+len)    0   
 int read::fix_char          (it*, c)            c               -1          0 или 1         2   OK
 int read::fix_str           (it*, s)            str             -1          0 или 1         1   OK
 int read::charclass         (it*, is)           [ ]             -1          0 или 1             OK
-int read::charclass         (it*, is)           [ ]             -1          0 или 1             
-int read::charclass         (it*, is)           [ ]             -1          0 или 1             
-int read::charclass         (it*, is, pstr*)    [ ]             -1          0 или 1         1   OK
-int read::charclass         (it*, spn, pstr*)   [ ]             -1          0 или 1            
-int read::charclass         (it*, bspn, pstr*)  [ ]             -1          0 или 1            
+int read::charclass         (it*, is)           [ ]             -1          0 или 1             OK
+int read::charclass         (it*, is)           [ ]             -1          0 или 1             OK
+int read::charclass         (it*, is, pstr*)    [ ]             -1          0 или 1             OK
+int read::charclass         (it*, spn, pstr*)   [ ]             -1          0 или 1             OK
+int read::charclass         (it*, bspn, pstr*)  [ ]             -1          0 или 1         1   OK
 int read::charclass_c       (it*, is, ch*)      [ ]             -1          0 или 1             OK
-int read::charclass_c       (it*, spn, ch*)     [ ]             -1          0 или 1             
-int read::charclass_c       (it*, bspn, ch*)    [ ]             -1          0 или 1             
+int read::charclass_c       (it*, spn, ch*)     [ ]             -1          0 или 1             OK
+int read::charclass_c       (it*, bspn, ch*)    [ ]             -1          0 или 1             OK
 
 int read::until_char        (it*, c)            .*c             -(1+len)    len                 OK
 int read::until_charclass   (it*, is)           .*[ ]           -(1+len)    len                 OK
-int read::until_charclass   (it*, spn)          .*[ ]           -(1+len)    len                 
-int read::until_charclass   (it*, bspn)         .*[ ]           -(1+len)    len                 
+int read::until_charclass   (it*, spn)          .*[ ]           -(1+len)    len                 OK
+int read::until_charclass   (it*, bspn)         .*[ ]           -(1+len)    len                 OK
 int read::while_charclass   (it*, is)           [ ]*            -(1+len)    len                 OK
-int read::while_charclass   (it*, spn)          [ ]*            -(1+len)    len                 
-int read::while_charclass   (it*, bspn)         [ ]*            -(1+len)    len                 
+int read::while_charclass   (it*, spn)          [ ]*            -(1+len)    len                 OK
+int read::while_charclass   (it*, bspn)         [ ]*            -(1+len)    len                 OK
 int read::until_char        (it*, c, pstr*)     .*c             -(1+len)    len                 OK
 int read::until_charclass   (it*, is, pstr*)    .*[ ]           -(1+len)    len                 OK
-int read::until_charclass   (it*, spn, pstr*)   .*[ ]           -(1+len)    len                 
-int read::until_charclass   (it*, bspn, pstr*)  .*[ ]           -(1+len)    len                 
-int read::while_charclass   (it*, is, pstr*)    [ ]*            -(1+len)    len             1   OK
-int read::while_charclass   (it*, spn, pstr*)   [ ]*            -(1+len)    len                
-int read::while_charclass   (it*, bspn, pstr*)  [ ]*            -(1+len)    len                
+int read::until_charclass   (it*, spn, pstr*)   .*[ ]           -(1+len)    len                 OK
+int read::until_charclass   (it*, bspn, pstr*)  .*[ ]           -(1+len)    len                 OK
+int read::while_charclass   (it*, is, pstr*)    [ ]*            -(1+len)    len                 OK
+int read::while_charclass   (it*, spn, pstr*)   [ ]*            -(1+len)    len                 OK
+int read::while_charclass   (it*, bspn, pstr*)  [ ]*            -(1+len)    len             1   OK
 
 int read::until_str         (it*, s)            .*str           -(1+len)    len                 OK
 int read::until_str         (it*, s, pstr*)     .*str           -(1+len)    len                 OK
@@ -206,12 +211,12 @@ int read::spcs              (it*)               [:space:]*
 
 int_t может быть : long, long long, unsigned long, unsigned long long
 flt_t может быть : float, double, long double
-																переполнение неудача
-int read::_int          (it*, int ss, int_t*)   [0-"$(($ss-1))"]+	-1		1						OK		OK
-int read::dec               (it*, int_t*)       [0-9]+				-1		1						OK		OK
-int read::hex               (it*, int_t*)       [:xdigit:]+			-1		1						OK		OK
-int read::oct               (it*, int_t*)       [0-7]+				-1		1						OK		OK
-int read::bin               (it*, int_t*)       [01]+				-1		1						OK		OK
+                                                                переполнение неудача
+int read::_int          (it*, int ss, int_t*)   [0-"$(($ss-1))"]+   -1      1                       OK      OK
+int read::dec               (it*, int_t*)       [0-9]+              -1      1                       OK      OK
+int read::hex               (it*, int_t*)       [:xdigit:]+         -1      1                       OK      OK
+int read::oct               (it*, int_t*)       [0-7]+              -1      1                       OK      OK
+int read::bin               (it*, int_t*)       [01]+               -1      1                       OK      OK
 int read::cfloat            (it*, flt_t*)   
 int read::ifloat            (it*, flt_t*)
 int read::rus_cfloat        (it*, flt_t*)   
@@ -348,7 +353,31 @@ int read::rus_ifloat        (it*, flt_t*)
         (*pit)++;
         return 0;
     }
-    
+
+    template<typename it_t> inline
+    int 
+    read_charclass(it_t * pit, span<typename iterator_traits<it_t>::value_type> s){
+        if(atend(*pit)) return -1;
+        while(*s.s)
+            if(**pit==*s.s++){
+                (*pit)++;
+                return 0;
+            }
+        return 1;
+    }
+        
+    template<typename it_t> inline
+    int 
+    read_charclass(it_t * pit, bispan<typename iterator_traits<it_t>::value_type> s){
+        if(atend(*pit)) return -1;
+        while(*s.s)
+            if(*s.s++<=**pit && **pit<=*s.s++){
+                (*pit)++;
+                return 0;
+            }
+        return 1;
+    }
+        
     /*
      * charclass(it_t * pit, const class_t & is, pstr_t * pstr)
      * если is(.) возвращает true от указываемого итератором символа, то считывает 1 символ
@@ -366,6 +395,30 @@ int read::rus_ifloat        (it*, flt_t*)
         return 0;
     }
 
+    template<typename it_t, typename str_t> inline
+    int 
+    read_charclass(it_t * pit, span<typename iterator_traits<it_t>::value_type> s, str_t * pstr){
+        if(atend(*pit)) return -1;
+        while(*s.s)
+            if(**pit==*s.s++){
+                (*pstr)+=*(*pit)++;
+                return 0;
+            }
+        return 1;
+    }
+        
+    template<typename it_t, typename str_t> inline
+    int 
+    read_charclass(it_t * pit, bispan<typename iterator_traits<it_t>::value_type> s, str_t * pstr){
+        if(atend(*pit)) return -1;
+        while(*s.s)
+            if(*s.s++<=**pit && **pit<=*s.s++){
+                (*pstr)+=*(*pit)++;
+                return 0;
+            }
+        return 1;
+    }
+        
     /*
      * charclass(it_t * pit, const class_t & is, ch_t * ch)
      * если is(.) возвращает true от указываемого итератором символа, то считывает 1 символ
@@ -383,6 +436,30 @@ int read::rus_ifloat        (it*, flt_t*)
         return 0;
     }
     
+    template<typename it_t, typename ch_t> inline
+    int 
+    read_charclass_c(it_t * pit, span<typename iterator_traits<it_t>::value_type> s, ch_t * pch){
+        if(atend(*pit)) return -1;
+        while(*s.s)
+            if(**pit==*s.s++){
+                (*pch)=*(*pit)++;
+                return 0;
+            }
+        return 1;
+    }
+        
+    template<typename it_t, typename ch_t> inline
+    int 
+    read_charclass_c(it_t * pit, bispan<typename iterator_traits<it_t>::value_type> s, ch_t * pch){
+        if(atend(*pit)) return -1;
+        while(*s.s)
+            if(*s.s++<=**pit && **pit<=*s.s++){
+                (*pch)=*(*pit)++;
+                return 0;
+            }
+        return 1;
+    }
+        
 //======================= until_char, until_charclass, while_charclass
     /*
      * until_char(it_t * pit, ch_t ch)
@@ -425,6 +502,36 @@ int read::rus_ifloat        (it*, flt_t*)
         return -(1+i);
     }
     
+            template<typename it_t> inline
+            int 
+            read_until_charclass(it_t * pit, span<typename iterator_traits<it_t>::value_type> s){
+                int i=0;
+                while(!atend(*pit)){
+                    typename iterator_traits<it_t>::pointer ss=s.s;
+                    while(*ss)
+                        if(**pit==*ss++)
+                            return i;
+                    (*pit)++;
+                    i++;
+                }
+                return -(1+i);
+            }
+
+            template<typename it_t> inline
+            int 
+            read_until_charclass(it_t * pit, bispan<typename iterator_traits<it_t>::value_type> s){
+                int i=0;
+                while(!atend(*pit)){
+                    typename iterator_traits<it_t>::pointer ss=s.s;
+                    while(*ss)
+                        if(*ss++<=**pit && **pit<=*ss++)
+                            return i;
+                    (*pit)++;
+                    i++;
+                }
+                return -(1+i);
+            }
+
     template<typename it_t, typename class_t> inline
     int 
     read_while_charclass(it_t * pit, const class_t & is){
@@ -439,6 +546,42 @@ int read::rus_ifloat        (it*, flt_t*)
         return -(1+i);
     }
     
+            template<typename it_t> inline
+            int 
+            read_while_charclass(it_t * pit, span<typename iterator_traits<it_t>::value_type> s){
+                int i=0;
+                while(!atend(*pit)){
+                    typename iterator_traits<it_t>::pointer ss=s.s;
+                    while(*ss)
+                        if(**pit==*ss++){
+                            (*pit)++;
+                            i++;
+                            goto met;
+                        }
+                    return i;
+                met:;
+                }
+                return -(1+i);
+            }
+
+            template<typename it_t> inline
+            int 
+            read_while_charclass(it_t * pit, bispan<typename iterator_traits<it_t>::value_type> s){
+                int i=0;
+                while(!atend(*pit)){
+                    typename iterator_traits<it_t>::pointer ss=s.s;
+                    while(*ss)
+                        if(*ss++<=**pit && **pit<=*ss++){
+                            (*pit)++;
+                            i++;
+                            goto met;
+                        }
+                    return i;
+                met:;
+                }
+                return -(1+i);
+            }
+
     /*
      * until_char(it_t * pit, ch_t ch, str_t * pstr)
      * считывает строку, до тех пор пока не встретится заданный символ или конец файла
@@ -482,6 +625,36 @@ int read::rus_ifloat        (it*, flt_t*)
         return -(1+i);
     }
 
+            template<typename it_t, typename str_t> inline
+            int 
+            read_until_charclass(it_t * pit, span<typename iterator_traits<it_t>::value_type> s, str_t * pstr){
+                int i=0;
+                while(!atend(*pit)){
+                    typename iterator_traits<it_t>::pointer ss=s.s;
+                    while(*ss)
+                        if(**pit==*ss++)
+                            return i;
+                    (*pstr)+=*(*pit)++;
+                    i++;
+                }
+                return -(1+i);
+            }
+
+            template<typename it_t, typename str_t> inline
+            int 
+            read_until_charclass(it_t * pit, bispan<typename iterator_traits<it_t>::value_type> s, str_t * pstr){
+                int i=0;
+                while(!atend(*pit)){
+                    typename iterator_traits<it_t>::pointer ss=s.s;
+                    while(*ss)
+                        if(*ss++<=**pit && **pit<=*ss++)
+                            return i;
+                    (*pstr)+=*(*pit)++;
+                    i++;
+                }
+                return -(1+i);
+            }
+
     template<typename it_t, typename class_t, typename str_t> inline
     int 
     read_while_charclass(it_t * pit, const class_t & is, str_t * pstr){
@@ -495,6 +668,42 @@ int read::rus_ifloat        (it*, flt_t*)
             }
         return -(1+i);
     }
+
+            template<typename it_t, typename str_t> inline
+            int 
+            read_while_charclass(it_t * pit, span<typename iterator_traits<it_t>::value_type> s, str_t * pstr){
+                int i=0;
+                while(!atend(*pit)){
+                    typename iterator_traits<it_t>::pointer ss=s.s;
+                    while(*ss)
+                        if(**pit==*ss++){
+                            (*pstr)+=*(*pit)++;
+                            i++;
+                            goto met;
+                        }
+                    return i;
+                met:;
+                }
+                return -(1+i);
+            }
+
+            template<typename it_t, typename str_t> inline
+            int 
+            read_while_charclass(it_t * pit, bispan<typename iterator_traits<it_t>::value_type> s, str_t * pstr){
+                int i=0;
+                while(!atend(*pit)){
+                    typename iterator_traits<it_t>::pointer ss=s.s;
+                    while(*ss)
+                        if(*ss++<=**pit && **pit<=*ss++){
+                            (*pstr)+=*(*pit)++;
+                            i++;
+                            goto met;
+                        }
+                    return i;
+                met:;
+                }
+                return -(1+i);
+            }
 
 //======================= until_str, until_pattern
     /*
@@ -593,78 +802,82 @@ int read::rus_ifloat        (it*, flt_t*)
 
     template<typename it_t> inline
     int 
-    read_spc(it_t * it);
+    read_spc(it_t * pit){
+        return read_charclass(pit,spn_space<typename iterator_traits<it_t>::value_type>());
+    }
     
     template<typename it_t> inline
     int 
-    read_spcs(it_t * it);
+    read_spcs(it_t * pit){
+        return read_while_charclass(pit,spn_space<typename iterator_traits<it_t>::value_type>());
+    }
 
-	/*
-	 * On success, the function returns (as rez) the converted integral number as a int_t value.
-	 * If no valid conversion could be performed, a zero value is returned (as rez) and return 1.
-	 * If the value read is out of the range of representable values by a int_t, 
-	 * the function returns (as rez) LONG_MAX or LONG_MIN (зависит от int_t) (defined in <climits>), 
-	 *     and return -1
-	 * перед вызовом errno должно быть установлено в 0 (оно для каждого потока свое)
-	 */
+    /*
+     * On success, the function returns (as rez) the converted integral number as a int_t value.
+     * If no valid conversion could be performed, a zero value is returned (as rez) and return 1.
+     * If the value read is out of the range of representable values by a int_t, 
+     * the function returns (as rez) LONG_MAX or LONG_MIN (зависит от int_t) (defined in <climits>), 
+     *     and return -1
+     * перед вызовом errno должно быть установлено в 0 (оно для каждого потока свое)
+     */
     template<typename it_t, typename int_t> inline
     int 
     read_int(it_t * pit, int ss, int_t * prez);
 //todo оптимизировать, чтобы не заморачивался с пробелами
 #if 1 //реализации read_int (внутри #if чтобы был один уровень вложенности для свертывания (в notepad++) )
 #define def_read_int(ch_t, int_t, func) \
-	inline \
-	int\
-	read_int(const ch_t ** ps, int ss, int_t * prez)\
-	{\
-		const ch_t * s = *ps;\
-		r_if(read_spc(ps)){\
-			*ps=s;\
-			*prez=0;\
-			return 1;\
-		}\
-		*prez=func(*ps,const_cast<ch_t**>(ps),ss);\
-		if(*ps==s)	return 1;\
-		if(errno){\
-			errno=0;\
-			return -1;\
-		}\
-		return 0;\
-	}
-	def_read_int(char,		long,				strtol)
-	def_read_int(char,		long long,			strtoll)
-	def_read_int(char,		unsigned long,		strtoul)
-	def_read_int(char,		unsigned long long,	strtoull)
-	def_read_int(wchar_t,	long,				wcstol)
-	def_read_int(wchar_t,	long long,			wcstoll)
-	def_read_int(wchar_t,	unsigned long,		wcstoul)
-	def_read_int(wchar_t,	unsigned long long,	wcstoull)
+    inline \
+    int\
+    read_int(const ch_t ** ps, int ss, int_t * prez)\
+    {\
+        const ch_t * s = *ps;\
+        r_if(read_spc(ps)){\
+            *ps=s;\
+            *prez=0;\
+            return 1;\
+        }\
+        *prez=func(*ps,const_cast<ch_t**>(ps),ss);\
+        if(*ps==s)  return 1;\
+        if(errno){\
+            errno=0;\
+            return -1;\
+        }\
+        return 0;\
+    }
+    def_read_int(char,      long,               strtol)
+    def_read_int(char,      long long,          strtoll)
+    def_read_int(char,      unsigned long,      strtoul)
+    def_read_int(char,      unsigned long long, strtoull)
+    def_read_int(wchar_t,   long,               wcstol)
+    def_read_int(wchar_t,   long long,          wcstoll)
+    def_read_int(wchar_t,   unsigned long,      wcstoul)
+    def_read_int(wchar_t,   unsigned long long, wcstoull)
 #undef def_read_int
 #endif
     
     template<typename it_t, typename int_t> inline
     int 
     read_dec(it_t * pit, int_t * prez){
-		return _int(pit,10,prez);
-	}
+        return _int(pit,10,prez);
+    }
     
     template<typename it_t, typename int_t> inline
     int 
     read_hex(it_t * pit, int_t * prez){
-		return _int(pit,16,prez);
-	}
+        return _int(pit,16,prez);
+    }
     
     template<typename it_t, typename int_t> inline
     int 
     read_oct(it_t * pit, int_t * prez){
-		return _int(pit,8,prez);
-	}
+        return _int(pit,8,prez);
+    }
     
     template<typename it_t, typename int_t> inline
     int 
     read_bin(it_t * pit, int_t * prez){
-		return _int(pit,2,prez);
-	}
+        return _int(pit,2,prez);
+    }
     
     //при чтении точка обязательна, если нет экспоненты
     template<typename it_t, typename flt_t> inline
@@ -689,121 +902,121 @@ int read::rus_ifloat        (it*, flt_t*)
 
 template<typename ch_t, typename it_t>
 struct basic_read{
-	static int until_eof(it_t * pit)
-	{	return read_until_eof(pit);	}
-	
-					template<typename str_t> 	
-	static int until_eof(it_t * pit, str_t * pstr)
-	{	return read_until_eof(pit,pstr);	}
-	
-	static int fix_length(it_t * pit, size_t n)
-	{	return read_fix_length(pit,n);	}
-	
-					template<typename str_t> 	
-	static int fix_length(it_t * pit, size_t n, str_t * pstr)
-	{	return read_fix_length(pit,n,pstr);	}
-	
-	static int fix_char(it_t * pit, ch_t c)
-	{	return read_fix_char(pit,c);	}
-	
-	static int fix_str(it_t * pit, const ch_t * s)
-	{	return read_fix_str(pit,s);	}
-	
-					template<typename class_t> 	
-	static int charclass(it_t * pit, const class_t & is)
-	{	return read_charclass(pit,is);	}
-	
-					template<typename class_t, typename str_t> 
-	static int charclass(it_t * pit, const class_t & is, str_t * pstr)
-	{	return read_charclass(pit,is,pstr);	}
-	
-					template<typename class_t> 	
-	static int charclass_c(it_t * pit, const class_t & is, ch_t * pch)
-	{	return read_charclass_c(pit,is,pch);	}
-	
-	static int until_char(it_t * pit, ch_t ch)
-	{	return read_until_char(pit,ch);	}
-	
-					template<typename class_t> 	
-	static int until_charclass(it_t * pit, const class_t & is)
-	{	return read_until_charclass(pit,is);	}
-	
-					template<typename class_t> 	
-	static int while_charclass(it_t * pit, const class_t & is)
-	{	return read_while_charclass(pit,is);	}
-	
-					template<typename str_t> 	
-	static int until_char(it_t * pit, ch_t ch, str_t * pstr)
-	{	return read_until_char(pit,ch,pstr);	}
-	
-					template<typename class_t, typename str_t> 
-	static int until_charclass(it_t * pit, const class_t & is, str_t * pstr)
-	{	return read_until_charclass(pit,is,pstr);	}
-	
-					template<typename class_t, typename str_t> 
-	static int while_charclass(it_t * pit, const class_t & is, str_t * pstr)
-	{	return read_while_charclass(pit,is,pstr);	}
-	
-	static int until_str(it_t * pit, const ch_t * s)
-	{	return read_until_str(pit,s);	}
-	
-					template<typename str_t> 	
-	static int until_str(it_t * pit, const ch_t * s, str_t * pstr)
-	{	return read_until_str(pit,s,pstr);	}
-	
-					template<typename pattern_t>
-	static int until_pattern(it_t * pit, const pattern_t & read_pattern)
-	{	return read_until_pattern(pit,read_pattern);	}
-	
-					template<typename pattern_t, typename str_t> 
-	static int until_pattern(it_t * pit, const pattern_t & read_pattern, str_t * pstr)
-	{	return read_until_pattern(pit,read_pattern,pstr);	}
-	
-					template<typename pattern_t, typename str_t, typename rez_t> 
-	static int until_pattern(it_t * pit, const pattern_t & read_pattern, str_t * pstr, rez_t * rez)
-	{	return read_until_pattern(pit,read_pattern,pstr,rez);	}
-	
-	static int spc(it_t * it)
-	{	return read_spc(it);	}
-	
-	static int spcs(it_t * it)
-	{	return read_spcs(it);	}
-	
-					template<typename int_t> 	
-	static int _int(it_t * pit, int ss, int_t * prez)
-	{	read_int(pit,ss,prez);	}
-	
-					template<typename int_t> 	
-	static int dec(it_t * pit, int_t * prez)
-	{	read_dec(pit,prez);		}
-	
-					template<typename int_t> 	
-	static int hex(it_t * pit, int_t * prez)
-	{	read_hex(pit,prez);		}
-	
-					template<typename int_t> 	
-	static int oct(it_t * pit, int_t * prez)
-	{	read_oct(pit,prez);		}
-	
-					template<typename int_t> 	
-	static int bin(it_t * pit, int_t * prez)
-	{	read_bin(pit,prez);		}
-	
-					template<typename flt_t> 	
-	static int cfloat(it_t * pit, flt_t * prez)
-	;
-	
-					template<typename flt_t> 	
-	static int rus_cfloat(it_t * pit, flt_t * prez)
-	;
-	
-					template<typename flt_t> 	
-	static int ifloat(it_t * pit, flt_t * prez)
-	;
-	
-					template<typename flt_t> 	
-	static int rus_ifloat(it_t * pit, flt_t * prez)
-	;
+    static int until_eof(it_t * pit)
+    {   return read_until_eof(pit); }
+    
+                    template<typename str_t>    
+    static int until_eof(it_t * pit, str_t * pstr)
+    {   return read_until_eof(pit,pstr);    }
+    
+    static int fix_length(it_t * pit, size_t n)
+    {   return read_fix_length(pit,n);  }
+    
+                    template<typename str_t>    
+    static int fix_length(it_t * pit, size_t n, str_t * pstr)
+    {   return read_fix_length(pit,n,pstr); }
+    
+    static int fix_char(it_t * pit, ch_t c)
+    {   return read_fix_char(pit,c);    }
+    
+    static int fix_str(it_t * pit, const ch_t * s)
+    {   return read_fix_str(pit,s); }
+    
+                    template<typename class_t>  
+    static int charclass(it_t * pit, const class_t & is)
+    {   return read_charclass(pit,is);  }
+    
+                    template<typename class_t, typename str_t> 
+    static int charclass(it_t * pit, const class_t & is, str_t * pstr)
+    {   return read_charclass(pit,is,pstr); }
+    
+                    template<typename class_t>  
+    static int charclass_c(it_t * pit, const class_t & is, ch_t * pch)
+    {   return read_charclass_c(pit,is,pch);    }
+    
+    static int until_char(it_t * pit, ch_t ch)
+    {   return read_until_char(pit,ch); }
+    
+                    template<typename class_t>  
+    static int until_charclass(it_t * pit, const class_t & is)
+    {   return read_until_charclass(pit,is);    }
+    
+                    template<typename class_t>  
+    static int while_charclass(it_t * pit, const class_t & is)
+    {   return read_while_charclass(pit,is);    }
+    
+                    template<typename str_t>    
+    static int until_char(it_t * pit, ch_t ch, str_t * pstr)
+    {   return read_until_char(pit,ch,pstr);    }
+    
+                    template<typename class_t, typename str_t> 
+    static int until_charclass(it_t * pit, const class_t & is, str_t * pstr)
+    {   return read_until_charclass(pit,is,pstr);   }
+    
+                    template<typename class_t, typename str_t> 
+    static int while_charclass(it_t * pit, const class_t & is, str_t * pstr)
+    {   return read_while_charclass(pit,is,pstr);   }
+    
+    static int until_str(it_t * pit, const ch_t * s)
+    {   return read_until_str(pit,s);   }
+    
+                    template<typename str_t>    
+    static int until_str(it_t * pit, const ch_t * s, str_t * pstr)
+    {   return read_until_str(pit,s,pstr);  }
+    
+                    template<typename pattern_t>
+    static int until_pattern(it_t * pit, const pattern_t & read_pattern)
+    {   return read_until_pattern(pit,read_pattern);    }
+    
+                    template<typename pattern_t, typename str_t> 
+    static int until_pattern(it_t * pit, const pattern_t & read_pattern, str_t * pstr)
+    {   return read_until_pattern(pit,read_pattern,pstr);   }
+    
+                    template<typename pattern_t, typename str_t, typename rez_t> 
+    static int until_pattern(it_t * pit, const pattern_t & read_pattern, str_t * pstr, rez_t * rez)
+    {   return read_until_pattern(pit,read_pattern,pstr,rez);   }
+    
+    static int spc(it_t * it)
+    {   return read_spc(it);    }
+    
+    static int spcs(it_t * it)
+    {   return read_spcs(it);   }
+    
+                    template<typename int_t>    
+    static int _int(it_t * pit, int ss, int_t * prez)
+    {   read_int(pit,ss,prez);  }
+    
+                    template<typename int_t>    
+    static int dec(it_t * pit, int_t * prez)
+    {   read_dec(pit,prez);     }
+    
+                    template<typename int_t>    
+    static int hex(it_t * pit, int_t * prez)
+    {   read_hex(pit,prez);     }
+    
+                    template<typename int_t>    
+    static int oct(it_t * pit, int_t * prez)
+    {   read_oct(pit,prez);     }
+    
+                    template<typename int_t>    
+    static int bin(it_t * pit, int_t * prez)
+    {   read_bin(pit,prez);     }
+    
+                    template<typename flt_t>    
+    static int cfloat(it_t * pit, flt_t * prez)
+    ;
+    
+                    template<typename flt_t>    
+    static int rus_cfloat(it_t * pit, flt_t * prez)
+    ;
+    
+                    template<typename flt_t>    
+    static int ifloat(it_t * pit, flt_t * prez)
+    ;
+    
+                    template<typename flt_t>    
+    static int rus_ifloat(it_t * pit, flt_t * prez)
+    ;
 };//class basic_read<sh_t,it_t>
     //тут я планирую написать и специализировать строковые функции для разных типов строк
     //они понадобятся при оптимизации функций из read::
