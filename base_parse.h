@@ -164,9 +164,10 @@ span        spn  //см выше
 bispan      bspn  //см выше
 func_obj    err pf(it*) //наподобие int read::spc(it*)
 func_obj    err pf(it*, rez*)
-                                                                                                    специализация для
-len - кол-во символов, добавлненных в *pstr                                                         char    wchar_t char16_t    char_32_t
-                                                                возвращаемое значение в случае  реализованность
+                                                                                                      	специализация для
+len - кол-во символов, добавлненных в *pstr                                                           	char  wchar_t  char16_t  char_32_t
+																									исправлены баги
+                                                                возвращаемое значение в случае  реализованность 
 название                    аргументы           рег.выр.        если EOF    если не EOF     статистика использования
 int read::until_eof         (it*)               .*$             0           0               1   OK
 int read::until_eof         (it*,    pstr*)     .*$             len         len                 OK
@@ -174,7 +175,7 @@ int read::until_eof         (it*,    pstr*)     .*$             len         len 
 int read::fix_length        (it*, n)            .{n}            -1          0                   OK
 int read::fix_length        (it*, n, pstr*)     .{n}            -(1+len)    0                   OK
 int read::fix_char          (it*, c)            c               -1          0 или 1         8   OK
-int read::fix_str           (it*, s)            str             -1          0 или 1         1   OK
+int read::fix_str           (it*, s)            str             -1          0 или 1         1   OK	OK
 int read::charclass         (it*, is)           [ ]             -1          0 или 1             OK
 int read::charclass         (it*, is)           [ ]             -1          0 или 1             OK
 int read::charclass         (it*, is)           [ ]             -1          0 или 1             OK
@@ -335,6 +336,7 @@ int read::rus_ifloat        (it*, flt_t*)
                 return 1;
             else
                 (*pit)++, s++;
+		if(!*s) return 0;
         return -1;
     }
     

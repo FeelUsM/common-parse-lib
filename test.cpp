@@ -1,3 +1,4 @@
+#include <iostream>
 #include <string>
 #include <stdio.h>
 #include "base_parse.h"
@@ -33,6 +34,52 @@ struct example_read{
 			return "ожидался символ '>'";
 		return 0;
 	}
+};
+
+template<typename it_t, typename str_t>
+struct xml_parse{
+	typedef typename str_t::value_type ch_t;
+	typedef basic_read<ch_t,it_t> read;
+
+	static
+	const char *
+	xml(it_t * pit)
+	{
+		const char * err;
+		r_ifnot(err=DTD(pit))
+			return err;
+		r_if(err=elem_tag(pit))
+			return 0;
+		else r_if(err=elem_tag_last(pit))
+			return 0;
+		return err;
+	}
+
+	static
+	const char *
+	DTD(it_t * pit)
+	{
+		char str[] = "<!xml>";
+		const char* cstr = str;
+		r_ifnot(read_fix_str(pit, cstr))
+			return "некорректный DTD";
+		return 0;
+	}
+
+	static
+	const char *
+	elem_tag(it_t * pit)
+	{
+		return 0;
+	}
+
+	static
+	const char *
+	elem_tag_last(it_t * pit)
+	{
+		return 0;
+	}
+
 };
 
 const char * read_sum(const char **pit, double * prez);
@@ -140,6 +187,18 @@ int main()
 	}
 	read::until_eof(&p);//в конце все итераторы должны дойти до канца файла
 	printf("результат: %f\n",rez);
+
+
+	typedef xml_parse<const char*,string> parse;
+	string xml_doc = "<!xml>";
+	const char* cstr = xml_doc.c_str();
+	string str_out;
+	
+	const char* err_out;
+
+	r_ifnot(err_out = parse::xml(&cstr))
+		printf("ошибка: %s\n",err_out);
+	else cout << "распарсил xml_doc" << endl;
 	
 	return 0;
 }
