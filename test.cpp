@@ -1,7 +1,7 @@
 #include <iostream>
 #include <string>
-#include <stdio.h>
 #include "base_parse.h"
+#include "stream_string.h"
 
 using namespace str;
 using namespace std;
@@ -82,123 +82,144 @@ struct xml_parse{
 
 };
 
-const char * read_sum(const char **pit, double * prez);
+namespace calc{
+	const char * read_sum(const char **pit, double * prez);
 
-//выр::=spcs('('сумма spcs')'|число)
-const char * read_expr(const char **pit, double * prez){
-	const char * err;
-	read_spcs(pit);
-	r_if(read_fix_char(pit,'(')){
-		r_ifnot(err = read_sum(pit,prez))
+	//выр::=spcs('('сумма spcs')'|число)
+	const char * read_expr(const char **pit, double * prez){
+		const char * err;
+		read_spcs(pit);
+		r_if(read_fix_char(pit,'(')){
+			r_ifnot(err = read_sum(pit,prez))
+				return err;
+			read_spcs(pit);
+			r_ifnot(read_fix_char(pit,')'))
+				return "ожидалась закрывающая скобка";
+			return 0;
+		}
+		int x;
+		int errc;
+		r_ifnot(errc=read_dec(pit,&x)){
+			return "ожидалось число";
+		}
+		*prez = x;
+		return 0;
+	}
+
+	//множ::=выр spcs(('*'|'/')выр)*
+	const char * read_mul(const char **pit, double * prez){
+		const char * err;
+		r_ifnot(err = read_expr(pit,prez))
 			return err;
 		read_spcs(pit);
-		r_ifnot(read_fix_char(pit,')'))
-			return "ожидалась закрывающая скобка";
-		return 0;
+		while(true){
+			int zn;
+			r_if(read_fix_char(pit,'*')){
+				zn=1;
+				goto met;
+			}
+			else r_if(read_fix_char(pit,'/')){
+				zn=0;
+				goto met;
+			}
+			return 0;
+		met:
+			double x;
+			r_ifnot(err=read_expr(pit,&x))
+				return err;
+			if(zn)	*prez *= x;
+			else	*prez /= x;
+		}
+		return 0;//ни когда не выполниться
 	}
-	int x;
-	int errc;
-	r_ifnot(errc=read_dec(pit,&x)){
-		return "ожидалось число";
-	}
-	*prez = x;
-	return 0;
-}
 
-//множ::=выр spcs(('*'|'/')выр)*
-const char * read_mul(const char **pit, double * prez){
-	const char * err;
-	r_ifnot(err = read_expr(pit,prez))
-		return err;
-	read_spcs(pit);
-	while(true){
-		int zn;
-		r_if(read_fix_char(pit,'*')){
-			zn=1;
-			goto met;
-		}
-		else r_if(read_fix_char(pit,'/')){
-			zn=0;
-			goto met;
-		}
-		return 0;
-	met:
-		double x;
-		r_ifnot(err=read_expr(pit,&x))
+	//сумма::=множ spcs(('+'|'-')множ)*
+	const char * read_sum(const char **pit, double * prez){
+		const char * err;
+		r_ifnot(err = read_mul(pit,prez))
 			return err;
-		if(zn)	*prez *= x;
-		else	*prez /= x;
-	}
-	return 0;//ни когда не выполниться
-}
-
-//сумма::=множ spcs(('+'|'-')множ)*
-const char * read_sum(const char **pit, double * prez){
-	const char * err;
-	r_ifnot(err = read_mul(pit,prez))
-		return err;
-	read_spcs(pit);
-	while(true){
-		int zn;
-		r_if(read_fix_char(pit,'+')){
-			zn = 1;
-			goto met;
+		read_spcs(pit);
+		while(true){
+			int zn;
+			r_if(read_fix_char(pit,'+')){
+				zn = 1;
+				goto met;
+			}
+			else r_if(read_fix_char(pit,'-')){
+				zn = -1;
+				goto met;
+			}
+			return 0;
+		met:
+			double x;
+			r_ifnot(err = read_mul(pit,&x))
+				return err;
+			*prez += x*zn;
 		}
-		else r_if(read_fix_char(pit,'-')){
-			zn = -1;
-			goto met;
-		}
-		return 0;
-	met:
-		double x;
-		r_ifnot(err = read_mul(pit,&x))
-			return err;
-		*prez += x*zn;
+		return 0;//ни когда не выполниться
 	}
-	return 0;//ни когда не выполниться
-}
-
+}//namespace calc
+	
 int main()
 {
-	using std::string;
-	typedef basic_read<char,const char*> read;
-	typedef example_read<const char*,string> ex_read;
-
-	string file_string="<sdfghj>";
-	const char * p=file_string.c_str();
-	string str;
+	{
+		typedef xml_parse<const char*,string> parse;
+		string xml_doc = "<!xml>";
+		const char* cstr = xml_doc.c_str();
+		string str_out;
+		
+		const char* err_out;
 	
-	const char * err;
-	r_ifnot(err=ex_read::tag(&p,&str)){
-		printf("на позиции %d произошла ошибка: %s\n",p-file_string.c_str(),err);
-		return -1;
+		r_ifnot(err_out = parse::xml(&cstr))
+			cout << "ошибка: " << err_out << endl;
+		else cout << "распарсил xml_doc" << endl;
 	}
-	read::until_eof(&p);//в конце все итераторы должны дойти до канца файла
-	printf("результат: %s\n",str.c_str());
 	
+	{
+		typedef example_read<const char*,string> ex_read;
+
+		string file_string="<sdfghj>";
+		const char * p= file_string.c_str();
+		string str;
 	
-	string str_expression="5+84/(51)";
-	printf("вычисляем выражение %s\n",str_expression.c_str());
-	p=str_expression.c_str();
-	double rez;
-	r_ifnot(err=read_sum(&p,&rez)){
-		printf("на позиции %d произошла ошибка: %s\n",p-str_expression.c_str(),err);
-		return -1;
+		const char * err;
+		r_ifnot(err=ex_read::tag(&p,&str)){
+			cout << "на позиции " << p-file_string.c_str() << " произошла ошибка: " << err << endl;
+			return -1;
+		}
+		cout << "результат: " << str << endl;
 	}
-	read::until_eof(&p);//в конце все итераторы должны дойти до канца файла
-	printf("результат: %f\n",rez);
-
-
-	typedef xml_parse<const char*,string> parse;
-	string xml_doc = "<!xml>";
-	const char* cstr = xml_doc.c_str();
-	string str_out;
 	
-	const char* err_out;
-
-	r_ifnot(err_out = parse::xml(&cstr))
-		printf("ошибка: %s\n",err_out);
-	else cout << "распарсил xml_doc" << endl;
+	{
+		string str_expression="5+84/(51)";
+		cout << "вычисляем выражение " << str_expression << endl;
+		const char * p= str_expression.c_str();
+		const char * err;
+		double rez;
+		r_ifnot(err=calc::read_sum(&p,&rez)){
+			printf("на позиции %d произошла ошибка: %s\n",p-str_expression.c_str(),err);
+			return -1;
+		}
+		cout << "результат: " << rez << endl;
+	}
 	
+	{
+		try{
+			string_file_FILE file(stdin);
+			/*
+			 * при создании stream_string создается внутренний итератор, а значит создается первый буфер
+			 * а значит вы должны ввести хотя бы одну строку
+			 */
+			stream_string<basic_simple_buffer<char,string_file_FILE,200>> str(&file);
+		}
+		catch(const char * mes){
+			cerr << "ошибка: " << mes << endl;
+			return -1;
+		}
+		catch(...){
+			cerr << "неизвестная ошибка" << endl;
+		}
+	}
+
 	return 0;
 }
