@@ -509,7 +509,7 @@ int read::rus_ifloat        (it*, flt_t*)
             read_until_charclass(it_t * pit, span<typename iterator_traits<it_t>::value_type> s){
                 int i=0;
                 while(!atend(*pit)){
-                    typename iterator_traits<it_t>::pointer ss=s.s;
+                    typename iterator_traits<it_t>::const_pointer ss=s.s;
                     while(*ss)
                         if(**pit==*ss++)
                             return i;
@@ -524,7 +524,7 @@ int read::rus_ifloat        (it*, flt_t*)
             read_until_charclass(it_t * pit, bispan<typename iterator_traits<it_t>::value_type> s){
                 int i=0;
                 while(!atend(*pit)){
-                    typename iterator_traits<it_t>::pointer ss=s.s;
+                    typename iterator_traits<it_t>::const_pointer ss=s.s;
                     while(*ss)
                         if(*ss++<=**pit && **pit<=*ss++)
                             return i;
@@ -553,7 +553,7 @@ int read::rus_ifloat        (it*, flt_t*)
             read_while_charclass(it_t * pit, span<typename iterator_traits<it_t>::value_type> s){
                 int i=0;
                 while(!atend(*pit)){
-                    typename iterator_traits<it_t>::pointer ss=s.s;
+                    const typename iterator_traits<it_t>::value_type * ss=s.s;
                     while(*ss)
                         if(**pit==*ss++){
                             (*pit)++;
@@ -571,7 +571,7 @@ int read::rus_ifloat        (it*, flt_t*)
             read_while_charclass(it_t * pit, bispan<typename iterator_traits<it_t>::value_type> s){
                 int i=0;
                 while(!atend(*pit)){
-                    typename iterator_traits<it_t>::pointer ss=s.s;
+                    typename iterator_traits<it_t>::const_pointer ss=s.s;
                     while(*ss)
                         if(*ss++<=**pit && **pit<=*ss++){
                             (*pit)++;
@@ -632,7 +632,7 @@ int read::rus_ifloat        (it*, flt_t*)
             read_until_charclass(it_t * pit, span<typename iterator_traits<it_t>::value_type> s, str_t * pstr){
                 int i=0;
                 while(!atend(*pit)){
-                    typename iterator_traits<it_t>::pointer ss=s.s;
+                    const typename iterator_traits<it_t>::value_type * ss=s.s;
                     while(*ss)
                         if(**pit==*ss++)
                             return i;
@@ -647,7 +647,7 @@ int read::rus_ifloat        (it*, flt_t*)
             read_until_charclass(it_t * pit, bispan<typename iterator_traits<it_t>::value_type> s, str_t * pstr){
                 int i=0;
                 while(!atend(*pit)){
-                    typename iterator_traits<it_t>::pointer ss=s.s;
+                    const typename iterator_traits<it_t>::value_type * ss=s.s;
                     while(*ss)
                         if(*ss++<=**pit && **pit<=*ss++)
                             return i;
@@ -676,7 +676,7 @@ int read::rus_ifloat        (it*, flt_t*)
             read_while_charclass(it_t * pit, span<typename iterator_traits<it_t>::value_type> s, str_t * pstr){
                 int i=0;
                 while(!atend(*pit)){
-                    typename iterator_traits<it_t>::pointer ss=s.s;
+                    typename iterator_traits<it_t>::const_pointer ss=s.s;
                     while(*ss)
                         if(**pit==*ss++){
                             (*pstr)+=*(*pit)++;
@@ -694,7 +694,7 @@ int read::rus_ifloat        (it*, flt_t*)
             read_while_charclass(it_t * pit, bispan<typename iterator_traits<it_t>::value_type> s, str_t * pstr){
                 int i=0;
                 while(!atend(*pit)){
-                    typename iterator_traits<it_t>::pointer ss=s.s;
+                    const typename iterator_traits<it_t>::value_type * ss=s.s;
                     while(*ss)
                         if(*ss++<=**pit && **pit<=*ss++){
                             (*pstr)+=*(*pit)++;

@@ -277,10 +277,11 @@ public:	//TYPES
 		my_assert(tail.size==0,"simple_buffer: не пустой хвост");
 		_begin = alloc_t().allocate(buf_size);
 		_end = _begin+ _file->read(_begin,buf_size-1);
-		cerr<<"конструируем буфер"
+		cerr<<"буфер"
 			<<"["<<hex<< this <<"]"
 			<<"<"<< _iterator_counter <<">"
 			<<"("<<hex<< (void*)_begin <<","<<hex<< (void*)_end <<")"
+			<<" - конструируется"
 			<<endl;
 
 		if(_begin == _end)
@@ -294,16 +295,19 @@ public:	//TYPES
 	}
 	
 	basic_simple_buffer()	: _begin(0)	, _iterator_counter(0){
-		cerr<<"конструируем буфер по умолчанию"
+		cerr<<"буфер"
 			<<"["<<hex<< this <<"]"
 			<<"<"<< _iterator_counter <<">"
 			<<"("<<hex<< (void*)_begin <<","<<hex<< (void*)_end <<")"
+			<<" - конструируем по умолчанию"
 			<<endl;
 	}
 	~basic_simple_buffer(){
-		cerr<<"разрушаем буфер"
+		cerr<<"буфер"
 			<<"["<<hex<<this<<"]"
+			<<"<"<< _iterator_counter <<">"
 			<<"("<<hex<< (void*)_begin <<","<<hex<< (void*)_end <<")"
+			<<" - разрушаем"
 			<<endl;
 		if(!_begin)	return;
 		my_assert(_iterator_counter==0,"simple_buffer: на буфере остались итераторы");
@@ -327,11 +331,12 @@ public:	//TYPES
 		, _nomber(r._nomber)
 	{	
 		cerr
-			<<"конструируем буфер"
+			<<"буфер"
 			<<"["<<hex<<this<<"]"
-			<<"из буфера"
-			<<"["<<hex<<this<<"]"
+			<<"<"<< _iterator_counter <<">"
 			<<"("<<hex<< (void*)_begin <<","<<hex<< (void*)_end <<")"
+			<<" - конструируем из буфера"
+			<<"["<<hex<<this<<"]"
 			<<endl;
 		r._begin=0;
 	}
@@ -574,21 +579,25 @@ public:
 	explicit 
 	_stream_string_iterator(super_iterator sit)	: itbuf(sit), pointer(sit->begin()), endbuf(sit->end()){
 		itbuf->inc_iterator_counter();
-		cerr<<"конструируем str_iterator[" <<hex<<this <<"]"
-			<<"("<<hex<<pointer<<","<<hex<<endbuf<<")"
-			<<"от super_iterator'а по буферу[" <<hex<<&*itbuf <<"]" 
+		cerr<<"str_iterator[" <<hex<<this <<"]"
+			<<"("<<hex<<(void*)pointer<<","<<hex<<(void*)endbuf<<")"
+			<<" - конструируем от super_iterator'а по буферу[" <<hex<<&*itbuf <<"]" 
 			<<endl;
 	}
 
 	_stream_string_iterator()				: pointer(0), endbuf(0)	{
-		cerr<<"конструируем по умолчанию str_iterator[" <<hex<<this <<"]"
-			//<<"("<<hex<<pointer<<","<<hex<<endbuf<<")"
+		cerr<<"str_iterator[" <<hex<<this <<"]"
+			<<"("<<hex<<(void*)pointer<<","<<hex<<(void*)endbuf<<")"
+			<<" - конструируем по умолчанию"
 			<<endl;
 	}
 	~_stream_string_iterator()	{
-		cerr << "разрушаем str_iterator [" <<hex<<this <<"](" <<hex<<pointer <<"," <<hex<<endbuf <<")"<< endl;
+		cerr<<"str_iterator [" <<hex<<this <<"]"
+			<<"("<<hex<<(void*)pointer<<","<<hex<<(void*)endbuf<<")"
+			<<" - разрушаем"
+			<<endl;
 		if(pointer)	{
-			cerr << "и он валидный" << endl;
+			cerr << "               и он валидный" << endl;
 			itbuf->base()->del_iter_from_buf(itbuf);
 			pointer=0;
 			endbuf=0;
@@ -759,15 +768,15 @@ public:
 		: _file(f)
 		, _data(dat)
 	{
-		cerr << "начали конструировать stream_string" << endl;
-		cerr<< "internal _iterator"
+		cerr << "stream_string - начали конструировать " << endl;
+		cerr<< "      internal _iterator"
 			<<"["<<hex<<&_iterator<<"]"
 			<<endl;
 
 		_bufs.push_back(buf_t(this,_file,typename buf_t::tail_type(),0));
-		cerr<<"в конструкторе stream_string создали первый буфер" 
+		cerr<<"stream_string - в конструкторе создали первый буфер" 
 			<<"["<<hex<<&*_bufs.begin()<<"]"
-			<<"("<<hex<<_bufs.begin()->begin()<<","<<hex<<_bufs.begin()->end()<<")"
+			<<"("<<hex<<(int)_bufs.begin()->begin()<<","<<hex<<(int)_bufs.begin()->end()<<")"
 			<<endl;
 		if(_bufs.begin()->begin()==_bufs.begin()->end())	{//неожиданный конец файла
 			cerr << "неожиданный конец файла" << endl;
@@ -776,7 +785,7 @@ public:
 		}
 		else
 			_iterator = iterator(_bufs.begin());//он сам сконструируется от итераора на буфер
-		cerr << "stream_string сконструирован" << endl;
+		cerr << "stream_string - сконструирован" << endl;
 	}
 	
 	stream_string() = delete;
@@ -790,7 +799,16 @@ public:
 	 */
 	~stream_string()	{
 		_iterator.~iterator();
-		my_assert(_bufs.empty(),"при деструктировании остались не удаленные буфера");
+		cerr<< "internal _iterator"
+			<<"["<<hex<<&_iterator<<"]"
+			<<" - разрушен"
+			<<endl;
+		if(!_bufs.empty())
+			cerr<<"при деструктировании потока остались не удаленные буфера"<<endl;
+		else
+			cerr<<"деструктирование потока идет упешно"<<endl;
+		cerr<<"stream_string - закончили разрушаться"
+			<<endl;
 		//если потом начнут разрушаться итераторы - это пиздец
 	}
 
@@ -814,11 +832,11 @@ public:
 		
 	iterator & 
 	internal_iterator()
-	{	return *_iterator;	}
+	{	return _iterator;	}
 
 	iterator *
 	pinternal_iterator()
-	{	return _iterator;	}
+	{	return &_iterator;	}
 
 	list<buf_t> &
 	bufs()

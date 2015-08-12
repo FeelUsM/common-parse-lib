@@ -83,10 +83,12 @@ struct xml_parse{
 };
 
 namespace calc{
-	const char * read_sum(const char **pit, double * prez);
+	template<class it_t>
+	const char * read_sum(it_t * pit, double * prez);
 
 	//выр::=spcs('('сумма spcs')'|число)
-	const char * read_expr(const char **pit, double * prez){
+	template<class it_t>
+	const char * read_expr(it_t * pit, double * prez){
 		const char * err;
 		read_spcs(pit);
 		r_if(read_fix_char(pit,'(')){
@@ -107,7 +109,8 @@ namespace calc{
 	}
 
 	//множ::=выр spcs(('*'|'/')выр)*
-	const char * read_mul(const char **pit, double * prez){
+	template<class it_t>
+	const char * read_mul(it_t * pit, double * prez){
 		const char * err;
 		r_ifnot(err = read_expr(pit,prez))
 			return err;
@@ -134,7 +137,8 @@ namespace calc{
 	}
 
 	//сумма::=множ spcs(('+'|'-')множ)*
-	const char * read_sum(const char **pit, double * prez){
+	template<class it_t>
+	const char * read_sum(it_t * pit, double * prez){
 		const char * err;
 		r_ifnot(err = read_mul(pit,prez))
 			return err;
@@ -212,8 +216,18 @@ int main()
 			 * при создании stream_string создается внутренний итератор, а значит создается первый буфер
 			 * а значит вы должны ввести хотя бы одну строку
 			 */
-			cerr << "до создания str" <<endl; 
+			cerr << "--->до создания str" <<endl; 
 			stream_string<basic_simple_buffer<char,string_file_FILE,200>> str(&file);
+			cerr << "--->после создания str" <<endl; 
+			const char * err;
+			double rez;
+			r_ifnot(err=calc::read_sum(str.pinternal_iterator(),&rez)){
+				printf("на позиции --- произошла ошибка: %s\n",err);
+				return -1;
+			}
+			cout << "результат: " << rez << endl;
+			
+			cerr << "--->после создания str" <<endl; 
 		}
 		catch(const char * mes){
 			cerr << "ошибка: " << mes << endl;
