@@ -1,7 +1,7 @@
 #include <iostream>
 #include <string>
-#include "base_parse.h"
 #include "stream_string.h"
+#include "base_parse.h"
 
 using namespace str;
 using namespace std;
@@ -216,9 +216,7 @@ int main()
 			 * при создании stream_string создается внутренний итератор, а значит создается первый буфер
 			 * а значит вы должны ввести хотя бы одну строку
 			 */
-			cerr << "--->до создания str" <<endl; 
 			stream_string<basic_simple_buffer<char,string_file_FILE,200>> str(&file);
-			cerr << "--->после создания str" <<endl; 
 			const char * err;
 			double rez;
 			r_ifnot(err=calc::read_sum(str.pinternal_iterator(),&rez)){
@@ -227,7 +225,6 @@ int main()
 			}
 			cout << "результат: " << rez << endl;
 			
-			cerr << "--->после создания str" <<endl; 
 		}
 		catch(const char * mes){
 			cerr << "ошибка: " << mes << endl;

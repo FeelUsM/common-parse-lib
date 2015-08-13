@@ -2,21 +2,6 @@
 #ifndef MYSTREAM_H
 #define MYSTREAM_H
 
-//#include <deque>
-#include <stdio.h>
-#include <string.h>
-#include <wchar.h>
-#include <memory>
-#include <iterator>
-#include <list>
-using std::list;
-using std::pair;
-
-#include <iostream>
-using std::cerr;
-using std::endl;
-using std::hex;
-
 /*
 todo:
 перекодировка
@@ -30,21 +15,83 @@ distance()
 internal_file и конструкоры
 */
 
+#include <stdio.h>	//для файлов
+#include <wchar.h>	//для файлов
+#include <string.h>	//???
+#include <memory>	//std::allocator
+#include <iterator>	//от std::iterator наследуем свои итераторы
+#include <list>		//std::list
+#include <iostream>	//для дебага
+
+namespace str {
+using std::list;
+//using std::pair;
+
 template<typename X> inline
 void my_assert(bool b, X x){
 	if(!b)	throw x;
 }
 
-#define DEBUG_MES(mes)	(cerr << mes << endl)
+struct hex{
+  void * x;
+  template<class T>
+  hex(T m):x((void*)m){}
+};
+std::ostream & operator<<(std::ostream & str, hex h){
+  return str << h.x;
+}
 
-namespace str {
+#define DEBUG_counter(mes)	//(std::cerr mes << std::endl)
+#define DEBUG_buffer(mes)	//(std::cerr mes << std::endl)
+#define DEBUG_stream(mes)	//(std::cerr mes << std::endl)
 
 // ----****----
-// ----****---- CLASS basic_block_file ----****----
-// файл, выдающий блоки
+// ----****---- CLASS basic_block_file_c_str ----****----
 // ----****----
+// стрка, выдающая блоки
 template <typename ch_t>
-class basic_block_file_FILE{
+class basic_block_file_c_str
+{
+	ch_t * _file;
+public:
+		//CONSTRUCTION DESTRUCTION
+	basic_block_file_c_str(ch_t * str)	: _file(str)	{	}
+	basic_block_file_c_str() = delete;
+	~basic_block_file_c_str() = default;
+	
+		//COPYING
+	//файлы можно копировать как хочешь ибо они не содержат буферов
+#if __cplusplus >= 201103L
+	basic_block_file_c_str & operator=	(const	basic_block_file_c_str &	) = default;	
+	basic_block_file_c_str				(const	basic_block_file_c_str &	) = default;
+	basic_block_file_c_str & operator=	(		basic_block_file_c_str &&) = default;
+	basic_block_file_c_str				(		basic_block_file_c_str &&) = default;
+#else
+	//todo потом допишем
+#endif
+	
+		//MEMBERS
+	size_t read(ch_t * buf, size_t size){
+		//todo для специализаций подошли бы и strncpy() и wcsncpy()
+		for(size_t i=0; i<size; i++,buf++,_file++)
+			if(!(*_file))
+				return i;
+			else
+				*buf = *_file;
+		return size;
+	}
+	bool eof(){
+		return !*_file;
+	}
+};
+	
+// ----****----
+// ----****---- CLASS basic_block_file_FILE ----****----
+// ----****----
+// файл, выдающий блоки
+template <typename ch_t>
+class basic_block_file_FILE
+{
 	FILE * _file;
 public:
 		//CONSTRUCTION DESTRUCTION
@@ -84,8 +131,8 @@ public:
 	
 // ----****----
 // ----****---- CLASS string_file_FILE ----****----
-// файл, выдающий строки
 // ----****----
+// файл, выдающий строки
 class string_file_FILE
 {
 	FILE * _file;
@@ -136,7 +183,7 @@ public:
 };
 	
 // ----****----
-// ----****---- CLASS wstring_file ----****----
+// ----****---- CLASS wstring_file_FILE ----****----
 // файл, выдающий wстроки
 // ----****----
 class wstring_file_FILE
@@ -193,6 +240,8 @@ public:
  * или на std::istream (последнее - я не знаю зачем)
  */
 
+/* то что выше, наверно, можно перенести в отдельный какой-нибудь file.h*/
+
 // ----****----
 // ----****---- forward defs ----****----
 // ----****----
@@ -202,8 +251,6 @@ template<class buf_t>
 class _stream_string_const_iterator;
 template<class buf_t>
 class _stream_string_iterator;
-
-/* то что выше, наверно, можно перенести в отдельный какой-нибудь file.h*/
 
 // ----****----
 // ----****---- CLASS basic_simple_buffer ----****----
@@ -271,47 +318,48 @@ public:	//TYPES
 	 * или будет сконструирован по умолчанию
 	 * но на всякий случай все равно лучше, что бы было все при себе
 	 */
-	basic_simple_buffer(basic_type * b, file_t * f, tail_type tail, int n=0)
-		: _base(b)	, _file(f)	, _nomber(n) , _iterator_counter(0)	{
+	basic_simple_buffer(basic_type * b, file_t * f, tail_type tail, int n)
+		: _base(b)	, _file(f)	, _iterator_counter(0) , _nomber(n)	{
 		//т.к. tail() всегда возвращает pair(0,0) в simple_buffer
 		my_assert(tail.size==0,"simple_buffer: не пустой хвост");
 		_begin = alloc_t().allocate(buf_size);
 		_end = _begin+ _file->read(_begin,buf_size-1);
-		cerr<<"буфер"
-			<<"["<<hex<< this <<"]"
+		DEBUG_buffer(<<"буфер #"<<_nomber
+			<<"["<<hex(this)<<"]"
 			<<"<"<< _iterator_counter <<">"
-			<<"("<<hex<< (void*)_begin <<","<<hex<< (void*)_end <<")"
-			<<" - конструируется"
-			<<endl;
+			<<"("<<hex(_begin)<<","<<hex(_end)<<")"
+			<<" - конструируется");
 
-		if(_begin == _end)
+		if(_begin == _end) {
 			if((_atend=_file->eof()))
 				;//it's OK //внезапный конец файла
 			else
 				throw "прочитано 0 символов, а конца файла нет";
+		}
 		*_end = 0;
 		_atend = _file->eof();
 		//параметры перекодировки можно плоучить при помощи stream_data_type _base->stream_data()
 	}
 	
-	basic_simple_buffer()	: _begin(0)	, _iterator_counter(0){
-		cerr<<"буфер"
-			<<"["<<hex<< this <<"]"
+	basic_simple_buffer()	: _begin(0)	, _iterator_counter(0), _nomber(-1){
+		DEBUG_buffer(<<"буфер #"<<_nomber
+			<<"["<<hex(this)<<"]"
 			<<"<"<< _iterator_counter <<">"
-			<<"("<<hex<< (void*)_begin <<","<<hex<< (void*)_end <<")"
-			<<" - конструируем по умолчанию"
-			<<endl;
+			<<"("<<hex(_begin)<<","<<hex(_end)<<")"
+			<<" - конструируем по умолчанию");
 	}
 	~basic_simple_buffer(){
-		cerr<<"буфер"
-			<<"["<<hex<<this<<"]"
+		DEBUG_buffer(<<"буфер #"<<_nomber
+			<<"["<<hex(this)<<"]"
 			<<"<"<< _iterator_counter <<">"
-			<<"("<<hex<< (void*)_begin <<","<<hex<< (void*)_end <<")"
-			<<" - разрушаем"
-			<<endl;
+			<<"("<<hex(_begin)<<","<<hex(_end)<<")"
+			<<" - разрушаем");
 		if(!_begin)	return;
-		my_assert(_iterator_counter==0,"simple_buffer: на буфере остались итераторы");
-			//эта проверка очень желательна
+		//эта проверка очень желательна
+		if(_iterator_counter)
+			std::cerr	<<"basic_simple_buffer #"<<_nomber
+						<<": на буфере осталось "<<_iterator_counter<<" итераторов"
+						<<std::endl;
 		alloc_t().deallocate(_begin,buf_size);	
 		_begin = 0;
 		_iterator_counter = 0;
@@ -324,20 +372,21 @@ public:	//TYPES
 	basic_simple_buffer	(const	my_t &	) = delete;
 	my_t & operator=	(		my_t &&	) = delete;
 	basic_simple_buffer	(		my_t &&	r)
-		: _begin(r._begin)
+		: _base(r._base)
+		, _file(r._file)
+		, _begin(r._begin)
 		, _end(r._end)
-		, _base(r._base)
+		, _atend(r._atend)
 		, _iterator_counter(r._iterator_counter)
 		, _nomber(r._nomber)
 	{	
-		cerr
+		DEBUG_buffer(
 			<<"буфер"
-			<<"["<<hex<<this<<"]"
+			<<"["<<hex(this)<<"]"
 			<<"<"<< _iterator_counter <<">"
-			<<"("<<hex<< (void*)_begin <<","<<hex<< (void*)_end <<")"
+			<<"("<<hex(_begin)<<","<<hex(_end)<<")"
 			<<" - конструируем из буфера"
-			<<"["<<hex<<this<<"]"
-			<<endl;
+			<<"["<<hex(this)<<"]");
 		r._begin=0;
 	}
 #else //будте осторожны при присваиваниях буфера и передачи в функции
@@ -355,12 +404,9 @@ public:
 	}
 #endif //CLASS simple_buffer
 		
-#if 1	//PUBLIC MEMBERS
+//{	//PUBLIC MEMBERS
 	//хвост - неперекодированный кусок этого буфера
-	tail_type 
-	tail()	{	
-		return tail_type();
-	}
+	tail_type 	tail()		{	return tail_type();	}
 	
 	ch_t *	begin()const	{	return _begin;	}
 	ch_t *	end()const		{	return _end;	}
@@ -368,31 +414,15 @@ public:
 	bool 	eof()const		{	return _atend;	}
 	void 	set_eof()		{	_atend=true;	}
 	
-	/*
-	 * вот нельзя, блеять, просто все члены сделать открытыми
-	 * из-за ебаных принципов ООП:
-	 * другой класс, реализованныый кем-то еще может не содержать этих переменных, 
-	 * но предоставлять методы работы с ними обязан
-	 * 
-	 * но т.к. это шаблонный полиморфизм
-	 * если переменные-члены сделать окрытыми
-	 * другой кругом классе, реализованном кем-то еще
-	 * эти переменные могут быть заменены на классы, прикидывающиеся переменными такого же типа
-	 * (если конечно ни кто не станет получать указатели на такие переменные
-	 * хотя даже в этом случае есть operator&() )
-	 * по этому
-	 */
-	//int iterator_counter;//используется operator++(), operator--() и получение значения
-	//обратно для одинаковости переделал
 	int inc_iterator_counter()	{	return ++_iterator_counter;	}
 	int dec_iterator_counter()	{	return --_iterator_counter;	}
 	int get_iterator_counter()const{return _iterator_counter;	}
 
 	int 		nomber()const	{	return _nomber;	}
-	int		set_nomber(int n)	{	return _nomber=n;	}
+	//int		set_nomber(int n)	{	return _nomber=n;	}	//можно _nomber объявить не как const
 	basic_type * base()const	{	return _base;	}
 	file_t * 	file()const		{	return _file;	}//на всякий случай
-#endif	
+//}	
 }; //CLASS simple_buffer
 
 /* здесь можно добавить буфер с перекодировкой, 
@@ -437,6 +467,11 @@ public:
  * да да, считанное из фала в буфера можно изменять
  */
 
+template<class buf_t> inline
+bool atend(const _stream_string_const_iterator<buf_t> & it) {	
+	return it.pointer==0;	
+}
+
 // ----****----		
 // --**-- ITERATOR _stream_string_const_iterator --**--
 // ----****----		
@@ -450,12 +485,14 @@ class _stream_string_const_iterator
 		typename buf_t::const_reference
 	>
 {
-	friend class _stream_string_iterator<buf_t>;
 		//private TYPEDEFS
 	typedef typename buf_t::value_type				ch_t;
 	typedef _stream_string_const_iterator<buf_t> 	my_t;
 	typedef typename list<buf_t>::iterator 			super_iterator;
-	
+		//FRIENDS
+	friend class _stream_string_iterator<buf_t>;
+	friend bool atend<buf_t>(const my_t & );
+
 		//DATA
 	ch_t * pointer;//==0 <=> atend
 	ch_t * endbuf;//==0 <=> не связан ни с каким буфером
@@ -464,7 +501,7 @@ class _stream_string_const_iterator
 public:
 		//CONSTRUCTION, DESTRUCTION
 	explicit 
-	_stream_string_const_iterator(super_iterator sit): itbuf(sit), pointer(sit->begin()), endbuf(sit->end()){
+	_stream_string_const_iterator(super_iterator sit): pointer(sit->begin()), endbuf(sit->end()) {
 		itbuf->inc_iterator_counter();
 	}
 
@@ -472,7 +509,8 @@ public:
 	}
 	~_stream_string_const_iterator(){
 		if(!pointer)	return;
-		itbuf->base()->del_iter_from_buf(itbuf);
+		if(itbuf->dec_iterator_counter() ==0)
+			itbuf->base()->del_buf_request(itbuf);
 		pointer=0;
 		endbuf=0;
 	}
@@ -522,7 +560,8 @@ public:
 				pointer=itbuf->begin();
 				endbuf=itbuf->end();
 			}
-			mybase->del_iter_from_buf(oldbuf);
+			if(oldbuf->dec_iterator_counter() ==0)
+				mybase->del_buf_request(oldbuf);
 		}
 		return * this;   
 	}
@@ -537,15 +576,20 @@ public:
 		return itbuf==r.itbuf && pointer==r.pointer;
 	}
 	bool operator<(const my_t & r)const	{
-		my_assert(itbuf->mybase==r.itbuf->mybase,"сравнение итераторов по разным потокам");
+		my_assert(itbuf->base()==r.itbuf->base(),"сравнение итераторов по разным потокам");
 		if(itbuf->nomber()<r.itbuf->nomber())
 			return true;
-		else if(itbuf->nomber==r.itbuf->nomber)
+		else if(itbuf->nomber()==r.itbuf->nomber())
 			return pointer<r.pointer;
 		else
 			return false;
 	}
 };
+
+template<class buf_t> inline
+bool atend(const _stream_string_iterator<buf_t> & it) {	
+	return it.pointer==0;	
+}
 
 // ----****----		
 //--**-- TEMPLATE CLASS _stream_string_iterator --**--
@@ -561,14 +605,13 @@ class _stream_string_iterator
 		typename buf_t::reference
 	>
 {
-	friend class _stream_string_const_iterator<buf_t>;
 		//private TYPEDEFS
 	typedef typename buf_t::value_type		ch_t;
 	typedef _stream_string_iterator<buf_t> 	my_t;
 	typedef typename list<buf_t>::iterator 	super_iterator;
-//далее копия с const_iterator'а, с удаленными const в разделе ACCESS и CONSTRUCTION и во всех вызовах деструкторов 
-//а также добавленным конструктором копирования и оператором присваивания от const_iterator'а
-
+		//FRIENDS
+	friend class _stream_string_const_iterator<buf_t>;
+	friend bool atend<buf_t>(const my_t & );
 		//DATA
 	ch_t * pointer;//==0 <=> atend
 	ch_t * endbuf;//==0 <=> не связан ни с каким буфером
@@ -577,28 +620,30 @@ class _stream_string_iterator
 public:
 		//CONSTRUCTION, DESTRUCTION
 	explicit 
-	_stream_string_iterator(super_iterator sit)	: itbuf(sit), pointer(sit->begin()), endbuf(sit->end()){
+	_stream_string_iterator(super_iterator sit)	: pointer(sit->begin()), endbuf(sit->end()), itbuf(sit)	{
 		itbuf->inc_iterator_counter();
-		cerr<<"str_iterator[" <<hex<<this <<"]"
-			<<"("<<hex<<(void*)pointer<<","<<hex<<(void*)endbuf<<")"
-			<<" - конструируем от super_iterator'а по буферу[" <<hex<<&*itbuf <<"]" 
-			<<endl;
+		DEBUG_counter(<<"str_iterator[" <<hex(this)<<"]"
+			<<"("<<hex(pointer)<<","<<hex(endbuf)<<")"
+			<<" - конструируем от super_iterator'а по буферу #" <<itbuf->nomber() 
+		);
 	}
 
 	_stream_string_iterator()				: pointer(0), endbuf(0)	{
-		cerr<<"str_iterator[" <<hex<<this <<"]"
-			<<"("<<hex<<(void*)pointer<<","<<hex<<(void*)endbuf<<")"
+		DEBUG_counter(
+			<<"str_iterator[" <<hex(this)<<"]"
+			<<"("<<hex(pointer)<<","<<hex(endbuf)<<")"
 			<<" - конструируем по умолчанию"
-			<<endl;
+		);
 	}
 	~_stream_string_iterator()	{
-		cerr<<"str_iterator [" <<hex<<this <<"]"
-			<<"("<<hex<<(void*)pointer<<","<<hex<<(void*)endbuf<<")"
+		DEBUG_counter(
+			<<"str_iterator [" <<hex(this)<<"]"
+			<<"("<<hex(pointer)<<","<<hex(endbuf)<<")"
 			<<" - разрушаем"
-			<<endl;
+		);
 		if(pointer)	{
-			cerr << "               и он валидный" << endl;
-			itbuf->base()->del_iter_from_buf(itbuf);
+			if(itbuf->dec_iterator_counter() ==0)
+				itbuf->base()->del_buf_request(itbuf);
 			pointer=0;
 			endbuf=0;
 		}
@@ -652,9 +697,9 @@ public:
 			super_iterator oldbuf = itbuf++;
 			if( itbuf == mybase->_bufs.end() )
 				if(oldbuf->eof())							//конец буферов
-					this->~_stream_string_const_iterator();	//в последнем буфере был конец файла
+					this->~_stream_string_iterator();	//в последнем буфере был конец файла
 				else if( (itbuf=mybase->add_buf()) == mybase->_bufs.end() )
-					this->~_stream_string_const_iterator();	//роизошел неожиданный конец файла
+					this->~_stream_string_iterator();	//роизошел неожиданный конец файла
 				else
 					goto normal_buffer;						//новый буфер был удачно создан
 			else{
@@ -663,7 +708,8 @@ public:
 				pointer=itbuf->begin();
 				endbuf=itbuf->end();
 			}
-			mybase->del_iter_from_buf(oldbuf);
+			if(oldbuf->dec_iterator_counter() ==0)
+				mybase->del_buf_request(oldbuf);
 		}
 		return * this;   
 	}
@@ -678,10 +724,10 @@ public:
 		return itbuf==r.itbuf && pointer==r.pointer;
 	}
 	bool operator<(const my_t & r)const	{
-		my_assert(itbuf->mybase==r.itbuf->mybase,"сравнение итераторов по разным потокам");
+		my_assert(itbuf->base()==r.itbuf->base(),"сравнение итераторов по разным потокам");
 		if(itbuf->nomber()<r.itbuf->nomber())
 			return true;
-		else if(itbuf->nomber==r.itbuf->nomber)
+		else if(itbuf->nomber()==r.itbuf->nomber())
 			return pointer<r.pointer;
 		else
 			return false;
@@ -756,8 +802,8 @@ private:
 	}
 
 	//если надо - удаляет буфер
-	void del_iter_from_buf(typename list<buf_t>::iterator itbuf){
-		if( itbuf->dec_iterator_counter()==0 && itbuf==_bufs.begin())
+	void del_buf_request(typename list<buf_t>::iterator itbuf){
+		if(itbuf==_bufs.begin())
 			while(_bufs.begin()->get_iterator_counter()==0 && _bufs.begin()!=_bufs.end())
 				_bufs.pop_front();
 	}
@@ -768,24 +814,26 @@ public:
 		: _file(f)
 		, _data(dat)
 	{
-		cerr << "stream_string - начали конструировать " << endl;
-		cerr<< "      internal _iterator"
-			<<"["<<hex<<&_iterator<<"]"
-			<<endl;
+		DEBUG_stream(
+			<< "stream_string - начали конструировать "
+			<< "internal _iterator"
+			<<"["<<hex(&_iterator)<<"]"
+		);
 
 		_bufs.push_back(buf_t(this,_file,typename buf_t::tail_type(),0));
-		cerr<<"stream_string - в конструкторе создали первый буфер" 
-			<<"["<<hex<<&*_bufs.begin()<<"]"
-			<<"("<<hex<<(int)_bufs.begin()->begin()<<","<<hex<<(int)_bufs.begin()->end()<<")"
-			<<endl;
+		DEBUG_stream(
+			<<"stream_string - в конструкторе создали первый буфер" 
+			<<"["<<hex(&*_bufs.begin())<<"]"
+			<<"("<<hex(_bufs.begin()->begin())<<","<<hex(_bufs.begin()->end())<<")"
+		);
 		if(_bufs.begin()->begin()==_bufs.begin()->end())	{//неожиданный конец файла
-			cerr << "неожиданный конец файла" << endl;
+		DEBUG_stream( << "неожиданный конец файла" );
 			_bufs.pop_front();
 			_iterator = iterator();
 		}
 		else
 			_iterator = iterator(_bufs.begin());//он сам сконструируется от итераора на буфер
-		cerr << "stream_string - сконструирован" << endl;
+		DEBUG_stream( << "stream_string - сконструирован" );
 	}
 	
 	stream_string() = delete;
@@ -799,33 +847,33 @@ public:
 	 */
 	~stream_string()	{
 		_iterator.~iterator();
-		cerr<< "internal _iterator"
-			<<"["<<hex<<&_iterator<<"]"
+		DEBUG_stream(
+			<< "internal _iterator"
+			<<"["<<hex(&_iterator)<<"]"
 			<<" - разрушен"
-			<<endl;
+		);
 		if(!_bufs.empty())
-			cerr<<"при деструктировании потока остались не удаленные буфера"<<endl;
+			std::cerr<<"при деструктировании потока остались не удаленные буфера"<<std::endl;
 		else
-			cerr<<"деструктирование потока идет упешно"<<endl;
-		cerr<<"stream_string - закончили разрушаться"
-			<<endl;
+			DEBUG_stream( <<"деструктирование потока идет упешно" );
+		DEBUG_stream( <<"stream_string - закончили разрушаться" );
 		//если потом начнут разрушаться итераторы - это пиздец
 	}
 
 		//COPYING
-#if __cplusplus >= 201103L
+//#if __cplusplus >= 201103L
 	my_t & operator=(const	my_t &	) = delete;	
 	stream_string	(const	my_t &	) = delete;
 	my_t & operator=(		my_t &&	) = delete;
 	stream_string	(		my_t &&	) = delete;//возможно можно разрешить
-#else
-private:
-	my_t & operator=	(const my_t &);
-	basic_stream_string	(const my_t &);
-public:
-#endif
+//#else
+//private:
+//	my_t & operator=	(const my_t &);
+//	basic_stream_string	(const my_t &);
+//public:
+//#endif
 
-#if 1	//PUBLIC MEMBERS
+//{	//PUBLIC MEMBERS
 	typename buf_t::stream_data_type
 	stream_data()const
 	{	return _data;	}
@@ -857,20 +905,8 @@ public:
 	const_iterator 
 	end()const
 	{	return const_iterator();	}
-#endif
+//}
 };//CLASS basic_stream_string
-
-
-
-template<class buf_t>
-bool atend(const typename stream_string<buf_t>::iterator & it) {	
-	return it.pointer==0;	
-}
-
-template<class buf_t>
-bool atend (const typename stream_string<buf_t>::const_iterator & it) {	
-	return it.pointer==0;	
-}
 
 
 /*

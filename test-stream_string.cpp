@@ -1,40 +1,34 @@
 #include <iostream>
-#include "test-stream_string.h"
-using std::cout;
+#include "stream_string.h"
 using namespace str;
+using std::cerr;
+using std::cout;
+using std::endl;
 
-
-void foo()
-{
-	
-		//stream_string<basic_simple_buffer<char,200>>::iterator x;
-		cerr << "до создания str" <<endl; 
-		stream_string str;
-}
-
-class X{
-	public:
-	void foo()
-	{
-		my_assert(false,"строка из класса");
-	}
-	~X()
-	{
-		foo();
-	}
-};
-void test_try(){
-	//throw "строка";
-	//my_assert(false,"строка");
-	X x;
-}
+template class basic_block_file_c_str<char>;
+template class basic_block_file_c_str<wchar_t>;
+template class basic_block_file_c_str<char16_t>;
+template class basic_block_file_c_str<char32_t>;
+template class basic_block_file_FILE<char>;
+template class basic_block_file_FILE<wchar_t>;
+template class basic_block_file_FILE<char16_t>;
+template class basic_block_file_FILE<char32_t>;
+template class basic_simple_buffer<char,string_file_FILE>;
+template class basic_simple_buffer<wchar_t,wstring_file_FILE>;
+template class basic_simple_buffer<char,basic_block_file_c_str<char>>;
+typedef basic_simple_buffer<char,basic_block_file_c_str<char>> buffer_t;
+template class _stream_string_const_iterator<buffer_t>;
+template class _stream_string_iterator<buffer_t>;
+template class stream_string<buffer_t>;
+template bool str::atend<buffer_t>(const _stream_string_const_iterator<buffer_t> & it);
 
 int main()
 {
 	cout <<"================" << endl;
 	try{
-		//foo();
-		test_try();
+		char s[]="qwertyuiop[asdfghjkl;zxcvbnm,.      qwertyuiopasdfghjkl;zxcvbnm,.         qwertyuiop[asdfghjkl;'zxcvbnm,./";
+		basic_block_file_c_str<char> file(s);
+		buffer_t buffer(0, &file, buffer_t::tail_type(), 0);
 	}
 	catch(char * mes){
 		cerr << "ошибка: " << mes << endl;

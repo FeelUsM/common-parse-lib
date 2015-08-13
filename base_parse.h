@@ -2,12 +2,14 @@
 #ifndef BASE_PARSE_H
 #define BASE_PARSE_H
 
+#include <iterator> //для iterator_traits<it_t>::value_type
+#include <limits>	//для numeric_limits<int_t>::min() ::max()
 #include <errno.h>
 #include <stdlib.h> //для strtol, strtoll, strtoul, strtoull, strtof, strtod, strtold
 #include <wchar.h>  //для wcstol, wcstoll, wcstoul, wcstoull, wcstof, wcstod, wcstold
-#include <iterator> //для iterator_traits<it_t>::value_type
 namespace str{
 using std::iterator_traits;  
+using std::numeric_limits;
 
 
 /*
@@ -814,34 +816,126 @@ int read::rus_ifloat        (it*, flt_t*)
         return read_while_charclass(pit,spn_space<typename iterator_traits<it_t>::value_type>());
     }
 
+	template<typename it_t, typename int_t> inline
+	int 
+	read_digit(it_t * pit, int ss, int_t * prez){
+		if(atend(*pit))	
+			return -1;
+		if(2<=ss && ss<=10){
+			if( '0'<=**pit && **pit< '0'+ss){
+				*prez = *(*pit)++-'0';
+				return 0;
+			}
+			else
+				return 1;
+		}
+		else if(ss<=35){
+			if( '0'<=**pit && **pit<='9'){
+				*prez = *(*pit)++-'0';
+				return 0;
+			}
+			else if('a'<=**pit && **pit<='a'+ss-11){
+				*prez = *(*pit)++-'a'+10;
+				return 0;
+			}
+			else if('A'<=**pit && **pit<='A'+ss-11 ){
+				*prez = *(*pit)++-'A'+10;
+				return 0;
+			}
+			else
+				return 1;
+		}
+		else
+			//throw "неправильная система счисления";
+			return 2;
+	}
+	
+	template<typename it_t, typename int_t> inline
+    int 
+    read_uint(it_t * pit, int ss, int_t * prez){
+		int_t premax = (numeric_limits<int_t>::max()-ss+1)/ss;
+		r_ifnot(read_digit(pit,ss,prez))
+			return -1;
+		while(*prez<=premax){
+			int_t tmp;
+			r_ifnot(read_digit(pit,ss,&tmp))
+				return 0;
+			*prez *= ss;
+			*prez += tmp;
+		}
+		return 1;
+	}
+
+	//sign - опционально
+	template<typename it_t, typename int_t> inline
+    int 
+    read_sign_uint(it_t * pit, int ss, int_t * prez){
+		if(atend(*pit))
+			return -1;
+		if(**pit=='-'){
+			(*pit)++;
+			int err;
+			r_if(err=read_uint(pit,ss,prez)){
+				*prez = -*prez;
+				return 0;
+			}
+			else
+				return err;
+		}
+		if(**pit=='+')
+			(*pit)++;
+		return read_uint(pit,ss,prez);
+	}
+
+	//sign - опционально
+	template<typename it_t, typename int_t> inline
+    int 
+    read_sign_spcs_uint(it_t * pit, int ss, int_t * prez){
+		if(atend(*pit))
+			return -1;
+		if(**pit=='-'){
+			(*pit)++;
+			read_spcs(pit);
+			int err;
+			r_if(err=read_uint(pit,ss,prez)){
+				*prez = -*prez;
+				return 0;
+			}
+			else
+				return err;
+		}
+		if(**pit=='+'){
+			(*pit)++;
+			read_spcs(pit);
+		}
+		return read_uint(pit,ss,prez);
+	}
+
     /*
      * On success, the function returns (as rez) the converted integral number as a int_t value.
      * If no valid conversion could be performed, a zero value is returned (as rez) and return 1.
      * If the value read is out of the range of representable values by a int_t, 
      * the function returns (as rez) LONG_MAX or LONG_MIN (зависит от int_t) (defined in <climits>), 
      *     and return -1
-     * перед вызовом errno должно быть установлено в 0 (оно для каждого потока свое)
      */
-    //template<typename it_t, typename int_t> inline
-    //int 
-    //read_int(it_t * pit, int ss, int_t * prez);
-//todo оптимизировать, чтобы не заморачивался с пробелами
+	template<typename it_t, typename int_t> inline
+    int 
+    read_int(it_t * pit, int ss, int_t * prez){
+		read_spcs(pit);
+		return read_sign_spcs_uint(pit,ss,prez);
+	}
+
 #if 1 //реализации read_int (внутри #if чтобы был один уровень вложенности для свертывания (в notepad++) )
 #define def_read_int(ch_t, int_t, func) \
     inline \
     int\
     read_int(const ch_t ** ps, int ss, int_t * prez)\
     {\
-        const ch_t * s = *ps;\
-        r_if(read_spc(ps)){\
-            *ps=s;\
-            *prez=0;\
-            return 1;\
-        }\
 		errno=0;\
+		const ch_t * s =*ps;\
         *prez=func(*ps,const_cast<ch_t**>(ps),ss);\
-        if(*ps==s)  return 1;\
-        if(errno)   return -1;\
+        if(*ps==s)  return -1;\
+        if(errno)   return 1;\
         return 0;\
     }
 //todo: добавить условную компиляцию: проверять совпадает ли int и long
@@ -990,23 +1084,23 @@ struct basic_read{
     
                     template<typename int_t>    
     static int _int(it_t * pit, int ss, int_t * prez)
-    {   read_int(pit,ss,prez);  }
+    {   return read_int(pit,ss,prez);  }
     
                     template<typename int_t>    
     static int dec(it_t * pit, int_t * prez)
-    {   read_dec(pit,prez);     }
+    {   return read_dec(pit,prez);     }
     
                     template<typename int_t>    
     static int hex(it_t * pit, int_t * prez)
-    {   read_hex(pit,prez);     }
+    {   return read_hex(pit,prez);     }
     
                     template<typename int_t>    
     static int oct(it_t * pit, int_t * prez)
-    {   read_oct(pit,prez);     }
+    {   return read_oct(pit,prez);     }
     
                     template<typename int_t>    
     static int bin(it_t * pit, int_t * prez)
-    {   read_bin(pit,prez);     }
+    {   return read_bin(pit,prez);     }
     
                     template<typename flt_t>    
     static int cfloat(it_t * pit, flt_t * prez)
