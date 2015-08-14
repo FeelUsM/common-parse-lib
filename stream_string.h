@@ -50,22 +50,22 @@ std::ostream & operator<<(std::ostream & str, hex h){
 // ----****----
 // стрка, выдающая блоки
 template <typename ch_t>
-class basic_block_file_c_str
+class basic_block_file_on_c_str
 {
 	ch_t * _file;
 public:
 		//CONSTRUCTION DESTRUCTION
-	basic_block_file_c_str(ch_t * str)	: _file(str)	{	}
-	basic_block_file_c_str() = delete;
-	~basic_block_file_c_str() = default;
+	basic_block_file_on_c_str(ch_t * str)	: _file(str)	{	}
+	basic_block_file_on_c_str() = delete;
+	~basic_block_file_on_c_str() = default;
 	
 		//COPYING
 	//файлы можно копировать как хочешь ибо они не содержат буферов
 #if __cplusplus >= 201103L
-	basic_block_file_c_str & operator=	(const	basic_block_file_c_str &	) = default;	
-	basic_block_file_c_str				(const	basic_block_file_c_str &	) = default;
-	basic_block_file_c_str & operator=	(		basic_block_file_c_str &&) = default;
-	basic_block_file_c_str				(		basic_block_file_c_str &&) = default;
+	basic_block_file_on_c_str & operator=	(const	basic_block_file_on_c_str &	) = default;	
+	basic_block_file_on_c_str				(const	basic_block_file_on_c_str &	) = default;
+	basic_block_file_on_c_str & operator=	(		basic_block_file_on_c_str &&) = default;
+	basic_block_file_on_c_str				(		basic_block_file_on_c_str &&) = default;
 #else
 	//todo потом допишем
 #endif
@@ -90,29 +90,29 @@ public:
 // ----****----
 // файл, выдающий блоки
 template <typename ch_t>
-class basic_block_file_FILE
+class basic_block_file_on_FILE
 {
 	FILE * _file;
 public:
 		//CONSTRUCTION DESTRUCTION
-	basic_block_file_FILE(const char * name, const char * mode){
+	basic_block_file_on_FILE(const char * name, const char * mode){
 		_file = fopen(name,mode);
 		my_assert(_file,"не смог открыть файл");
 		//todo попробовать с и без FILEйных буферов
 		//my_assert(!setvbuf(file,NULL,_IONBF,0),"не получилось отключить буферизацию FILE");
 	}
-	basic_block_file_FILE() = delete;
-	~basic_block_file_FILE(){
+	basic_block_file_on_FILE() = delete;
+	~basic_block_file_on_FILE(){
 		fclose(_file);
 	}
 	
 		//COPYING
 	//файлы можно копировать как хочешь ибо они не содержат буферов
 #if __cplusplus >= 201103L
-	basic_block_file_FILE & operator=	(const	basic_block_file_FILE &	) = default;	
-	basic_block_file_FILE				(const	basic_block_file_FILE &	) = default;
-	basic_block_file_FILE & operator=	(		basic_block_file_FILE &&) = default;
-	basic_block_file_FILE				(		basic_block_file_FILE &&) = default;
+	basic_block_file_on_FILE & operator=	(const	basic_block_file_on_FILE &	) = default;	
+	basic_block_file_on_FILE				(const	basic_block_file_on_FILE &	) = default;
+	basic_block_file_on_FILE & operator=	(		basic_block_file_on_FILE &&) = default;
+	basic_block_file_on_FILE				(		basic_block_file_on_FILE &&) = default;
 #else
 	//todo потом допишем
 #endif
@@ -133,21 +133,21 @@ public:
 // ----****---- CLASS string_file_FILE ----****----
 // ----****----
 // файл, выдающий строки
-class string_file_FILE
+class string_file_on_FILE
 {
 	FILE * _file;
 	bool external;
 public:
 		//CONSTRUCTION DESTRUCTION
-	string_file_FILE(const char * name, const char * mode)	: external(false)	{
+	string_file_on_FILE(const char * name, const char * mode)	: external(false)	{
 		_file = fopen(name,mode);
 		my_assert(_file,"не смог открыть файл");
 	}
-	string_file_FILE(FILE * f)	: _file(f)	, external(true) {
+	string_file_on_FILE(FILE * f)	: _file(f)	, external(true) {
 	}
 
-	string_file_FILE() = delete;
-	~string_file_FILE(){
+	string_file_on_FILE() = delete;
+	~string_file_on_FILE(){
 		if(external)	return;
 		fclose(_file);
 	}
@@ -155,10 +155,10 @@ public:
 		//COPYING
 	//файлы можно копировать как хочешь ибо они не содержат буферов
 #if __cplusplus >= 201103L
-	string_file_FILE & operator=	(const	string_file_FILE &	) = default;	
-	string_file_FILE				(const	string_file_FILE &	) = default;
-	string_file_FILE & operator=	(		string_file_FILE &&) = default;
-	string_file_FILE				(		string_file_FILE &&) = default;
+	string_file_on_FILE & operator=	(const	string_file_on_FILE &	) = default;	
+	string_file_on_FILE				(const	string_file_on_FILE &	) = default;
+	string_file_on_FILE & operator=	(		string_file_on_FILE &&) = default;
+	string_file_on_FILE				(		string_file_on_FILE &&) = default;
 #else
 	//todo потом допишем
 #endif
@@ -186,21 +186,21 @@ public:
 // ----****---- CLASS wstring_file_FILE ----****----
 // файл, выдающий wстроки
 // ----****----
-class wstring_file_FILE
+class wstring_file_on_FILE
 {
 	FILE * _file;
 	bool external;
 public:
 		//CONSTRUCTION DESTRUCTION
-	wstring_file_FILE(const char * name, const char * mode)	: external(false)	{
+	wstring_file_on_FILE(const char * name, const char * mode)	: external(false)	{
 		_file = fopen(name,mode);
 		my_assert(_file,"не смог открыть файл");
 	}
-	wstring_file_FILE(FILE * f)	: _file(f), external(true) 	{
+	wstring_file_on_FILE(FILE * f)	: _file(f), external(true) 	{
 	}
 
-	wstring_file_FILE() = delete;
-	~wstring_file_FILE()	{
+	wstring_file_on_FILE() = delete;
+	~wstring_file_on_FILE()	{
 		if(external)	return;
 		fclose(_file);
 	}
@@ -208,10 +208,10 @@ public:
 		//COPYING
 	//файлы можно копировать как хочешь ибо они не содержат буферов
 #if __cplusplus >= 201103L
-	wstring_file_FILE & operator=	(const	wstring_file_FILE &	) = default;	
-	wstring_file_FILE				(const	wstring_file_FILE &	) = default;
-	wstring_file_FILE & operator=	(		wstring_file_FILE &&) = default;
-	wstring_file_FILE				(		wstring_file_FILE &&) = default;
+	wstring_file_on_FILE & operator=	(const	wstring_file_on_FILE &	) = default;	
+	wstring_file_on_FILE				(const	wstring_file_on_FILE &	) = default;
+	wstring_file_on_FILE & operator=	(		wstring_file_on_FILE &&) = default;
+	wstring_file_on_FILE				(		wstring_file_on_FILE &&) = default;
 #else
 	//todo потом допишем
 #endif

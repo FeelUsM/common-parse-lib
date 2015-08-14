@@ -211,12 +211,12 @@ int main()
 		cout <<"================" << endl;
 		try{
 			//stream_string<basic_simple_buffer<char,string_file_FILE,200>>::iterator x;
-			string_file_FILE file(stdin);
+			string_file_on_FILE file(stdin);
 			/*
 			 * при создании stream_string создается внутренний итератор, а значит создается первый буфер
 			 * а значит вы должны ввести хотя бы одну строку
 			 */
-			stream_string<basic_simple_buffer<char,string_file_FILE,200>> str(&file);
+			stream_string<basic_simple_buffer<char,string_file_on_FILE,200>> str(&file);
 			const char * err;
 			double rez;
 			r_ifnot(err=calc::read_sum(str.pinternal_iterator(),&rez)){
