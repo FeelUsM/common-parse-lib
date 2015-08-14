@@ -61,14 +61,10 @@ public:
 	
 		//COPYING
 	//файлы можно копировать как хочешь ибо они не содержат буферов
-#if __cplusplus >= 201103L
 	basic_block_file_on_c_str & operator=	(const	basic_block_file_on_c_str &	) = default;	
 	basic_block_file_on_c_str				(const	basic_block_file_on_c_str &	) = default;
 	basic_block_file_on_c_str & operator=	(		basic_block_file_on_c_str &&) = default;
 	basic_block_file_on_c_str				(		basic_block_file_on_c_str &&) = default;
-#else
-	//todo потом допишем
-#endif
 	
 		//MEMBERS
 	size_t read(ch_t * buf, size_t size){
@@ -108,14 +104,10 @@ public:
 	
 		//COPYING
 	//файлы можно копировать как хочешь ибо они не содержат буферов
-#if __cplusplus >= 201103L
 	basic_block_file_on_FILE & operator=	(const	basic_block_file_on_FILE &	) = default;	
 	basic_block_file_on_FILE				(const	basic_block_file_on_FILE &	) = default;
 	basic_block_file_on_FILE & operator=	(		basic_block_file_on_FILE &&) = default;
 	basic_block_file_on_FILE				(		basic_block_file_on_FILE &&) = default;
-#else
-	//todo потом допишем
-#endif
 	
 		//MEMBERS
 	size_t read(ch_t * buf, size_t size){
@@ -137,6 +129,7 @@ class string_file_on_FILE
 {
 	FILE * _file;
 	bool external;
+	bool init = false;
 public:
 		//CONSTRUCTION DESTRUCTION
 	string_file_on_FILE(const char * name, const char * mode)	: external(false)	{
@@ -154,17 +147,19 @@ public:
 
 		//COPYING
 	//файлы можно копировать как хочешь ибо они не содержат буферов
-#if __cplusplus >= 201103L
 	string_file_on_FILE & operator=	(const	string_file_on_FILE &	) = default;	
 	string_file_on_FILE				(const	string_file_on_FILE &	) = default;
 	string_file_on_FILE & operator=	(		string_file_on_FILE &&) = default;
 	string_file_on_FILE				(		string_file_on_FILE &&) = default;
-#else
-	//todo потом допишем
-#endif
 	
 		//MEMBERS
 	size_t read(char * buf, size_t size){
+		if(!init){
+			my_assert(size>0,"string_file_on_FILE: запрошенный размер буфера =0");
+			*buf++ = '\n';
+			init = true;
+			return 1;
+		}
 		if(fgets(buf,size,_file))
 			return strlen(buf);
 		else
@@ -207,14 +202,10 @@ public:
 
 		//COPYING
 	//файлы можно копировать как хочешь ибо они не содержат буферов
-#if __cplusplus >= 201103L
 	wstring_file_on_FILE & operator=	(const	wstring_file_on_FILE &	) = default;	
 	wstring_file_on_FILE				(const	wstring_file_on_FILE &	) = default;
 	wstring_file_on_FILE & operator=	(		wstring_file_on_FILE &&) = default;
 	wstring_file_on_FILE				(		wstring_file_on_FILE &&) = default;
-#else
-	//todo потом допишем
-#endif
 
 		//MEMBERS
 	size_t read(wchar_t * buf, size_t size){
@@ -367,7 +358,6 @@ public:	//TYPES
 
 		//COPYING
 // http://sergeyteplyakov.blogspot.ru/2012/05/c-11-faq.html#default2
-#if __cplusplus >= 201103L
 	my_t & operator=	(const	my_t &	) = delete;	
 	basic_simple_buffer	(const	my_t &	) = delete;
 	my_t & operator=	(		my_t &&	) = delete;
@@ -389,20 +379,6 @@ public:	//TYPES
 			<<"["<<hex(this)<<"]");
 		r._begin=0;
 	}
-#else //будте осторожны при присваиваниях буфера и передачи в функции
-private:
-	my_t & operator=(const	my_t &	);
-public:
-	simple_buffer	(		my_t & r)
-		: _begin(r._begin)
-		, _end(r._end)
-		, _base(r.base)
-		, iterator_counter(r.iterator_counter)
-		, _nomber(r._nomber)
-	{	
-		r._begin=0;
-	}
-#endif //CLASS simple_buffer
 		
 //{	//PUBLIC MEMBERS
 	//хвост - неперекодированный кусок этого буфера
@@ -869,17 +845,10 @@ public:
 	}
 
 		//COPYING
-//#if __cplusplus >= 201103L
 	my_t & operator=(const	my_t &	) = delete;	
 	stream_string	(const	my_t &	) = delete;
 	my_t & operator=(		my_t &&	) = delete;
 	stream_string	(		my_t &&	) = delete;//возможно можно разрешить
-//#else
-//private:
-//	my_t & operator=	(const my_t &);
-//	basic_stream_string	(const my_t &);
-//public:
-//#endif
 
 //{	//PUBLIC MEMBERS
 	typename buf_t::stream_data_type
