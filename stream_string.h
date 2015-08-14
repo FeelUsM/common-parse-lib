@@ -450,6 +450,7 @@ public:
 	ch_t *	begin()const	{	return _begin;	}
 	ch_t *	end()const		{	return _end;	}
 	bool 	eof()const		{	return _atend;	}
+ 	void 	set_eof()		{	_atend=true;	}
 	int inc_iterator_counter()	{	return ++_iterator_counter;	}
 	int dec_iterator_counter()	{	return --_iterator_counter;	}
 	int get_iterator_counter()const{return _iterator_counter;	}
@@ -457,14 +458,13 @@ public:
 	basic_type * base()const	{	return _base;	}
  * необязательные методы:
 	size_t	size()const		{	return _end-_begin;	}
- 	void 	set_eof()		{	_atend=true;	}
 	int		set_nomber(int n)	{	return _nomber=n;	}
 	file_t * 	file()const		{	return _file;	}//на всякий случай
 
  */
 
 /* итератор и конст_итератор отличаются тем, что разыменованный итератор можно изменять
- * да да, считанное из фала в буфера можно изменять
+ * да да, считанное из файла в буфера можно изменять
  */
 
 template<class buf_t> inline
@@ -544,24 +544,29 @@ public:
 
 		//MOVING
 	my_t & operator++()	{	// ++myInstance. 
-		if(++pointer ==endbuf){//конец внутри буфера
-			typename buf_t::basic_type * mybase = itbuf->base();
-			super_iterator oldbuf = itbuf++;
-			if( itbuf == mybase->_bufs.end() )
-				if(oldbuf->eof())							//конец буферов
-					this->~_stream_string_const_iterator();	//в последнем буфере был конец файла
-				else if( (itbuf=mybase->add_buf()) == mybase->_bufs.end() )
-					this->~_stream_string_const_iterator();	//роизошел неожиданный конец файла
-				else
-					goto normal_buffer;						//новый буфер был удачно создан
-			else{
-		normal_buffer:
-				itbuf->inc_iterator_counter();
-				pointer=itbuf->begin();
-				endbuf=itbuf->end();
+		my_assert(pointer,"попытка сдвинуть инвалидный указатель");
+		if(++pointer ==endbuf){	//конец буфера
+			if(itbuf->eof()){	//конец файла
+				this->~_stream_string_const_iterator();
+				return *this;
 			}
-			if(oldbuf->dec_iterator_counter() ==0)
-				mybase->del_buf_request(oldbuf);
+			typename buf_t::basic_type * mybase = itbuf->base();
+			super_iterator nextbuf = itbuf;
+			nextbuf++;			//попытка перейти на следующий буфер
+			if(nextbuf== mybase->pbufs()->end()){	//но его не оказалось
+				nextbuf = mybase->add_buf();
+				if(nextbuf== mybase->pbufs()->end()){	//и вообще оказался неожиданный конец файла
+					itbuf->set_eof();
+					this->~_stream_string_const_iterator();
+					return *this;
+				}
+			}
+			itbuf->dec_iterator_counter();
+			mybase->del_buf_request(itbuf);
+			itbuf = nextbuf;
+			itbuf->inc_iterator_counter();
+			pointer = itbuf->begin();
+			endbuf = itbuf->end();
 		}
 		return * this;   
 	}
@@ -692,24 +697,29 @@ public:
 
 		//MOVING
 	my_t & operator++()	{	// ++myInstance. 
-		if(++pointer ==endbuf){//конец внутри буфера
-			typename buf_t::basic_type * mybase = itbuf->base();
-			super_iterator oldbuf = itbuf++;
-			if( itbuf == mybase->_bufs.end() )
-				if(oldbuf->eof())							//конец буферов
-					this->~_stream_string_iterator();	//в последнем буфере был конец файла
-				else if( (itbuf=mybase->add_buf()) == mybase->_bufs.end() )
-					this->~_stream_string_iterator();	//роизошел неожиданный конец файла
-				else
-					goto normal_buffer;						//новый буфер был удачно создан
-			else{
-		normal_buffer:
-				itbuf->inc_iterator_counter();
-				pointer=itbuf->begin();
-				endbuf=itbuf->end();
+		my_assert(pointer,"попытка сдвинуть инвалидный указатель");
+		if(++pointer ==endbuf){	//конец буфера
+			if(itbuf->eof()){	//конец файла
+				this->~_stream_string_iterator();
+				return *this;
 			}
-			if(oldbuf->dec_iterator_counter() ==0)
-				mybase->del_buf_request(oldbuf);
+			typename buf_t::basic_type * mybase = itbuf->base();
+			super_iterator nextbuf = itbuf;
+			nextbuf++;			//попытка перейти на следующий буфер
+			if(nextbuf== mybase->pbufs()->end()){	//но его не оказалось
+				nextbuf = mybase->add_buf();
+				if(nextbuf== mybase->pbufs()->end()){	//и вообще оказался неожиданный конец файла
+					itbuf->set_eof();
+					this->~_stream_string_iterator();
+					return *this;
+				}
+			}
+			itbuf->dec_iterator_counter();
+			mybase->del_buf_request(itbuf);
+			itbuf = nextbuf;
+			itbuf->inc_iterator_counter();
+			pointer = itbuf->begin();
+			endbuf = itbuf->end();
 		}
 		return * this;   
 	}
@@ -740,9 +750,6 @@ public:
 template<class buf_t>
 class stream_string
 {
-	friend class _stream_string_iterator<buf_t>;
-	friend class _stream_string_const_iterator<buf_t>;
-	
 		//TYPE DEFINES
 public:
 	typedef typename buf_t::value_type			value_type;
@@ -781,6 +788,7 @@ private:
 
 	iterator _iterator;//internal iterator
 
+public:	
 		//PRIVATE MEMBERS
 	/*
 	 * читает новый буфер, и настраивает его номер
@@ -808,7 +816,6 @@ private:
 				_bufs.pop_front();
 	}
 	
-public:	
 		//CONSTRUCTION AND DESTRUCTION
 	stream_string(file_type * f, typename buf_t::stream_data_type dat= typename buf_t::stream_data_type())
 		: _file(f)
@@ -852,6 +859,7 @@ public:
 			<<"["<<hex(&_iterator)<<"]"
 			<<" - разрушен"
 		);
+		del_buf_request(_bufs.begin());
 		if(!_bufs.empty())
 			std::cerr<<"при деструктировании потока остались не удаленные буфера"<<std::endl;
 		else
