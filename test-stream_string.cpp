@@ -25,7 +25,7 @@ namespace str{
 	template bool atend<buffer_t>(const _stream_string_iterator<buffer_t> & it);
 }
 namespace std{
-	template class iterator_traits<str::_stream_string_iterator<str::buffer_t> >;
+	template struct iterator_traits<str::_stream_string_iterator<str::buffer_t> >;
 }	
 
 int main()

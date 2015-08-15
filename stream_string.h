@@ -425,11 +425,11 @@ public:
 
 template<class buf_t> inline
 bool atend(const _stream_string_const_iterator<buf_t> & it) {	
-	return it.pointer==0;	
+	return it.point==0;	
 }
 
 // ----****----		
-// --**-- ITERATOR _stream_string_const_iterator --**--
+// ----****---- ITERATOR _stream_string_const_iterator ----****----
 // ----****----		
 template<class buf_t>
 class _stream_string_const_iterator
@@ -450,49 +450,49 @@ class _stream_string_const_iterator
 
 protected:
 		//DATA
-	ch_t * pointer;//==0 <=> atend
+	ch_t * point;//==0 <=> atend
 	ch_t * endbuf;//==0 <=> не связан ни с каким буфером
 	super_iterator itbuf;
 	
 public:
 		//CONSTRUCTION, DESTRUCTION
 	explicit 
-	_stream_string_const_iterator(super_iterator sit): pointer(sit->begin()), endbuf(sit->end()), itbuf(sit) {
+	_stream_string_const_iterator(super_iterator sit): point(sit->begin()), endbuf(sit->end()), itbuf(sit) {
 		itbuf->_iterator_counter++;
 		DEBUG_counter(<<"str_iterator[" <<hex(this)<<"]"
-			<<"("<<hex(pointer)<<","<<hex(endbuf)<<")"
+			<<"("<<hex(point)<<","<<hex(endbuf)<<")"
 			<<" - конструируем от super_iterator'а по буферу #" <<itbuf->nomber() 
 		);
 	}
 
-	_stream_string_const_iterator()					: pointer(0), endbuf(0)	{
+	_stream_string_const_iterator()					: point(0), endbuf(0)	{
 		DEBUG_counter(
 			<<"str_iterator[" <<hex(this)<<"]"
-			<<"("<<hex(pointer)<<","<<hex(endbuf)<<")"
+			<<"("<<hex(point)<<","<<hex(endbuf)<<")"
 			<<" - конструируем по умолчанию"
 		);
 	}
 	~_stream_string_const_iterator(){
 		DEBUG_counter(
 			<<"str_iterator [" <<hex(this)<<"]"
-			<<"("<<hex(pointer)<<","<<hex(endbuf)<<")"
+			<<"("<<hex(point)<<","<<hex(endbuf)<<")"
 			<<" - разрушаем"
 		);
-		if(!pointer)	return;
+		if(!point)	return;
 		if(--itbuf->_iterator_counter ==0)
 			itbuf->base()->del_buf_request(itbuf);
-		pointer=0;
+		point=0;
 		endbuf=0;
 	}
 		
 		//COPYING
-	_stream_string_const_iterator(const my_t & r)	: pointer(r.pointer), endbuf(r.endbuf), itbuf(r.itbuf)	{
+	_stream_string_const_iterator(const my_t & r)	: point(r.point), endbuf(r.endbuf), itbuf(r.itbuf)	{
 		itbuf->_iterator_counter++;
 	}
 	my_t & operator=(const my_t & r)	{
 		//можно оптимизировать
 		this->~my_t();
-		pointer=r.pointer;
+		point=r.point;
 		endbuf=r.endbuf;
 		itbuf=r.itbuf;
 		itbuf->_iterator_counter++;
@@ -506,16 +506,16 @@ public:
 
 		//ACCESS
 	const ch_t & operator*()const	{	
-		return *pointer;	
+		return *point;	
 	}
 	const ch_t * operator->()const	{	
-		return pointer;	
+		return point;	
 	}
 
 		//MOVING
 	my_t & operator++()	{	// ++myInstance. 
-		my_assert(pointer,"попытка сдвинуть инвалидный указатель");
-		if(++pointer ==endbuf){	//конец буфера
+		my_assert(point,"попытка сдвинуть инвалидный указатель");
+		if(++point ==endbuf){	//конец буфера
 			if(itbuf->eof()){	//конец файла
 				this->~_stream_string_const_iterator();
 				return *this;
@@ -531,11 +531,11 @@ public:
 					return *this;
 				}
 			}
-			if(--itbuf->_iterator_counter);
+			if(--itbuf->_iterator_counter)
 				mybase->del_buf_request(itbuf);
 			itbuf = nextbuf;
 			itbuf->_iterator_counter++;
-			pointer = itbuf->begin();
+			point = itbuf->begin();
 			endbuf = itbuf->end();
 		}
 		return * this;   
@@ -548,14 +548,14 @@ public:
 
 		//ARITHMETIC
 	bool operator==(const my_t & r)const{
-		return itbuf==r.itbuf && pointer==r.pointer;
+		return itbuf==r.itbuf && point==r.point;
 	}
 	bool operator<(const my_t & r)const	{
 		my_assert(itbuf->base()==r.itbuf->base(),"сравнение итераторов по разным потокам");
 		if(itbuf->nomber()<r.itbuf->nomber())
 			return true;
 		else if(itbuf->nomber()==r.itbuf->nomber())
-			return pointer<r.pointer;
+			return point<r.point;
 		else
 			return false;
 	}
@@ -563,11 +563,11 @@ public:
 
 template<class buf_t> inline
 bool atend(const _stream_string_iterator<buf_t> & it) {	
-	return it.pointer==0;	
+	return it.point==0;	
 }
 
 // ----****----		
-//--**-- TEMPLATE CLASS _stream_string_iterator --**--
+// ----****---- TEMPLATE CLASS _stream_string_iterator ----****----
 // ----****----		
 template<class buf_t>
 class _stream_string_iterator
@@ -614,6 +614,16 @@ public:
 	bool operator==(const parent_t & r)const	{	return parent_t::operator==(r);	}
 	bool operator<(const parent_t & r)const		{	return parent_t::operator<(r);	}
 };
+
+// ----****----
+// ----****---- CLASS basic_adressed_buffer ----****----
+// ----****----
+template <typename ch_t, class file_t, int buf_size=512, class alloc_t = std::allocator<ch_t>>
+class basic_adressed_buffer : public basic_simple_buffer<ch_t,file_t,buf_size,alloc_t>
+{
+	
+};
+
 
 // ----****----		
 // ----****---- CONTEINER stream_string ----****----
@@ -782,6 +792,7 @@ public:
 };//CLASS basic_stream_string
 
 
+
 /*
 		// TEMPLATE CLASS _stream_string_iterator
 template<class T, class Alloc> 
@@ -795,9 +806,9 @@ public:
 	//my_t & operator=(const my_t & r)
 	//const my_t & operator=(const my_t & r)const
 	const T & operator*()const
-	{	return *pointer;	}
+	{	return *point;	}
 	const T * operator->()const
-	{	return pointer;	}
+	{	return point;	}
 };
 */
 
