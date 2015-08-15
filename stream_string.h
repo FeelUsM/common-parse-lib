@@ -1,6 +1,6 @@
 ﻿//(c) FeelUs
-#ifndef MYSTREAM_H
-#define MYSTREAM_H
+#ifndef STREAM_STRING_H
+#define STREAM_STRING_H
 
 /*
 todo:
@@ -259,6 +259,7 @@ class basic_simple_buffer
 	
 public:	//TYPEDEFS AND TYPES
 	typedef stream_string<my_t> 				basic_type;
+	typedef file_t								file_type;		//отличие от STL
 
 	typedef ch_t								value_type;
 	typedef alloc_t								allocator_type;
@@ -271,13 +272,7 @@ public:	//TYPEDEFS AND TYPES
 	typedef typename alloc_t::reference			reference;
 	typedef typename alloc_t::const_reference	const_reference;
 	
-	typedef file_t								file_type;		//отличие от STL
-	
-	//typedef pair<int, const char *> 			tail_type;			//это как пример, здесь можно определить любой тип
-	//typedef pair<const char *, const char *> 	stream_data_type;	//это как пример, здесь можно определить любой тип
-	//это плохие примеры, у них нет конструктора по умолчанию
-
-	struct tail_type{												//это как пример, здесь можно определить любой тип
+	struct tail_type{			//это как пример, здесь можно определить любой тип
 		unsigned char size;
 		char m[7];			//размер 8 байт удобно иметь для выравнивания в памяти
 		tail_type()	: size(0)	{}
@@ -289,24 +284,40 @@ public:	//TYPEDEFS AND TYPES
 				m[i]=str[i];
 		}
 	};
-	struct stream_data_type{										//это как пример, здесь можно определить любой тип
+	struct stream_data_type{	//это как пример, здесь можно определить любой тип
 		const char * enc_in;
 		const char * enc_out;
 		stream_data_type()	: enc_in(0), enc_out(0)	{}
 		stream_data_type(const char * in, const char * out)	: enc_in(in), enc_out(out)	{}
 	};
 	
-private:
+private: //{
 		//DATA
-	basic_type * _base;		//поток
-	file_t * _file;			//файл
+	basic_type * const _base;//поток
+	file_t * 	const _file;	//файл
+	const int _nomber;		//что бы можно было быстро определить, какой буфер правее, какой левее
+	int _iterator_counter;	//счетчик итераторов, находящихся на этом буфере
+//}
+protected:
+	basic_simple_buffer(basic_type * b, file_t * f, int n)	//доступ к полям выше для наследников
+		: _base(b), _file(f), _nomber(n), _iterator_counter(0)	{}
+
 	ch_t * _begin, * _end;	//начало буфера и логический конец буфера (физически может быть больше)
 							//буфер обязан завершаться (ch_t)0
 	bool _atend; 			//кешируем file->eof()
-	int _iterator_counter;	//счетчик итераторов, находящихся на этом буфере
-	const int _nomber;		//что бы можно было быстро определить, какой буфер правее, какой левее
-
-public:	//CONSTRUCTION DESTRUCTION
+public:	
+		//GETTERS
+	ch_t *		begin()const	{	return _begin;	}
+	ch_t *		end()const		{	return _end;	}
+	bool 		eof()const		{	return _atend;	}
+	bool 		is_free()const	{	return _iterator_counter==0;	}
+	int 		nomber()const	{	return _nomber;	}
+	basic_type * base()const	{	return _base;	}
+	file_t * 	file()const		{	return _file;	}//на всякий случай
+	
+	//хвост - неперекодированный кусок этого буфера
+	tail_type 	tail()		{	return tail_type();	}
+		//CONSTRUCTION DESTRUCTION
 	/*
 	 * поток, файл, хвост, номбер
 	 * хвост - неперекодированный кусок предыдущего буфера
@@ -314,8 +325,8 @@ public:	//CONSTRUCTION DESTRUCTION
 	 * или будет сконструирован по умолчанию
 	 * но на всякий случай все равно лучше, что бы было все при себе
 	 */
-	basic_simple_buffer(basic_type * b, file_t * f, tail_type tail, int n)
-		: _base(b)	, _file(f)	, _iterator_counter(0) , _nomber(n)	{
+	basic_simple_buffer(basic_type * b, file_t * f, tail_type tail, int n)	
+		: basic_simple_buffer{b,f,n}	{
 		//т.к. tail() всегда возвращает pair(0,0) в simple_buffer
 		my_assert(tail.size==0,"simple_buffer: не пустой хвост");
 		_begin = alloc_t().allocate(buf_size);
@@ -337,7 +348,8 @@ public:	//CONSTRUCTION DESTRUCTION
 		//параметры перекодировки можно плоучить при помощи stream_data_type _base->stream_data()
 	}
 	
-	basic_simple_buffer()	: _begin(0)	, _iterator_counter(0), _nomber(-1){
+	basic_simple_buffer()	: basic_simple_buffer{0,0,-1}	{
+		_begin = 0;
 		DEBUG_buffer(<<"буфер #"<<_nomber
 			<<"["<<hex(this)<<"]"
 			<<"<"<< _iterator_counter <<">"
@@ -366,15 +378,12 @@ public:	//CONSTRUCTION DESTRUCTION
 	my_t & operator=	(const	my_t &	) = delete;	
 	basic_simple_buffer	(const	my_t &	) = delete;
 	my_t & operator=	(		my_t &&	) = delete;
-	basic_simple_buffer	(		my_t &&	r)
-		: _base(r._base)
-		, _file(r._file)
-		, _begin(r._begin)
-		, _end(r._end)
-		, _atend(r._atend)
-		, _iterator_counter(r._iterator_counter)
-		, _nomber(r._nomber)
-	{	
+	basic_simple_buffer	(		my_t &&	r)	: _base(r._base), _file(r._file), _nomber(r._nomber)	{	
+		_iterator_counter=r._iterator_counter;
+		_begin			= r._begin;
+		_end			= r._end;
+		_atend			= r._atend;
+		r._begin=0;
 		DEBUG_buffer(
 			<<"буфер #"<<_nomber
 			<<"["<<hex(this)<<"]"
@@ -382,28 +391,7 @@ public:	//CONSTRUCTION DESTRUCTION
 			<<"("<<hex(_begin)<<","<<hex(_end)<<")"
 			<<" - конструируем из буфера"
 			<<"["<<hex(this)<<"]");
-		r._begin=0;
 	}
-		
-//{	//PUBLIC MEMBERS
-	//хвост - неперекодированный кусок этого буфера
-	tail_type 	tail()		{	return tail_type();	}
-	
-	ch_t *	begin()const	{	return _begin;	}
-	ch_t *	end()const		{	return _end;	}
-	size_t	size()const		{	return _end-_begin;	}
-	bool 	eof()const		{	return _atend;	}
-	void 	set_eof()		{	_atend=true;	}
-	
-	int inc_iterator_counter()	{	return ++_iterator_counter;	}
-	int dec_iterator_counter()	{	return --_iterator_counter;	}
-	int get_iterator_counter()const{return _iterator_counter;	}
-
-	int 		nomber()const	{	return _nomber;	}
-	//int		set_nomber(int n)	{	return _nomber=n;	}	//можно _nomber объявить не как const
-	basic_type * base()const	{	return _base;	}
-	file_t * 	file()const		{	return _file;	}//на всякий случай
-//}	
 }; //CLASS simple_buffer
 
 /* здесь можно добавить буфер с перекодировкой, 
@@ -411,37 +399,6 @@ public:	//CONSTRUCTION DESTRUCTION
  * с блекджеком
  * со шлюхами
  * smth else
- */
-
-/* требование к буферам:
- * механизм перемещения (не копирования)
- * конструирование типа buf_t(stream_string<buf_t>* base, typename buf_t::file_type *, typename buf_t::tail_type, int nomber)
- * определенные типы:
-	typedef typename buf_t::value_type			value_type;
-	typedef typename buf_t::size_type			size_type;
-	typedef typename buf_t::difference_type		difference_type;
-	typedef typename buf_t::pointer				pointer;
-	typedef typename buf_t::const_pointer		const_pointer;
-	typedef typename buf_t::reference			reference;
-	typedef typename buf_t::const_reference		const_reference;
-	typedef typename buf_t::file_type			file_type;		//отличие от STL
-			typename buf_t::tail_type							//отличие от STL
-			typename buf_t::stream_data_type					//отличие от STL
- * методы:
-	ch_t *	begin()const	{	return _begin;	}
-	ch_t *	end()const		{	return _end;	}
-	bool 	eof()const		{	return _atend;	}
- 	void 	set_eof()		{	_atend=true;	}
-	int inc_iterator_counter()	{	return ++_iterator_counter;	}
-	int dec_iterator_counter()	{	return --_iterator_counter;	}
-	int get_iterator_counter()const{return _iterator_counter;	}
-	int 		nomber()const	{	return _nomber;	}
-	basic_type * base()const	{	return _base;	}
- * необязательные методы:
-	size_t	size()const		{	return _end-_begin;	}
-	int		set_nomber(int n)	{	return _nomber=n;	}
-	file_t * 	file()const		{	return _file;	}//на всякий случай
-
  */
 
 /* итератор и конст_итератор отличаются тем, что разыменованный итератор можно изменять
@@ -470,10 +427,10 @@ class _stream_string_const_iterator
 	typedef typename buf_t::value_type				ch_t;
 	typedef _stream_string_const_iterator<buf_t> 	my_t;
 	typedef typename list<buf_t>::iterator 			super_iterator;
-protected:
 		//FRIENDS
 	friend bool atend<buf_t>(const my_t & );
 
+protected:
 		//DATA
 	ch_t * pointer;//==0 <=> atend
 	ch_t * endbuf;//==0 <=> не связан ни с каким буфером
@@ -483,7 +440,7 @@ public:
 		//CONSTRUCTION, DESTRUCTION
 	explicit 
 	_stream_string_const_iterator(super_iterator sit): pointer(sit->begin()), endbuf(sit->end()) {
-		itbuf->inc_iterator_counter();
+		itbuf->_iterator_counter++;
 		DEBUG_counter(<<"str_iterator[" <<hex(this)<<"]"
 			<<"("<<hex(pointer)<<","<<hex(endbuf)<<")"
 			<<" - конструируем от super_iterator'а по буферу #" <<itbuf->nomber() 
@@ -504,7 +461,7 @@ public:
 			<<" - разрушаем"
 		);
 		if(!pointer)	return;
-		if(itbuf->dec_iterator_counter() ==0)
+		if(--itbuf->_iterator_counter ==0)
 			itbuf->base()->del_buf_request(itbuf);
 		pointer=0;
 		endbuf=0;
@@ -512,7 +469,7 @@ public:
 		
 		//COPYING
 	_stream_string_const_iterator(const my_t & r)	: pointer(r.pointer), endbuf(r.endbuf), itbuf(r.itbuf)	{
-		itbuf->inc_iterator_counter();
+		itbuf->_iterator_counter++;
 	}
 	my_t & operator=(const my_t & r)	{
 		//можно оптимизировать
@@ -520,7 +477,7 @@ public:
 		pointer=r.pointer;
 		endbuf=r.endbuf;
 		itbuf=r.itbuf;
-		itbuf->inc_iterator_counter();
+		itbuf->_iterator_counter++;
 		return *this;
 	}
 
@@ -551,15 +508,15 @@ public:
 			if(nextbuf== mybase->pbufs()->end()){	//но его не оказалось
 				nextbuf = mybase->add_buf();
 				if(nextbuf== mybase->pbufs()->end()){	//и вообще оказался неожиданный конец файла
-					itbuf->set_eof();
+					itbuf->_atend = true;;
 					this->~_stream_string_const_iterator();
 					return *this;
 				}
 			}
-			itbuf->dec_iterator_counter();
-			mybase->del_buf_request(itbuf);
+			if(--itbuf->_iterator_counter);
+				mybase->del_buf_request(itbuf);
 			itbuf = nextbuf;
-			itbuf->inc_iterator_counter();
+			itbuf->_iterator_counter++;
 			pointer = itbuf->begin();
 			endbuf = itbuf->end();
 		}
@@ -662,7 +619,8 @@ public:
 	typedef typename buf_t::file_type			file_type;	
 	typedef typename buf_t::stream_data_type 	stream_data_type;
 	typedef typename buf_t::tail_type 			tail_type;
-private:
+	
+private: //{
 	//typedef value_type							ch_t; //=> ch_t вообще в буфере не нужно
 	typedef stream_string<buf_t>	my_t;
 	
@@ -685,7 +643,7 @@ private:
 	stream_data_type _data;
 
 	iterator _iterator;//internal iterator
-
+//}
 public:	
 		//old PRIVATE MEMBERS
 	/*
@@ -710,7 +668,7 @@ public:
 	//если надо - удаляет буфер
 	void del_buf_request(typename list<buf_t>::iterator itbuf){
 		if(itbuf==_bufs.begin())
-			while(_bufs.begin()->get_iterator_counter()==0 && _bufs.begin()!=_bufs.end())
+			while(_bufs.begin()->is_free() && _bufs.begin()!=_bufs.end())
 				_bufs.pop_front();
 	}
 	
@@ -832,4 +790,4 @@ public:
 */
 
 }//namespace str
-#endif //MYSTREAM_H
+#endif //STREAM_STRING_H
