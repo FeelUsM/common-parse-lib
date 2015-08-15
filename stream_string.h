@@ -673,11 +673,12 @@ public:
 	add_buf(){
 		//хотя бы один буфер уже суествует, иначе этот метод не будет вызываться
 		typename list<buf_t>::iterator ppb= --_bufs.end();//поинтер на предыдущий буфер
+		DEBUG_stream(<<"stream: сейчас будет добавлен буфер:");
 		_bufs.push_back(buf_t(this,_file,ppb->tail(),ppb->nomber()+1));
 		typename list<buf_t>::iterator pb= --_bufs.end();//поинтер на текущий буфер
 		if(pb->eof())//внезапный конец файла
 		{
-			_bufs.pop_front();
+			_bufs.pop_back();
 			return _bufs.end();
 		}
 		return pb;
