@@ -78,8 +78,8 @@ std::ostream & operator<<(std::ostream & str, basic_dump<ch_t> d){
 
 #define DEBUG_fatal(mes)	(std::cerr << "--------ОШИБКА В ДЕСТРУКТОРЕ: " mes << std::endl)
 #define DEBUG_counter(mes)	//(std::cerr mes << std::endl)
-#define DEBUG_buffer(mes)	(std::cerr mes << std::endl)
-#define DEBUG_stream(mes)	(std::cerr mes << std::endl)
+#define DEBUG_buffer(mes)	//(std::cerr mes << std::endl)
+#define DEBUG_stream(mes)	//(std::cerr mes << std::endl)
 
 // ----****----
 // ----****---- CLASS basic_block_file_c_str ----****----
@@ -666,8 +666,7 @@ public:
 		//old PRIVATE MEMBERS
 	/*
 	 * читает новый буфер, и настраивает его номер
-	 * если прочитано 0 - уничтожет этот буфер, возвращает _bufs.end() //это означает конец файла
-	 * иначе возвращает ук-тель(итератор) на этот буфер
+	 * возвращает ук-тель(итератор) на этот буфер
 	 */
 	typename list<buf_t>::iterator 
 	add_buf(){
@@ -675,13 +674,7 @@ public:
 		typename list<buf_t>::iterator ppb= --_bufs.end();//поинтер на предыдущий буфер
 		DEBUG_stream(<<"stream: сейчас будет добавлен буфер:");
 		_bufs.push_back(buf_t(this,_file,ppb->tail(),ppb->nomber()+1));
-		typename list<buf_t>::iterator pb= --_bufs.end();//поинтер на текущий буфер
-		if(pb->eof())//внезапный конец файла
-		{
-			_bufs.pop_back();
-			return _bufs.end();
-		}
-		return pb;
+		return --_bufs.end();
 	}
 
 	//если надо - удаляет буфер
@@ -712,7 +705,7 @@ public:
 			<<"["<<hex(&*_bufs.begin())<<"]"
 			<<"("<<hex(_bufs.begin()->begin())<<","<<hex(_bufs.begin()->end())<<")"
 		);
-		if(_bufs.begin()->begin()==_bufs.begin()->end())	{//неожиданный конец файла
+		if(_bufs.begin()->eof())	{//неожиданный конец файла
 		DEBUG_stream( << "неожиданный конец файла" );
 			_bufs.pop_front();
 			_iterator = iterator();
