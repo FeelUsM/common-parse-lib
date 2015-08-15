@@ -230,6 +230,10 @@ int main()
 			cerr << "ошибка: " << mes << endl;
 			return -1;
 		}
+		catch(string mes){
+			cerr << "ошибка: " << mes << endl;
+			return -1;
+		}
 		catch(...){
 			cerr << "неизвестная ошибка" << endl;
 		}
