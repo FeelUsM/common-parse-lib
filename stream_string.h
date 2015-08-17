@@ -807,17 +807,29 @@ public:
 	iterator & 
 	internal_iterator()
 	{	return _iterator;	}
+	const_iterator & 
+	internal_citerator()const
+	{	return _iterator;	}
 
 	iterator *
 	pinternal_iterator()
+	{	return &_iterator;	}
+	const_iterator *
+	pinternal_citerator()const
 	{	return &_iterator;	}
 
 	list<buf_t> &
 	bufs()
 	{	return _bufs;	}
+	const list<buf_t> &
+	cbufs()const
+	{	return _bufs;	}
 
 	list<buf_t> *
 	pbufs()
+	{	return &_bufs;	}
+	const list<buf_t> *
+	pcbufs()const
 	{	return &_bufs;	}
 
 	bool 
