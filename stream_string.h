@@ -8,10 +8,6 @@ todo:
 вычисление строки-столбца по итератору
 файлы на фаловых дескрипторах unix
 
-advance_or_end()
-advance()
-distance()
-
 internal_file и конструкоры
 */
 
@@ -41,7 +37,7 @@ struct hex{
 };
 std::ostream & operator<<(std::ostream & str, hex h){
 	if(h.x)
-		return str << std::setw(8)<<std::hex<<(unsigned int)h.x;
+		return str << std::setw(8)<<std::hex<<(unsigned int)h.x<<std::dec;
 	else
 		return str<<'0';
 }
@@ -81,6 +77,7 @@ std::ostream & operator<<(std::ostream & str, basic_dump<ch_t> d){
 #define DEBUG_buffer(mes)	//(std::cerr mes << std::endl)
 #define DEBUG_stream(mes)	//(std::cerr mes << std::endl)
 
+// ============ ФАЙЛЫ ============
 // ----****----
 // ----****---- CLASS basic_block_file_c_str ----****----
 // ----****----
@@ -269,6 +266,8 @@ public:
 
 /* то что выше, наверно, можно перенести в отдельный какой-нибудь file.h*/
 
+// ============ ПРОСТЫЕ БУФЕРА И ИТЕРАТОРЫ ============
+
 // ----****----
 // ----****---- forward defs ----****----
 // ----****----
@@ -349,6 +348,7 @@ public:
 		//GETTERS
 	ch_t *		begin()const	{	return _begin;	}
 	ch_t *		end()const		{	return _end;	}
+	size_t		size()const		{	return _end-_begin;	}
 	bool 		eof()const		{	return _atend;	}
 	bool 		is_free()const	{	return _iterator_counter==0;	}
 	int 		nomber()const	{	return _nomber;	}
@@ -412,21 +412,12 @@ public:
 	}
 }; //CLASS simple_buffer
 
-/* здесь можно добавить буфер с перекодировкой, 
- * с вычислением строки-столбца по указателю/итератору
- * с блекджеком
- * со шлюхами
- * smth else
- */
-
 /* итератор и конст_итератор отличаются тем, что разыменованный итератор можно изменять
  * да да, считанное из файла в буфера можно изменять
  */
 
 template<class buf_t> inline
-bool atend(const _stream_string_const_iterator<buf_t> & it) {	
-	return it.point==0;	
-}
+bool atend(const _stream_string_const_iterator<buf_t> & it);
 
 // ----****----		
 // ----****---- ITERATOR _stream_string_const_iterator ----****----
@@ -450,11 +441,13 @@ class _stream_string_const_iterator
 
 protected:
 		//DATA
-	ch_t * point;//==0 <=> atend
-	ch_t * endbuf;//==0 <=> не связан ни с каким буфером
-	super_iterator itbuf;
-	
-public:
+	ch_t * 			point;//==0 <=> atend
+	ch_t * 			endbuf;
+	super_iterator 	itbuf;
+public:	//GETTERS
+	ch_t * 			get_point()const	{	return point;	}
+	ch_t * 			get_endbuf()const	{	return endbuf;	}
+	super_iterator 	get_itbuf()const	{	return itbuf;	}
 		//CONSTRUCTION, DESTRUCTION
 	explicit 
 	_stream_string_const_iterator(super_iterator sit): point(sit->begin()), endbuf(sit->end()), itbuf(sit) {
@@ -561,11 +554,6 @@ public:
 	}
 };
 
-template<class buf_t> inline
-bool atend(const _stream_string_iterator<buf_t> & it) {	
-	return it.point==0;	
-}
-
 // ----****----		
 // ----****---- TEMPLATE CLASS _stream_string_iterator ----****----
 // ----****----		
@@ -578,10 +566,6 @@ class _stream_string_iterator
 	typedef _stream_string_iterator<buf_t> 	my_t;
 	typedef _stream_string_const_iterator<buf_t> parent_t;
 	typedef typename list<buf_t>::iterator 	super_iterator;
-		//FRIENDS
-	friend bool atend<buf_t>(const my_t & );
-		//DATA
-	//from base class
 public:
 		//CONSTRUCTION, DESTRUCTION
 	explicit 
@@ -615,15 +599,65 @@ public:
 	bool operator<(const parent_t & r)const		{	return parent_t::operator<(r);	}
 };
 
+template<class buf_t> inline
+bool atend(const _stream_string_const_iterator<buf_t> & it) {	
+	return it.point==0;	
+}
+
+/* todo:
+advance_or_end()
+advance()
+distance()
+ */
+
+// ============ БУФЕР С ВЫЧИСЛЕНИЕМ СТРОКИ-СТОЛБЦА ============
+
+struct linecol{
+	int line,col;
+	linecol(int l=1, int c=1):line(l),col(c){}
+};
+
+template <typename ch_t, class file_t, int buf_size, class alloc_t>
+class basic_adressed_buffer;
+
+template <typename ch_t, class file_t, int buf_size, class alloc_t>
+linecol get_linecol(const _stream_string_const_iterator<basic_adressed_buffer<ch_t,file_t,buf_size,alloc_t> > & it);
+template <typename ch_t, class file_t, int buf_size, class alloc_t>
+void set_linecol(const _stream_string_const_iterator<basic_adressed_buffer<ch_t,file_t,buf_size,alloc_t> > & it, linecol lc);
+
 // ----****----
 // ----****---- CLASS basic_adressed_buffer ----****----
 // ----****----
 template <typename ch_t, class file_t, int buf_size=512, class alloc_t = std::allocator<ch_t>>
 class basic_adressed_buffer : public basic_simple_buffer<ch_t,file_t,buf_size,alloc_t>
 {
+	typedef basic_simple_buffer<ch_t, file_t, buf_size, alloc_t> my_t;
+	friend linecol 	get_linecol<ch_t,file_t,buf_size,alloc_t>(const _stream_string_const_iterator<my_t> &);
+	friend void 	set_linecol<ch_t,file_t,buf_size,alloc_t>(const _stream_string_const_iterator<my_t> & , linecol);
+public:
+	typedef linecol tail_type;
 	
 };
 
+template <typename ch_t, class file_t, int buf_size, class alloc_t>
+linecol get_linecol(const _stream_string_const_iterator<basic_adressed_buffer<ch_t,file_t,buf_size,alloc_t> > & it){
+	return linecol();
+}
+template <typename ch_t, class file_t, int buf_size, class alloc_t>
+void set_linecol(const _stream_string_const_iterator<basic_adressed_buffer<ch_t,file_t,buf_size,alloc_t> > & it, linecol lc){
+	
+}
+
+
+
+/* здесь можно добавить буфер с перекодировкой, 
+ * с вычислением строки-столбца по указателю/итератору
+ * с блекджеком
+ * со шлюхами
+ * smth else
+ */
+
+// ============ ПОТОК ============
 
 // ----****----		
 // ----****---- CONTEINER stream_string ----****----
@@ -676,7 +710,10 @@ public:
 		//old PRIVATE MEMBERS
 	/*
 	 * читает новый буфер, и настраивает его номер
-	 * возвращает ук-тель(итератор) на этот буфер
+	 * если прочитано 0 символов - 
+	 *	уничтожет этот буфер, 
+	 *	возвращает _bufs.end() //это означает конец файла
+	 * иначе возвращает ук-тель(итератор) на этот буфер
 	 */
 	typename list<buf_t>::iterator 
 	add_buf(){
@@ -684,7 +721,13 @@ public:
 		typename list<buf_t>::iterator ppb= --_bufs.end();//поинтер на предыдущий буфер
 		DEBUG_stream(<<"stream: сейчас будет добавлен буфер:");
 		_bufs.push_back(buf_t(this,_file,ppb->tail(),ppb->nomber()+1));
-		return --_bufs.end();
+		typename list<buf_t>::iterator pb= --_bufs.end();//поинтер на текущий буфер
+		if(pb->size()==0)//внезапный конец файла
+		{
+			_bufs.pop_back();
+			return _bufs.end();
+		}
+		return pb;
 	}
 
 	//если надо - удаляет буфер
@@ -715,7 +758,7 @@ public:
 			<<"["<<hex(&*_bufs.begin())<<"]"
 			<<"("<<hex(_bufs.begin()->begin())<<","<<hex(_bufs.begin()->end())<<")"
 		);
-		if(_bufs.begin()->eof())	{//неожиданный конец файла
+		if(_bufs.begin()->size()==0)	{//неожиданный конец файла
 		DEBUG_stream( << "неожиданный конец файла" );
 			_bufs.pop_front();
 			_iterator = iterator();
