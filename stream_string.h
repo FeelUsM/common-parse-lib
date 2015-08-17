@@ -808,7 +808,7 @@ public:
 	internal_iterator()
 	{	return _iterator;	}
 	const_iterator & 
-	internal_citerator()const
+	internal_citerator()const 
 	{	return _iterator;	}
 
 	iterator *
