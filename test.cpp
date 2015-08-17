@@ -108,14 +108,14 @@ namespace calc{
 		return 0;
 	}
 
-	//множ::=выр spcs(('*'|'/')выр)*
+	//множ::=выр (spcs('*'|'/')выр)*
 	template<class it_t>
 	const char * read_mul(it_t * pit, double * prez){
 		const char * err;
 		r_ifnot(err = read_expr(pit,prez))
 			return err;
-		read_spcs(pit);
 		while(true){
+			read_spcs(pit);
 			int zn;
 			r_if(read_fix_char(pit,'*')){
 				zn=1;
@@ -195,13 +195,19 @@ int main()
 	}
 	
 	{
-		string str_expression="5+84/(51)";
-		cout << "вычисляем выражение " << str_expression << endl;
+		string str_expression_1 = "5+84/(51)";
+		string str_expression_2 = "15 + (16 /6 *4)";
+		string str_expression = str_expression_2;
+		cout <<"вычисляем выражение:" <<endl <<str_expression <<endl;
 		const char * p= str_expression.c_str();
 		const char * err;
 		double rez;
 		r_ifnot(err=calc::read_sum(&p,&rez)){
-			printf("на позиции %d произошла ошибка: %s\n",p-str_expression.c_str(),err);
+			int pos=p-str_expression.c_str();
+			for(int i=1; i<pos; i++)
+				cout <<' ';
+			cout <<'^' <<endl;
+			printf("произошла ошибка: %s\n",err);
 			return -1;
 		}
 		cout << "результат: " << rez << endl;
