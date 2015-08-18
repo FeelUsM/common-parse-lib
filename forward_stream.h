@@ -1,6 +1,6 @@
 ﻿//(c) FeelUs
-#ifndef STREAM_STRING_H
-#define STREAM_STRING_H
+#ifndef FORWARD_STREAM_H
+#define FORWARD_STREAM_H
 
 /*
 todo:
@@ -20,16 +20,12 @@ internal_file и конструкоры
 #include <iostream>	//для дебага
 #include <iomanip>	//для дебага
 #include <string>	//для дебага
+#include <exception>//для дебага
 
-namespace str {
+namespace str {//нечто среднее между string и stream
 using std::list;
 using std::string;
 //using std::pair;
-
-template<typename X> inline
-void my_assert(bool b, X x){
-	if(!b)	throw string("АВАРИЙНОЕ ИСКЛЮЧЕНИЕ: ")+x;
-}
 
 struct hex{
 	const void * x;
@@ -72,10 +68,23 @@ std::ostream & operator<<(std::ostream & str, basic_dump<ch_t> d){
 	return str;
 }
 
-#define DEBUG_fatal(mes)	(std::cerr << "--------ОШИБКА В ДЕСТРУКТОРЕ: " mes << std::endl)
-#define DEBUG_counter(mes)	//(std::cerr mes << std::endl)
-#define DEBUG_buffer(mes)	//(std::cerr mes << std::endl)
-#define DEBUG_stream(mes)	//(std::cerr mes << std::endl)
+#define DEBUG_fatal(MES)	(std::cerr <<"--------ОШИБКА В ДЕСТРУКТОРЕ: " MES <<std::endl)
+#define DEBUG_counter(MES)	//(std::cerr MES <<std::endl)
+#define DEBUG_buffer(MES)	//(std::cerr MES <<std::endl)
+#define DEBUG_stream(MES)	//(std::cerr MES <<std::endl)
+
+class stream_exception : public std::exception
+{
+	string _what;
+public:
+	stream_exception(){}
+	stream_exception(string s):_what(s){}
+	const char * what()const noexcept	{	return _what.c_str();	}
+};
+template<typename X> inline//X - string или const char *
+void my_assert(bool b, X x){
+	if(!b)	throw stream_exception(string("АВАРИЙНОЕ ИСКЛЮЧЕНИЕ В FORWARD_STREAM_H: ")+x);
+}
 
 // ============ ФАЙЛЫ ============
 // ----****----
@@ -272,11 +281,11 @@ public:
 // ----****---- forward defs ----****----
 // ----****----
 template<class buf_t>
-class stream_string;
+class forward_stream;
 template<class buf_t>
-class _stream_string_const_iterator;
+class _forward_stream_const_iterator;
 template<class buf_t>
-class _stream_string_iterator;
+class _forward_stream_iterator;
 
 //{DEBUG
 template <typename ch_t, class file_t, int buf_size, class alloc_t>
@@ -308,16 +317,16 @@ class basic_simple_buffer
 	//можно сделать buf_size = alloc_t().init_page_size()
 	//но его из мануалов почему-то убрали
 	typedef basic_simple_buffer<ch_t, file_t, buf_size, alloc_t> my_t;
-	friend class _stream_string_const_iterator<my_t>;
+	friend class _forward_stream_const_iterator<my_t>;
 	friend std::ostream & operator<< <ch_t,file_t,buf_size,alloc_t>(std::ostream & str, const my_t * b);
 public:	//TYPEDEFS AND TYPES
-	typedef stream_string<my_t> 				basic_type;
+	typedef forward_stream<my_t> 				basic_type;
 	typedef file_t								file_type;		//отличие от STL
 
 	typedef ch_t								value_type;
 	typedef alloc_t								allocator_type;
-	typedef _stream_string_const_iterator<my_t>	const_iterator;
-	typedef _stream_string_iterator<my_t>		iterator;
+	typedef _forward_stream_const_iterator<my_t>	const_iterator;
+	typedef _forward_stream_iterator<my_t>		iterator;
 	typedef typename alloc_t::size_type			size_type;
 	typedef typename alloc_t::difference_type	difference_type;
 	typedef typename alloc_t::pointer			pointer;
@@ -417,13 +426,13 @@ public:
  */
 
 template<class buf_t> inline
-bool atend(const _stream_string_const_iterator<buf_t> & it);
+bool atend(const _forward_stream_const_iterator<buf_t> & it);
 
 // ----****----		
-// ----****---- ITERATOR _stream_string_const_iterator ----****----
+// ----****---- ITERATOR _forward_stream_const_iterator ----****----
 // ----****----		
 template<class buf_t>
-class _stream_string_const_iterator
+class _forward_stream_const_iterator
 	:public std::iterator<
 		std::forward_iterator_tag,
 		typename buf_t::value_type,
@@ -434,7 +443,7 @@ class _stream_string_const_iterator
 {
 		//private TYPEDEFS
 	typedef typename buf_t::value_type				ch_t;
-	typedef _stream_string_const_iterator<buf_t> 	my_t;
+	typedef _forward_stream_const_iterator<buf_t> 	my_t;
 	typedef typename list<buf_t>::iterator 			super_iterator;
 		//FRIENDS
 	friend bool atend<buf_t>(const my_t & );
@@ -450,7 +459,7 @@ public:	//GETTERS
 	super_iterator 	get_itbuf()const	{	return itbuf;	}
 		//CONSTRUCTION, DESTRUCTION
 	explicit 
-	_stream_string_const_iterator(super_iterator sit): point(sit->begin()), endbuf(sit->end()), itbuf(sit) {
+	_forward_stream_const_iterator(super_iterator sit): point(sit->begin()), endbuf(sit->end()), itbuf(sit) {
 		itbuf->_iterator_counter++;
 		DEBUG_counter(<<"str_iterator[" <<hex(this)<<"]"
 			<<"("<<hex(point)<<","<<hex(endbuf)<<")"
@@ -458,14 +467,14 @@ public:	//GETTERS
 		);
 	}
 
-	_stream_string_const_iterator()					: point(0), endbuf(0)	{
+	_forward_stream_const_iterator()					: point(0), endbuf(0)	{
 		DEBUG_counter(
 			<<"str_iterator[" <<hex(this)<<"]"
 			<<"("<<hex(point)<<","<<hex(endbuf)<<")"
 			<<" - конструируем по умолчанию"
 		);
 	}
-	~_stream_string_const_iterator(){
+	~_forward_stream_const_iterator(){
 		DEBUG_counter(
 			<<"str_iterator [" <<hex(this)<<"]"
 			<<"("<<hex(point)<<","<<hex(endbuf)<<")"
@@ -479,7 +488,7 @@ public:	//GETTERS
 	}
 		
 		//COPYING
-	_stream_string_const_iterator(const my_t & r)	: point(r.point), endbuf(r.endbuf), itbuf(r.itbuf)	{
+	_forward_stream_const_iterator(const my_t & r)	: point(r.point), endbuf(r.endbuf), itbuf(r.itbuf)	{
 		itbuf->_iterator_counter++;
 	}
 	my_t & operator=(const my_t & r)	{
@@ -493,7 +502,7 @@ public:	//GETTERS
 	}
 
 /*	todo
-	_stream_string_const_iterator( my_t && r)
+	_forward_stream_const_iterator( my_t && r)
 	my_t & operator=( my_t && r)
 */
 
@@ -510,7 +519,7 @@ public:	//GETTERS
 		my_assert(point,"попытка сдвинуть инвалидный указатель");
 		if(++point ==endbuf){	//конец буфера
 			if(itbuf->eof()){	//конец файла
-				this->~_stream_string_const_iterator();
+				this->~_forward_stream_const_iterator();
 				return *this;
 			}
 			typename buf_t::basic_type * mybase = itbuf->base();
@@ -520,7 +529,7 @@ public:	//GETTERS
 				nextbuf = mybase->add_buf();
 				if(nextbuf== mybase->pbufs()->end()){	//и вообще оказался неожиданный конец файла
 					itbuf->_atend = true;;
-					this->~_stream_string_const_iterator();
+					this->~_forward_stream_const_iterator();
 					return *this;
 				}
 			}
@@ -555,30 +564,30 @@ public:	//GETTERS
 };
 
 // ----****----		
-// ----****---- TEMPLATE CLASS _stream_string_iterator ----****----
+// ----****---- TEMPLATE CLASS _forward_stream_iterator ----****----
 // ----****----		
 template<class buf_t>
-class _stream_string_iterator
-	:public _stream_string_const_iterator<buf_t>
+class _forward_stream_iterator
+	:public _forward_stream_const_iterator<buf_t>
 {
 		//private TYPEDEFS
 	typedef typename buf_t::value_type		ch_t;
-	typedef _stream_string_iterator<buf_t> 	my_t;
-	typedef _stream_string_const_iterator<buf_t> parent_t;
+	typedef _forward_stream_iterator<buf_t> 	my_t;
+	typedef _forward_stream_const_iterator<buf_t> parent_t;
 	typedef typename list<buf_t>::iterator 	super_iterator;
 public:
 		//CONSTRUCTION, DESTRUCTION
 	explicit 
-	_stream_string_iterator(super_iterator sit)	: parent_t(sit)	{	}
+	_forward_stream_iterator(super_iterator sit)	: parent_t(sit)	{	}
 
-	_stream_string_iterator()					: parent_t()	{	}
-	~_stream_string_iterator()					= default;
+	_forward_stream_iterator()					: parent_t()	{	}
+	~_forward_stream_iterator()					= default;
 		
 		//COPYING
-	_stream_string_iterator(const parent_t & r)	: parent_t(r)	{	}
+	_forward_stream_iterator(const parent_t & r)	: parent_t(r)	{	}
 	my_t & operator=(const parent_t & r)	{	parent_t::operator=(r);	return *this;	}
 /*	todo
-	_stream_string_const_iterator( my_t && r)
+	_forward_stream_const_iterator( my_t && r)
 	my_t & operator=( my_t && r)
 */
 
@@ -600,7 +609,7 @@ public:
 };
 
 template<class buf_t> inline
-bool atend(const _stream_string_const_iterator<buf_t> & it) {	
+bool atend(const _forward_stream_const_iterator<buf_t> & it) {	
 	return it.point==0;	
 }
 
@@ -621,9 +630,9 @@ template <typename ch_t, class file_t, int buf_size, class alloc_t>
 class basic_adressed_buffer;
 
 template <typename ch_t, class file_t, int buf_size, class alloc_t>
-linecol get_linecol(const _stream_string_const_iterator<basic_adressed_buffer<ch_t,file_t,buf_size,alloc_t> > & it);
+linecol get_linecol(const _forward_stream_const_iterator<basic_adressed_buffer<ch_t,file_t,buf_size,alloc_t> > & it);
 template <typename ch_t, class file_t, int buf_size, class alloc_t>
-void set_linecol(const _stream_string_const_iterator<basic_adressed_buffer<ch_t,file_t,buf_size,alloc_t> > & it, linecol lc);
+void set_linecol(const _forward_stream_const_iterator<basic_adressed_buffer<ch_t,file_t,buf_size,alloc_t> > & it, linecol lc);
 
 // ----****----
 // ----****---- CLASS basic_adressed_buffer ----****----
@@ -632,19 +641,19 @@ template <typename ch_t, class file_t, int buf_size=512, class alloc_t = std::al
 class basic_adressed_buffer : public basic_simple_buffer<ch_t,file_t,buf_size,alloc_t>
 {
 	typedef basic_simple_buffer<ch_t, file_t, buf_size, alloc_t> my_t;
-	friend linecol 	get_linecol<ch_t,file_t,buf_size,alloc_t>(const _stream_string_const_iterator<my_t> &);
-	friend void 	set_linecol<ch_t,file_t,buf_size,alloc_t>(const _stream_string_const_iterator<my_t> & , linecol);
+	friend linecol 	get_linecol<ch_t,file_t,buf_size,alloc_t>(const _forward_stream_const_iterator<my_t> &);
+	friend void 	set_linecol<ch_t,file_t,buf_size,alloc_t>(const _forward_stream_const_iterator<my_t> & , linecol);
 public:
 	typedef linecol tail_type;
 	
 };
 
 template <typename ch_t, class file_t, int buf_size, class alloc_t>
-linecol get_linecol(const _stream_string_const_iterator<basic_adressed_buffer<ch_t,file_t,buf_size,alloc_t> > & it){
+linecol get_linecol(const _forward_stream_const_iterator<basic_adressed_buffer<ch_t,file_t,buf_size,alloc_t> > & it){
 	return linecol();
 }
 template <typename ch_t, class file_t, int buf_size, class alloc_t>
-void set_linecol(const _stream_string_const_iterator<basic_adressed_buffer<ch_t,file_t,buf_size,alloc_t> > & it, linecol lc){
+void set_linecol(const _forward_stream_const_iterator<basic_adressed_buffer<ch_t,file_t,buf_size,alloc_t> > & it, linecol lc){
 	
 }
 
@@ -660,10 +669,10 @@ void set_linecol(const _stream_string_const_iterator<basic_adressed_buffer<ch_t,
 // ============ ПОТОК ============
 
 // ----****----		
-// ----****---- CONTEINER stream_string ----****----
+// ----****---- CONTEINER forward_stream ----****----
 // ----****----
 template<class buf_t>
-class stream_string
+class forward_stream
 {
 		//TYPE DEFINES
 public:
@@ -684,7 +693,7 @@ public:
 	
 private: //{
 	//typedef value_type							ch_t; //=> ch_t вообще в буфере не нужно
-	typedef stream_string<buf_t>	my_t;
+	typedef forward_stream<buf_t>	my_t;
 	
 		//DATA DEFINES
 	file_type * _file;
@@ -704,7 +713,7 @@ private: //{
 	list<buf_t> _bufs;
 	stream_data_type _data;
 
-	iterator _iterator;//internal iterator
+	mutable iterator _iterator;//internal iterator
 //}
 public:	
 		//old PRIVATE MEMBERS
@@ -742,19 +751,20 @@ public:
 	 * читает первый буфер
 	 * и создает первый (internal) iterator
 	 */
-	stream_string(file_type * f, typename buf_t::stream_data_type dat= typename buf_t::stream_data_type())
+	explicit
+	forward_stream(file_type * f, typename buf_t::stream_data_type dat= typename buf_t::stream_data_type())
 		: _file(f)
 		, _data(dat)
 	{
 		DEBUG_stream(
-			<< "stream_string - начали конструировать "
+			<< "forward_stream - начали конструировать "
 			<< "internal _iterator"
 			<<"["<<hex(&_iterator)<<"]"
 		);
 
 		_bufs.push_back(buf_t(this,_file,typename buf_t::tail_type(),0));
 		DEBUG_stream(
-			<<"stream_string - в конструкторе создали первый буфер" 
+			<<"forward_stream - в конструкторе создали первый буфер" 
 			<<"["<<hex(&*_bufs.begin())<<"]"
 			<<"("<<hex(_bufs.begin()->begin())<<","<<hex(_bufs.begin()->end())<<")"
 		);
@@ -765,10 +775,10 @@ public:
 		}
 		else
 			_iterator = iterator(_bufs.begin());//он сам сконструируется от итераора на буфер
-		DEBUG_stream( << "stream_string - сконструирован" );
+		DEBUG_stream( << "forward_stream - сконструирован" );
 	}
 	
-	stream_string() = delete;
+	forward_stream() = delete;
 	
 	/*
 	 * нет итераторов - нет буферов
@@ -777,7 +787,7 @@ public:
 	 * все итераторы должны дойти до конца или быть удалены, например путем присваивания им stream.end();
 	 * итерторы дошедшие до конца с потоком не связаны
 	 */
-	~stream_string()	{
+	~forward_stream()	{
 		_iterator.~iterator();
 		DEBUG_stream(
 			<< "internal _iterator"
@@ -786,18 +796,18 @@ public:
 		);
 		del_buf_request(_bufs.begin());
 		if(!_bufs.empty())
-			DEBUG_fatal(<<"stream_string: в потоке остались не удаленные буфера");
+			DEBUG_fatal(<<"forward_stream: в потоке остались не удаленные буфера");
 		else
 			DEBUG_stream( <<"деструктирование потока идет упешно" );
-		DEBUG_stream( <<"stream_string - закончили разрушаться" );
+		DEBUG_stream( <<"forward_stream - закончили разрушаться" );
 		//если потом начнут разрушаться итераторы - это пиздец
 	}
 
 		//COPYING
 	my_t & operator=(const	my_t &	) = delete;	
-	stream_string	(const	my_t &	) = delete;
+	forward_stream	(const	my_t &	) = delete;
 	my_t & operator=(		my_t &&	) = delete;
-	stream_string	(		my_t &&	) = delete;//возможно можно разрешить
+	forward_stream	(		my_t &&	) = delete;//возможно можно разрешить
 
 //{	//PUBLIC MEMBERS
 	typename buf_t::stream_data_type
@@ -808,7 +818,7 @@ public:
 	internal_iterator()
 	{	return _iterator;	}
 	const_iterator & 
-	internal_citerator()const 
+	internal_citerator()const
 	{	return _iterator;	}
 
 	iterator *
@@ -849,15 +859,15 @@ public:
 
 
 /*
-		// TEMPLATE CLASS _stream_string_iterator
+		// TEMPLATE CLASS _forward_stream_iterator
 template<class T, class Alloc> 
-class _stream_string_iterator
-	:public _stream_string_const_iterator<T,Alloc>
+class _forward_stream_iterator
+	:public _forward_stream_const_iterator<T,Alloc>
 {
 public:
-	_stream_string_iterator()	{}
-	_stream_string_iterator(const my_t & r)
-		:_stream_string_const_iterator(r){}
+	_forward_stream_iterator()	{}
+	_forward_stream_iterator(const my_t & r)
+		:_forward_stream_const_iterator(r){}
 	//my_t & operator=(const my_t & r)
 	//const my_t & operator=(const my_t & r)const
 	const T & operator*()const
@@ -868,4 +878,4 @@ public:
 */
 
 }//namespace str
-#endif //STREAM_STRING_H
+#endif //FORWARD_STREAM_H
