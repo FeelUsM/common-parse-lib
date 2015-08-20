@@ -378,7 +378,7 @@ int read_until_pattern      (it*, pf, pstr*, rez*)  .*( )       -(1+len)    len 
 	 */
 	template<typename it_t, typename class_t, typename str_t> inline
 	int 
-	read_charclass(it_t & it, const class_t & is, str_t * pstr){
+	read_charclass_s(it_t & it, const class_t & is, str_t * pstr){
 		if(atend(it)) return -1;
 		if(!is(*it))  return 1;
 		*pstr += *it++;
@@ -387,7 +387,7 @@ int read_until_pattern      (it*, pf, pstr*, rez*)  .*( )       -(1+len)    len 
 
 	template<typename it_t, typename str_t> inline
 	int 
-	read_charclass(it_t & it, span<typename iterator_traits<it_t>::value_type> s, str_t * pstr){
+	read_charclass_s(it_t & it, span<typename iterator_traits<it_t>::value_type> s, str_t * pstr){
 		if(atend(it)) return -1;
 		while(*s.s)
 			if(*it == *s.s++){
@@ -399,7 +399,7 @@ int read_until_pattern      (it*, pf, pstr*, rez*)  .*( )       -(1+len)    len 
 		
 	template<typename it_t, typename str_t> inline
 	int 
-	read_charclass(it_t & it, bispan<typename iterator_traits<it_t>::value_type> s, str_t * pstr){
+	read_charclass_s(it_t & it, bispan<typename iterator_traits<it_t>::value_type> s, str_t * pstr){
 		if(atend(it)) return -1;
 		while(*s.s)
 			if(*s.s++<=*it && *it<=*s.s++){
@@ -846,9 +846,9 @@ int start_read_line         (it*)               \n              -1          0 и
 
 	template<typename it_t, typename class_t, typename str_t> inline
 	int 
-	read_s_charclass(it_t & it, const class_t & cl, str_t * ps){
+	read_s_charclass_s(it_t & it, const class_t & cl, str_t * ps){
 		read_spcs(it);
-		return read_charclass(it,cl,ps);
+		return read_charclass_s(it,cl,ps);
 	}
 
 	template<typename it_t, typename class_t, typename ch_t> inline
@@ -893,9 +893,9 @@ int start_read_line         (it*)               \n              -1          0 и
 
 	template<typename it_t, typename class_t, typename str_t> inline
 	int
-	read_b_charclass(it_t & it, const class_t & cl, str_t * ps){
+	read_b_charclass_s(it_t & it, const class_t & cl, str_t * ps){
 		read_blns(it);
-		return read_charclass(it,cl,ps);
+		return read_charclass_s(it,cl,ps);
 	}
 
 	template<typename it_t, typename class_t, typename ch_t> inline
