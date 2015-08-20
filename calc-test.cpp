@@ -27,6 +27,7 @@ const char * read_expr(it_t & it, double * prez){
 }
 
 //множ::=выр (spcs["*/"] выр)*
+DEF_STRING(md,"*/")
 template<class it_t>
 const char * read_mul(it_t & it, double * prez){
 	typedef typename std::iterator_traits<it_t>::value_type ch_t;
@@ -35,7 +36,7 @@ const char * read_mul(it_t & it, double * prez){
 		return err;
 	while(true){
 		ch_t zn;
-		r_ifnot(read_s_charclass_c(it,span<ch_t>("*/"),&zn))//не для char работать не будет
+		r_ifnot(read_s_charclass_c(it,span<ch_t>(md<ch_t>()),&zn))//не для char работать не будет
 			return 0;
 		double x;
 		r_ifnot(err=read_expr(it,&x))
@@ -47,6 +48,7 @@ const char * read_mul(it_t & it, double * prez){
 }
 
 //сумма::=множ (spcs["+-"] множ)*
+DEF_STRING(pm,"+-")
 template<class it_t>
 const char * read_sum(it_t & it, double * prez){
 	typedef typename std::iterator_traits<it_t>::value_type ch_t;
@@ -55,7 +57,7 @@ const char * read_sum(it_t & it, double * prez){
 		return err;
 	while(true){
 		ch_t zn;
-		r_ifnot(read_s_charclass_c(it,span<ch_t>("+-"),&zn))
+		r_ifnot(read_s_charclass_c(it,span<ch_t>(pm<ch_t>),&zn))
 			return 0;
 		double x;
 		r_ifnot(err = read_mul(it,&x))
@@ -101,10 +103,10 @@ int main()
 				double rez=0;
 				err=read_sum(strin,&rez);
 				read_until_str(strin,"END");
-				r_ifnot(err)
-					cout <<"на позиции --- произошла ошибка: " <<err <<endl;
-				else
+				r_if(err)
 					cout << "результат: " << rez << endl;
+				else
+					cout <<"на позиции --- произошла ошибка: " <<err <<endl;
 			}
 		}
 		catch(const char * mes){
