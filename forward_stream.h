@@ -69,9 +69,9 @@ std::ostream & operator<<(std::ostream & str, basic_dump<ch_t> d){
 }
 
 #define DEBUG_fatal(MES)	(std::cerr <<"--------ОШИБКА В ДЕСТРУКТОРЕ: " MES <<std::endl)
-#define DEBUG_counter(MES)	(std::cerr MES <<std::endl)
-#define DEBUG_buffer(MES)	(std::cerr MES <<std::endl)
-#define DEBUG_stream(MES)	(std::cerr MES <<std::endl)
+#define DEBUG_counter(MES)	//(std::cerr MES <<std::endl)
+#define DEBUG_buffer(MES)	//(std::cerr MES <<std::endl)
+#define DEBUG_stream(MES)	//(std::cerr MES <<std::endl)
 
 class stream_exception : public std::exception
 {

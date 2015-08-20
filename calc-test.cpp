@@ -26,7 +26,7 @@ const char * read_expr(it_t & it, double * prez){
 	return 0;
 }
 
-//множ::=выр (spcs[*/] выр)*
+//множ::=выр (spcs["*/"] выр)*
 template<class it_t>
 const char * read_mul(it_t & it, double * prez){
 	typedef typename std::iterator_traits<it_t>::value_type ch_t;
@@ -46,7 +46,7 @@ const char * read_mul(it_t & it, double * prez){
 	return 0;//ни когда не выполниться
 }
 
-//сумма::=множ (spcs[+-] множ)*
+//сумма::=множ (spcs["+-"] множ)*
 template<class it_t>
 const char * read_sum(it_t & it, double * prez){
 	typedef typename std::iterator_traits<it_t>::value_type ch_t;
@@ -94,19 +94,17 @@ int main()
 	if(1)
 	{
 		try{
-			while(true){
+			while(!atend(strin)){
 				cout <<"введите арифметическое выражение, заканчивающееся символами 'END'" <<endl;
 				start_read_line(strin);
-				cout <<"start:";
 				const char * err;
-				double rez;
+				double rez=0;
 				err=read_sum(strin,&rez);
 				read_until_str(strin,"END");
-				r_ifnot(err){
+				r_ifnot(err)
 					cout <<"на позиции --- произошла ошибка: " <<err <<endl;
-					return -1;
-				}
-				cout << "результат: " << rez << endl;
+				else
+					cout << "результат: " << rez << endl;
 			}
 		}
 		catch(const char * mes){
