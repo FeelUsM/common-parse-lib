@@ -317,7 +317,8 @@ class basic_simple_buffer
 	//можно сделать buf_size = alloc_t().init_page_size()
 	//но его из мануалов почему-то убрали
 	typedef basic_simple_buffer<ch_t, file_t, buf_size, alloc_t> my_t;
-	friend class _forward_stream_const_iterator<my_t>;
+	template <class T>
+	friend class _forward_stream_const_iterator;
 	friend std::ostream & operator<< <ch_t,file_t,buf_size,alloc_t>(std::ostream & str, const my_t * b);
 public:	//TYPEDEFS AND TYPES
 	typedef forward_stream<my_t> 				basic_type;
@@ -325,7 +326,7 @@ public:	//TYPEDEFS AND TYPES
 
 	typedef ch_t								value_type;
 	typedef alloc_t								allocator_type;
-	typedef _forward_stream_const_iterator<my_t>	const_iterator;
+	typedef _forward_stream_const_iterator<my_t>const_iterator;
 	typedef _forward_stream_iterator<my_t>		iterator;
 	typedef typename alloc_t::size_type			size_type;
 	typedef typename alloc_t::difference_type	difference_type;
@@ -334,10 +335,8 @@ public:	//TYPEDEFS AND TYPES
 	typedef typename alloc_t::reference			reference;
 	typedef typename alloc_t::const_reference	const_reference;
 	
-	struct tail_type{			//это как пример, здесь можно определить любой тип
-	};
-	struct stream_data_type{	//это как пример, здесь можно определить любой тип
-	};
+	struct tail_type{};			//это как пример, здесь можно определить любой тип
+	struct stream_data_type{};	//это как пример, здесь можно определить любой тип
 	
 private: //{
 		//DATA
@@ -635,17 +634,29 @@ template <typename ch_t, class file_t, int buf_size, class alloc_t>
 void set_linecol(const _forward_stream_const_iterator<basic_adressed_buffer<ch_t,file_t,buf_size,alloc_t> > & it, linecol lc);
 
 // ----****----
-// ----****---- CLASS basic_adressed_buffer ----****----
+// ----****---- CLASS basic_example_buffer ----****----
 // ----****----
 template <typename ch_t, class file_t, int buf_size=512, class alloc_t = std::allocator<ch_t>>
 class basic_adressed_buffer : public basic_simple_buffer<ch_t,file_t,buf_size,alloc_t>
 {
-	typedef basic_simple_buffer<ch_t, file_t, buf_size, alloc_t> my_t;
-	friend linecol 	get_linecol<ch_t,file_t,buf_size,alloc_t>(const _forward_stream_const_iterator<my_t> &);
-	friend void 	set_linecol<ch_t,file_t,buf_size,alloc_t>(const _forward_stream_const_iterator<my_t> & , linecol);
+	typedef basic_simple_buffer<ch_t,file_t,buf_size,alloc_t> parent_t;
+	typedef basic_adressed_buffer<ch_t, file_t, buf_size, alloc_t> my_t;
+	//friend linecol 	get_linecol<ch_t,file_t,buf_size,alloc_t>(const _forward_stream_const_iterator<my_t> &);
+	//friend void 	set_linecol<ch_t,file_t,buf_size,alloc_t>(const _forward_stream_const_iterator<my_t> & , linecol);
 public:
+	typedef _forward_stream_const_iterator<my_t>const_iterator;
+	typedef _forward_stream_iterator<my_t>		iterator;
+	typedef forward_stream<my_t> 				basic_type;
 	typedef linecol tail_type;
-	
+	basic_type * base()const	{	return reinterpret_cast<basic_type*>(parent_t::base());	}
+	tail_type 	tail()		{	return tail_type();	}
+	basic_adressed_buffer(basic_type * b, file_t * f, tail_type tail, int n)
+	:parent_t(reinterpret_cast<typename parent_t::basic_type*>(b),f,typename parent_t::tail_type(),n){}
+		//COPYING
+	my_t & operator=		(const	my_t &	) = delete;	
+	basic_adressed_buffer	(const	my_t &	) = delete;
+	my_t & operator=		(		my_t &&	) = delete;
+	basic_adressed_buffer	(		my_t &&	r)	: parent_t(static_cast<my_t&&>(r)){}	
 };
 
 template <typename ch_t, class file_t, int buf_size, class alloc_t>
@@ -657,14 +668,36 @@ void set_linecol(const _forward_stream_const_iterator<basic_adressed_buffer<ch_t
 	
 }
 
-
-
 /* здесь можно добавить буфер с перекодировкой, 
  * с вычислением строки-столбца по указателю/итератору
  * с блекджеком
  * со шлюхами
  * smth else
  */
+
+//минимальный пример наследования: 
+//проверять работоспособность инстанцированием всех классов и функций, параметризованных этим буфером
+template <typename ch_t, class file_t, int buf_size=512, class alloc_t = std::allocator<ch_t>>
+class basic_example_buffer : public basic_simple_buffer<ch_t,file_t,buf_size,alloc_t>
+{
+	typedef basic_simple_buffer<ch_t,file_t,buf_size,alloc_t> parent_t;
+	typedef basic_example_buffer<ch_t, file_t, buf_size, alloc_t> my_t;
+public:
+	typedef _forward_stream_const_iterator<my_t>const_iterator;
+	typedef _forward_stream_iterator<my_t>		iterator;
+	typedef forward_stream<my_t> 				basic_type;
+	typedef linecol tail_type;
+	basic_type * base()const{	return reinterpret_cast<basic_type*>(parent_t::base());	}
+	tail_type 	tail()		{	return tail_type();	}
+	basic_example_buffer(basic_type * b, file_t * f, tail_type tail, int n)
+	:parent_t(reinterpret_cast<typename parent_t::basic_type*>(b),f,typename parent_t::tail_type(),n)
+	{}
+		//COPYING
+	my_t & operator=	(const	my_t &	) = delete;
+	basic_example_buffer(const	my_t &	) = delete;
+	my_t & operator=	(		my_t &&	) = delete;
+	basic_example_buffer(		my_t &&	r)	: parent_t(static_cast<my_t&&>(r)){}
+};
 
 // ============ ПОТОК ============
 
@@ -855,27 +888,6 @@ public:
 	{	return const_iterator();	}
 //}
 };//CLASS basic_stream_string
-
-
-
-/*
-		// TEMPLATE CLASS _forward_stream_iterator
-template<class T, class Alloc> 
-class _forward_stream_iterator
-	:public _forward_stream_const_iterator<T,Alloc>
-{
-public:
-	_forward_stream_iterator()	{}
-	_forward_stream_iterator(const my_t & r)
-		:_forward_stream_const_iterator(r){}
-	//my_t & operator=(const my_t & r)
-	//const my_t & operator=(const my_t & r)const
-	const T & operator*()const
-	{	return *point;	}
-	const T * operator->()const
-	{	return point;	}
-};
-*/
 
 }//namespace str
 #endif //FORWARD_STREAM_H

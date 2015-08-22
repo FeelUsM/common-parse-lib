@@ -67,8 +67,8 @@ namespace str{
 	//пример невозможности преобразования char16_t*& в const char16_t*&
 	//а вот если iterator наследуется от const_iterator-а - то все OK
 	//кстати переход на ссылки не спасет
-	template int read_until_pattern	<char16_t*,int(&)(char16_t *&),u16string>(char16_t*& pit, int(&)(char16_t *&), u16string * pstr);
-	template int read_until_pattern	<char32_t*,int(&)(char32_t *&,u32string*),u32string>(char32_t*& pit, int(&)(char32_t *&,u32string*), u32string * pstr, u32string * rez);
+	template int read_until_pattern_s	<char16_t*,int(&)(char16_t *&),u16string>(char16_t*& pit, int(&)(char16_t *&), u16string * pstr);
+	template int read_until_pattern_s	<char32_t*,int(&)(char32_t *&,u32string*),u32string>(char32_t*& pit, int(&)(char32_t *&,u32string*), u32string * pstr, u32string * rez);
 
 	template int read_spc<const char*>(const char*& pit);
 	template int read_spcs<wchar_t*>(wchar_t*& pit);
@@ -110,6 +110,7 @@ namespace str{
 	template class basic_block_file_on_FILE<wchar_t>;
 	template class basic_block_file_on_FILE<char16_t>;
 	template class basic_block_file_on_FILE<char32_t>;
+	
 	template class basic_simple_buffer<char,string_file_on_FILE>;
 	template class basic_simple_buffer<wchar_t,wstring_file_on_FILE>;
 	template class basic_simple_buffer<char,basic_block_file_on_c_str<char>>;
@@ -118,6 +119,22 @@ namespace str{
 	template class _forward_stream_iterator<buffer_t>;
 	template class forward_stream<buffer_t>;
 	template bool atend<buffer_t>(const _forward_stream_const_iterator<buffer_t> & it);
+
+	template class basic_adressed_buffer<char,string_file_on_FILE>;
+	template class basic_adressed_buffer<wchar_t,wstring_file_on_FILE>;
+	template class basic_adressed_buffer<char,basic_block_file_on_c_str<char>>;
+	typedef basic_adressed_buffer<char,basic_block_file_on_c_str<char>> a_buffer_t;
+	template class _forward_stream_const_iterator<a_buffer_t>;
+	template class _forward_stream_iterator<a_buffer_t>;
+	template class forward_stream<a_buffer_t>;
+	template bool atend<a_buffer_t>(const _forward_stream_const_iterator<a_buffer_t> & it);
+	
+	template class basic_example_buffer<char,basic_block_file_on_c_str<char>>;
+	typedef basic_example_buffer<char,basic_block_file_on_c_str<char>> e_buffer_t;
+	template class _forward_stream_const_iterator<e_buffer_t>;
+	template class _forward_stream_iterator<e_buffer_t>;
+	template class forward_stream<e_buffer_t>;
+	template bool atend<e_buffer_t>(const _forward_stream_const_iterator<e_buffer_t> & it);
 }
 namespace std{
 	template struct iterator_traits<str::_forward_stream_iterator<str::buffer_t> >;
