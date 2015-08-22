@@ -3,6 +3,12 @@
 #define FORWARD_STREAM_H
 
 /*
+ * я тут обратил внимание, что использование этого потока оправдано,
+ * только если используются базовые алгоритмы read_fix_str, read_until_str и read_until_pattern
+ * или происходит копирование итераторов
+ */
+
+/*
 todo:
 перекодировка
 вычисление строки-столбца по итератору
@@ -634,15 +640,17 @@ template <typename ch_t, class file_t, int buf_size, class alloc_t>
 void set_linecol(const _forward_stream_const_iterator<basic_adressed_buffer<ch_t,file_t,buf_size,alloc_t> > & it, linecol lc);
 
 // ----****----
-// ----****---- CLASS basic_example_buffer ----****----
+// ----****---- CLASS basic_adressed_buffer ----****----
 // ----****----
 template <typename ch_t, class file_t, int buf_size=512, class alloc_t = std::allocator<ch_t>>
 class basic_adressed_buffer : public basic_simple_buffer<ch_t,file_t,buf_size,alloc_t>
 {
 	typedef basic_simple_buffer<ch_t,file_t,buf_size,alloc_t> parent_t;
 	typedef basic_adressed_buffer<ch_t, file_t, buf_size, alloc_t> my_t;
-	//friend linecol 	get_linecol<ch_t,file_t,buf_size,alloc_t>(const _forward_stream_const_iterator<my_t> &);
-	//friend void 	set_linecol<ch_t,file_t,buf_size,alloc_t>(const _forward_stream_const_iterator<my_t> & , linecol);
+	friend linecol 	get_linecol<ch_t,file_t,buf_size,alloc_t>(const _forward_stream_const_iterator<my_t> &);
+	friend void 	set_linecol<ch_t,file_t,buf_size,alloc_t>(const _forward_stream_const_iterator<my_t> & , linecol);
+	
+	
 public:
 	typedef _forward_stream_const_iterator<my_t>const_iterator;
 	typedef _forward_stream_iterator<my_t>		iterator;
@@ -677,6 +685,9 @@ void set_linecol(const _forward_stream_const_iterator<basic_adressed_buffer<ch_t
 
 //минимальный пример наследования: 
 //проверять работоспособность инстанцированием всех классов и функций, параметризованных этим буфером
+// ----****----
+// ----****---- CLASS basic_example_buffer ----****----
+// ----****----
 template <typename ch_t, class file_t, int buf_size=512, class alloc_t = std::allocator<ch_t>>
 class basic_example_buffer : public basic_simple_buffer<ch_t,file_t,buf_size,alloc_t>
 {

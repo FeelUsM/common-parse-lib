@@ -1,6 +1,10 @@
 #define one_source//что бы не линковать strin.cpp
 #include "strin.h"
 
+/*
+ * я тут обратил внимание, что для этого калькулятора вполне достаточно input итераторов
+ */
+
 using namespace str;
 
 template<class it_t>
