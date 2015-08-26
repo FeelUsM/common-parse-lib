@@ -103,14 +103,19 @@ int main()
 			while(!atend(strin)){
 				cout <<"введите арифметическое выражение, заканчивающееся символами 'END'" <<endl;
 				start_read_line(strin);
+						cout <<"ввели" <<endl;
 				const char * err;
 				double rez=0;
+				auto tmpp = strin;
+						cout <<"создали стартовый итератор" <<endl;
 				err=read_sum(strin,&rez);
+						cout <<"закончили читать сумму" <<endl;
 				read_until_str(strin,"END");
+						cout <<"дочитываем выражение" <<endl;
 				r_if(err)
 					cout << "результат: " << rez << endl;
 				else
-					cout <<"на позиции --- произошла ошибка: " <<err <<endl;
+					cout <<"на позиции " <<distance(strin,tmpp) <<" произошла ошибка: " <<err <<endl;
 			}
 		}
 		catch(const char * mes){

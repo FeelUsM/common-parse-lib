@@ -27,11 +27,15 @@ internal_file и конструкоры
 #include <iomanip>	//для дебага
 #include <string>	//для дебага
 #include <exception>//для дебага
+#include <vector>	//для adressed_buffer
+#include <algorithm>//для adressed_buffer
+#include <utility>	//для swap-а
 
 namespace str {//нечто среднее между string и stream
 using std::list;
 using std::string;
-//using std::pair;
+using std::pair;
+using std::make_pair;
 
 struct hex{
 	const void * x;
@@ -75,9 +79,9 @@ std::ostream & operator<<(std::ostream & str, basic_dump<ch_t> d){
 }
 
 #define DEBUG_fatal(MES)	(std::cerr <<"--------ОШИБКА В ДЕСТРУКТОРЕ: " MES <<std::endl)
-#define DEBUG_counter(MES)	//(std::cerr MES <<std::endl)
-#define DEBUG_buffer(MES)	//(std::cerr MES <<std::endl)
-#define DEBUG_stream(MES)	//(std::cerr MES <<std::endl)
+#define DEBUG_iterator(MES)	(std::cerr MES <<std::endl)
+#define DEBUG_buffer(MES)	(std::cerr MES <<std::endl)
+#define DEBUG_stream(MES)	(std::cerr MES <<std::endl)
 
 class stream_exception : public std::exception
 {
@@ -293,23 +297,24 @@ class _forward_stream_const_iterator;
 template<class buf_t>
 class _forward_stream_iterator;
 
-//{DEBUG
+//буфер #№[адрес структуры] (кол-во итераторов) [размер буфера] 'первые 10 символов содержимого'
+//{DEBUG basic_simple_buffer
 template <typename ch_t, class file_t, int buf_size, class alloc_t>
 class basic_simple_buffer ;
 template <typename ch_t, class file_t, int buf_size, class alloc_t>
-std::ostream & operator<<(std::ostream & str, const basic_simple_buffer<ch_t,file_t,buf_size,alloc_t> * b){
-	str << "буфер "
-		<< "#" << b->_nomber 	
-		<<"["<<hex(b)<<"]";
-	if(b->_begin){
-		str << "(" << b->_iterator_counter << ")"
-			<< "[" << b->_end - b->_begin <<"]"
-			<<"'"<<dump(b->_begin,10)<<"'";
-		if(b->_atend)
-			str<<"end";
+std::ostream & operator<<(std::ostream & str, const basic_simple_buffer<ch_t,file_t,buf_size,alloc_t> & b){
+	str <<"буфер "
+		<<"#" <<b._nomber
+		<<"[" <<hex(&b) <<"]";
+	if(b._begin){
+		str <<"(" <<b._iterator_counter <<")"
+			<<"[" <<b._end-b._begin <<"]"
+			<<"'" <<dump(b._begin,10) <<"'";
+		if(b._atend)
+			str <<"end";
 	}
 	else{
-		str << "инвалидный";
+		str <<"инвалидный";
 	}
 	return str;
 }
@@ -325,7 +330,7 @@ class basic_simple_buffer
 	typedef basic_simple_buffer<ch_t, file_t, buf_size, alloc_t> my_t;
 	template <class T>
 	friend class _forward_stream_const_iterator;
-	friend std::ostream & operator<< <ch_t,file_t,buf_size,alloc_t>(std::ostream & str, const my_t * b);
+	friend std::ostream & operator<< <ch_t,file_t,buf_size,alloc_t>(std::ostream & str, const my_t & b);
 public:	//TYPEDEFS AND TYPES
 	typedef forward_stream<my_t> 				basic_type;
 	typedef file_t								file_type;		//отличие от STL
@@ -344,8 +349,7 @@ public:	//TYPEDEFS AND TYPES
 	struct tail_type{};			//это как пример, здесь можно определить любой тип
 	struct stream_data_type{};	//это как пример, здесь можно определить любой тип
 	
-private: //{
-		//DATA
+private: //{ //DATA
 	basic_type * const _base;//поток
 	file_t * 	const _file;	//файл
 	const int _nomber;		//что бы можно было быстро определить, какой буфер правее, какой левее
@@ -393,19 +397,19 @@ public:
 		*_end = 0;
 		_atend = _file->eof();
 		//параметры перекодировки можно плоучить при помощи stream_data_type _base->stream_data()
-		DEBUG_buffer(<<this<<" - сконструирован");
+		DEBUG_buffer(<<*this<<" - сконструирован");
 	}
 	
 	basic_simple_buffer()	: basic_simple_buffer{0,0,-1}	{
 		_begin = 0;
-		DEBUG_buffer(<<this<<" - сконструирован по умолчанию");
+		//DEBUG_buffer(<<*this<<" - сконструирован по умолчанию");
 	}
 	~basic_simple_buffer(){
-		DEBUG_buffer(<<this<<" - разрушаем");
 		if(!_begin)	return;
+		DEBUG_buffer(<<*this<<" - разрушаем");
 		//эта проверка очень желательна
 		if(_iterator_counter)
-			DEBUG_fatal(<<this<<" - при разрушении занят итераторами");
+			DEBUG_fatal(<<*this<<" - при разрушении занят итераторами");
 		alloc_t().deallocate(_begin,buf_size);	
 		_begin = 0;
 		_iterator_counter = 0;
@@ -422,7 +426,7 @@ public:
 		_end			= r._end;
 		_atend			= r._atend;
 		r._begin=0;
-		DEBUG_buffer(<<this<<" - сконструирован из - "<< &r);
+		//DEBUG_buffer(<<*this <<" - сконструирован из - " <<r);
 	}
 }; //CLASS simple_buffer
 
@@ -432,7 +436,34 @@ public:
 
 template<class buf_t> inline
 bool atend(const _forward_stream_const_iterator<buf_t> & it);
+template<class buf_t> inline
+void swap(_forward_stream_const_iterator<buf_t> & it1, _forward_stream_const_iterator<buf_t> & it2);
+template<class buf_t> 
+typename std::iterator_traits<_forward_stream_const_iterator<buf_t>>::difference_type
+distance(const _forward_stream_const_iterator<buf_t> & it1, const _forward_stream_const_iterator<buf_t> & it2);
+template<class buf_t> 
+bool advance_or_end(_forward_stream_const_iterator<buf_t> & it, 
+	typename std::iterator_traits<_forward_stream_const_iterator<buf_t>>::difference_type);
+template<class buf_t> 
+void advance(_forward_stream_const_iterator<buf_t> & it, 
+	typename std::iterator_traits<_forward_stream_const_iterator<buf_t>>::difference_type);
 
+//
+//{DEBUG _forward_stream_const_iterator
+template <typename buf_t>
+std::ostream & operator<<(std::ostream & str, const _forward_stream_const_iterator<buf_t> & b){
+	str <<"итератор "
+		<<"[" <<hex(&b) <<"]";
+	if(b.point){
+		str <<"(" <<b.itbuf->nomber() 			<<"(" <<b.buf_iterator_counter() <<")"
+			<<"," <<b.point-b.itbuf->begin() 	<<"('" <<dump(b.point,1) <<"'))";
+	}
+	else{
+		str <<"инвалидный";
+	}
+	return str;
+}
+//}
 // ----****----		
 // ----****---- ITERATOR _forward_stream_const_iterator ----****----
 // ----****----		
@@ -451,14 +482,27 @@ class _forward_stream_const_iterator
 	typedef _forward_stream_const_iterator<buf_t> 	my_t;
 	typedef typename list<buf_t>::iterator 			super_iterator;
 		//FRIENDS
-	friend bool atend<buf_t>(const my_t & );
-
-protected:
-		//DATA
+	friend bool 
+	atend<buf_t>(const my_t & );
+	friend 
+	typename std::iterator_traits<my_t>::difference_type
+	distance<buf_t>(const my_t & first, const my_t & last);
+	friend bool 
+	advance_or_end<buf_t>(my_t & it, typename buf_t::difference_type);
+	friend void 
+	advance<buf_t>(my_t & it, typename buf_t::difference_type);
+	friend void 
+	swap<buf_t>(my_t & it1, my_t & it2);
+	friend
+	std::ostream & operator<< <buf_t>(std::ostream & str, const my_t & b);
+	
+protected:	//DATA
 	ch_t * 			point;//==0 <=> atend
 	ch_t * 			endbuf;
 	super_iterator 	itbuf;
-public:	//GETTERS
+	
+	int buf_iterator_counter()const		{	return itbuf->_iterator_counter;	}
+public:	//GETTERS - только ради получения доступа на чтения не надо наследоваться
 	ch_t * 			get_point()const	{	return point;	}
 	ch_t * 			get_endbuf()const	{	return endbuf;	}
 	super_iterator 	get_itbuf()const	{	return itbuf;	}
@@ -466,25 +510,14 @@ public:	//GETTERS
 	explicit 
 	_forward_stream_const_iterator(super_iterator sit): point(sit->begin()), endbuf(sit->end()), itbuf(sit) {
 		itbuf->_iterator_counter++;
-		DEBUG_counter(<<"str_iterator[" <<hex(this)<<"]"
-			<<"("<<hex(point)<<","<<hex(endbuf)<<")"
-			<<" - конструируем от super_iterator'а по буферу #" <<itbuf->nomber() 
-		);
+		DEBUG_iterator(<<*this <<" - сконструировали от super_iterator'а");
 	}
 
 	_forward_stream_const_iterator()					: point(0), endbuf(0)	{
-		DEBUG_counter(
-			<<"str_iterator[" <<hex(this)<<"]"
-			<<"("<<hex(point)<<","<<hex(endbuf)<<")"
-			<<" - конструируем по умолчанию"
-		);
+		DEBUG_iterator(<<*this <<" - сконструировали по умолчанию");
 	}
 	~_forward_stream_const_iterator(){
-		DEBUG_counter(
-			<<"str_iterator [" <<hex(this)<<"]"
-			<<"("<<hex(point)<<","<<hex(endbuf)<<")"
-			<<" - разрушаем"
-		);
+		DEBUG_iterator(<<*this <<" - разрушаем");
 		if(!point)	return;
 		if(--itbuf->_iterator_counter ==0)
 			itbuf->base()->del_buf_request(itbuf);
@@ -495,6 +528,7 @@ public:	//GETTERS
 		//COPYING
 	_forward_stream_const_iterator(const my_t & r)	: point(r.point), endbuf(r.endbuf), itbuf(r.itbuf)	{
 		itbuf->_iterator_counter++;
+		DEBUG_iterator(<<*this <<" - сконструировали копию от " <<r);
 	}
 	my_t & operator=(const my_t & r)	{
 		//можно оптимизировать
@@ -503,6 +537,7 @@ public:	//GETTERS
 		endbuf=r.endbuf;
 		itbuf=r.itbuf;
 		itbuf->_iterator_counter++;
+		DEBUG_iterator(<<*this <<" - присвоили от " <<r);
 		return *this;
 	}
 
@@ -523,6 +558,7 @@ public:	//GETTERS
 	my_t & operator++()	{	// ++myInstance. 
 		my_assert(point,"попытка сдвинуть инвалидный указатель");
 		if(++point ==endbuf){	//конец буфера
+			DEBUG_iterator(<<*this <<"в начале прыжка");
 			if(itbuf->eof()){	//конец файла
 				this->~_forward_stream_const_iterator();
 				return *this;
@@ -613,19 +649,112 @@ public:
 	bool operator<(const parent_t & r)const		{	return parent_t::operator<(r);	}
 };
 
+template <class buf_t> inline bool operator!= 
+	(const _forward_stream_const_iterator<buf_t> &  x, const _forward_stream_const_iterator<buf_t> &  y) { return !(x==y); }
+template <class buf_t> inline bool operator>  
+	(const _forward_stream_const_iterator<buf_t> &  x, const _forward_stream_const_iterator<buf_t> &  y) { return y<x; }
+template <class buf_t> inline bool operator<= 
+	(const _forward_stream_const_iterator<buf_t> &  x, const _forward_stream_const_iterator<buf_t> &  y) { return !(y<x); }
+template <class buf_t> inline bool operator>= 
+	(const _forward_stream_const_iterator<buf_t> &  x, const _forward_stream_const_iterator<buf_t> &  y) { return !(x<y); }
+
+template<class buf_t> inline
+void swap(_forward_stream_const_iterator<buf_t> & it1, _forward_stream_const_iterator<buf_t> & it2){
+	std::swap(it1.point ,it2.point );
+	std::swap(it1.endbuf,it2.endbuf);
+	std::swap(it1.itbuf ,it2.itbuf );
+}
+
+template<class buf_t> inline
+void swap(_forward_stream_iterator<buf_t> & it1, _forward_stream_iterator<buf_t> & it2){
+	swap(reinterpret_cast<_forward_stream_const_iterator<buf_t> &>(it1),
+		reinterpret_cast<_forward_stream_const_iterator<buf_t> &>(it2));
+}
+
 template<class buf_t> inline
 bool atend(const _forward_stream_const_iterator<buf_t> & it) {	
 	return it.point==0;	
 }
 
-/* todo:
-advance_or_end()
-advance()
-distance()
+/*
+ * вычисляет расстояние между итераторами
  */
+template<class buf_t> 
+typename std::iterator_traits<_forward_stream_const_iterator<buf_t>>::difference_type
+distance(const _forward_stream_const_iterator<buf_t> & first1, const _forward_stream_const_iterator<buf_t> & last1){
+	typedef typename std::iterator_traits<_forward_stream_const_iterator<buf_t>>::difference_type diff_t;
+	_forward_stream_const_iterator<buf_t> first = first1;//todo: оптимизоровать
+	_forward_stream_const_iterator<buf_t> last = last1;
+	diff_t factor;
+	if(first > last){
+		swap(first,last);
+		factor = -1;
+	}
+	else
+		factor = 1;
+	if(first.itbuf->nomber()==last.itbuf->nomber())
+		return factor*(last.point-first.point);
+	typename list<buf_t>::const_iterator it= first.itbuf;
+	diff_t dist= it->end()-first.point;
+	it++;
+	for(; it!=last.itbuf; it++)
+		dist+= it->size();
+	dist+= last.point-it->begin();
+	return dist*factor;
+}
+template<class buf_t> 
+typename std::iterator_traits<_forward_stream_iterator<buf_t>>::difference_type
+distance(const _forward_stream_iterator<buf_t> & first1, const _forward_stream_iterator<buf_t> & last1){
+	return distance((const _forward_stream_const_iterator<buf_t> &)first1,(const _forward_stream_const_iterator<buf_t> &)last1);
+}
+
+/*
+ * 
+ */
+template<class buf_t> 
+typename std::iterator_traits<_forward_stream_const_iterator<buf_t>>::difference_type 
+advance_or_end(_forward_stream_const_iterator<buf_t> & it, 
+	typename std::iterator_traits<_forward_stream_const_iterator<buf_t>>::difference_type dist){
+	//typedef typename std::iterator_traits<_forward_stream_const_iterator<buf_t>>::difference_type diff_t;
+	if(dist>0){
+		while(!it.itbuf->eof() && dist>it.endbuf-it.point){
+			dist -= it.endbuf-it.point;
+			it.point = it.endbuf-1;
+			it++;
+		}
+		if(it.itbuf->eof() && dist>=it.endbuf-it.point){
+			dist -= it.endbuf-it.point;
+			it.point = it.endbuf-1;
+			it++;
+			return dist;
+		}
+		it.point-=dist;
+		return 0;
+	}
+	else{
+		while(it.itbuf!=it.itbuf->base->bufs().begin() && dist>it.point-it.itbuf->begin()){
+			dist += it.point-it.itbuf->begin()+1;
+			it.point = it.itbuf->bagin();
+			it--;
+		}
+		if(it.itbuf->eof() && dist>=it.endbuf-it.point){
+			dist += it.point-it.itbuf->begin();
+			it=_forward_stream_const_iterator<buf_t>();
+			return dist;
+		}
+		it.point+=dist;
+		return 0;
+	}
+	return 0;
+}
+template<class buf_t> 
+void advance(_forward_stream_const_iterator<buf_t> & it, 
+	typename std::iterator_traits<_forward_stream_const_iterator<buf_t>>::difference_type dist){
+	if(advance_or_end(it,dist))
+		throw stream_exception("out of range in advance in forward stream iterator");
+}
 
 // ============ БУФЕР С ВЫЧИСЛЕНИЕМ СТРОКИ-СТОЛБЦА ============
-
 struct linecol{
 	int line,col;
 	linecol(int l=1, int c=1):line(l),col(c){}
@@ -650,16 +779,37 @@ class basic_adressed_buffer : public basic_simple_buffer<ch_t,file_t,buf_size,al
 	friend linecol 	get_linecol<ch_t,file_t,buf_size,alloc_t>(const _forward_stream_const_iterator<my_t> &);
 	friend void 	set_linecol<ch_t,file_t,buf_size,alloc_t>(const _forward_stream_const_iterator<my_t> & , linecol);
 	
-	
+	/*
+	 * самый первый символ и каждый символ ПОСЛЕ '\n' содержится в таблице
+	 */
+	typedef std::vector<pair<const ch_t *,linecol>> NLs_type;
+	NLs_type NLs;
+	void NLs_init(linecol lc){
+		NLs.clear();
+		NLs.push_back(make_pair(parent_t::begin(),lc));
+		//todo: использовать строковые функции
+		size_t line = lc.line;
+		for(const ch_t * pc = parent_t::begin(); pc!=parent_t::end(); pc++)
+			if(*pc==(ch_t)'\n')
+				NLs.push_back(make_pair(pc+1,linecol(++line,1)));
+	}
 public:
 	typedef _forward_stream_const_iterator<my_t>const_iterator;
 	typedef _forward_stream_iterator<my_t>		iterator;
 	typedef forward_stream<my_t> 				basic_type;
 	typedef linecol tail_type;
 	basic_type * base()const	{	return reinterpret_cast<basic_type*>(parent_t::base());	}
-	tail_type 	tail()		{	return tail_type();	}
-	basic_adressed_buffer(basic_type * b, file_t * f, tail_type tail, int n)
-	:parent_t(reinterpret_cast<typename parent_t::basic_type*>(b),f,typename parent_t::tail_type(),n){}
+	tail_type 	tail()const {
+		my_assert(!NLs.empty(),"в буфере с адресацией не задана адресация");
+		return tail_type(
+			(--NLs.end())->second.line, 
+			(--NLs.end())->second.col + parent_t::end()- (--NLs.end())->first);	
+	}
+	basic_adressed_buffer(basic_type * b, file_t * f, tail_type lc, int n)
+	:parent_t(reinterpret_cast<typename parent_t::basic_type*>(b),f,typename parent_t::tail_type(),n)
+	{
+		NLs_init(lc);
+	}
 		//COPYING
 	my_t & operator=		(const	my_t &	) = delete;	
 	basic_adressed_buffer	(const	my_t &	) = delete;
@@ -667,12 +817,43 @@ public:
 	basic_adressed_buffer	(		my_t &&	r)	: parent_t(static_cast<my_t&&>(r)){}	
 };
 
+template <typename ch_t>
+bool _NL_pair_lt(const pair<const ch_t *,linecol> & l, const pair<const ch_t *,linecol> & r){
+	return l.first < r.first;
+}
+
 template <typename ch_t, class file_t, int buf_size, class alloc_t>
 linecol get_linecol(const _forward_stream_const_iterator<basic_adressed_buffer<ch_t,file_t,buf_size,alloc_t> > & it){
-	return linecol();
+	typename basic_adressed_buffer<ch_t,file_t,buf_size,alloc_t>::NLs_type::iterator q= 
+		std::lower_bound(it.get_itbuf()->NLs.begin(),it.get_itbuf()->NLs.end(),
+			make_pair(it.get_point(),linecol()),_NL_pair_lt<ch_t>);
+	return linecol(q->second.line,q->second.col+it.get_point()-q->first);
 }
 template <typename ch_t, class file_t, int buf_size, class alloc_t>
 void set_linecol(const _forward_stream_const_iterator<basic_adressed_buffer<ch_t,file_t,buf_size,alloc_t> > & it, linecol lc){
+	typename basic_adressed_buffer<ch_t,file_t,buf_size,alloc_t>::NLs_type::iterator q= 
+		std::lower_bound(it.get_itbuf()->NLs.begin(),it.get_itbuf()->NLs.end(),
+			make_pair(it.get_point(),linecol()),_NL_pair_lt<ch_t>);
+	if(q->first == it->get_point())//вставляем или переприсваиваем
+		q->second = lc;
+	else{
+		it.get_itbuf()->NLs.insert(q,make_pair(it->get_point(),lc));
+		q++;
+	}
+	q++;
+	size_t line=lc.line;
+	line++;
+	for(; q!=it.get_itbuf()->NLs.end(); q++,line++)//доделываем текущий буфер
+		q->second.line = line;
+	typedef basic_adressed_buffer<ch_t,file_t,buf_size,alloc_t> buf_t;
+	//обрабатываем последующие буфера, NLs.init() не пригодился
+	for(typename list<buf_t>::iterator bit = ++it.get_itbuf() ; bit!=it.get_itbuf()->base()->bufs().end(); bit++)
+		for(q=it.get_itbuf()->NLs.begin() ; q!=it.get_itbuf()->NLs.end(); q++,line++)
+			q->second.line = line;
+}
+
+template <typename ch_t, class file_t, int buf_size, class alloc_t>
+void goto_linecol(_forward_stream_const_iterator<basic_adressed_buffer<ch_t,file_t,buf_size,alloc_t> > * it, linecol lc){
 	
 }
 
@@ -683,8 +864,9 @@ void set_linecol(const _forward_stream_const_iterator<basic_adressed_buffer<ch_t
  * smth else
  */
 
-//минимальный пример наследования: 
-//проверять работоспособность инстанцированием всех классов и функций, параметризованных этим буфером
+/*минимальный работающий пример наследования: 
+ *проверять работоспособность инстанцированием всех классов и функций, параметризованных этим буфером
+ */
 // ----****----
 // ----****---- CLASS basic_example_buffer ----****----
 // ----****----
@@ -901,4 +1083,14 @@ public:
 };//CLASS basic_stream_string
 
 }//namespace str
+namespace std{
+template<class buf_t>
+	struct iterator_traits<str::_forward_stream_iterator<buf_t> >{
+			typedef std::forward_iterator_tag		iterator_category;
+			typedef typename buf_t::value_type		value_type;
+			typedef typename buf_t::difference_type	difference_type;
+			typedef typename buf_t::pointer			pointer; //исправляется здесь
+			typedef typename buf_t::reference		reference; //и здесь (убирается const)
+	};
+}
 #endif //FORWARD_STREAM_H

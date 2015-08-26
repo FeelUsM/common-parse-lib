@@ -128,6 +128,9 @@ namespace str{
 	template class _forward_stream_iterator<a_buffer_t>;
 	template class forward_stream<a_buffer_t>;
 	template bool atend<a_buffer_t>(const _forward_stream_const_iterator<a_buffer_t> & it);
+	template linecol get_linecol<char,basic_block_file_on_FILE<char>,512,std::allocator<char>>(
+		const _forward_stream_const_iterator<basic_adressed_buffer<char,basic_block_file_on_FILE<char>,512,std::allocator<char>> > & it);
+
 	
 	template class basic_example_buffer<char,basic_block_file_on_c_str<char>>;
 	typedef basic_example_buffer<char,basic_block_file_on_c_str<char>> e_buffer_t;
