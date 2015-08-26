@@ -25,7 +25,7 @@
 #include <errno.h>  //для чтения чисел из си-строк
 #include <stdlib.h> //для strtol, strtoll, strtoul, strtoull, strtof, strtod, strtold
 #include <wchar.h>  //для wcstol, wcstoll, wcstoul, wcstoull, wcstof, wcstod, wcstold
-//#include <iostream>	//для дебага
+#include <iostream>	//для дебага
 namespace str{//нечто среднее между string и stream
 using std::iterator_traits;  
 using std::numeric_limits;
@@ -262,6 +262,9 @@ int read_until_pattern_s    (it&, pf, pstr*, rez*)  .*( )       -(1+len)    len
  * понятно, что при специалиации будет так:
  * за 1й проход найти точку, и за 2й несколько раз делаем append(a,b)
  */
+/* ? интересно, а можно ли компилятору как-нибудь задать опцию оптимизации,
+ * что бы он при вызове x++ и если результат не используется, использовал вызов ++x
+ */
 //{======================= until_eof, fix_length, fix_str, fix_char, charclass, c
 	/*
 	 * until_eof(it_t & it)
@@ -376,7 +379,7 @@ int read_until_pattern_s    (it&, pf, pstr*, rez*)  .*( )       -(1+len)    len
 	template<typename it_t, typename ch_t> inline
 	int 
 	read_fix_char(it_t & it, ch_t c){
-		if(atend(it)) return -1;
+		if(atend(it)) return -1; 
 		if(*it!=c)    return 1;
 		it++;
 		return 0;

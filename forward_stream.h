@@ -36,6 +36,7 @@ using std::list;
 using std::string;
 using std::pair;
 using std::make_pair;
+using std::swap;
 
 struct hex{
 	const void * x;
@@ -79,9 +80,9 @@ std::ostream & operator<<(std::ostream & str, basic_dump<ch_t> d){
 }
 
 #define DEBUG_fatal(MES)	(std::cerr <<"--------ОШИБКА В ДЕСТРУКТОРЕ: " MES <<std::endl)
-#define DEBUG_iterator(MES)	(std::cerr MES <<std::endl)
-#define DEBUG_buffer(MES)	(std::cerr MES <<std::endl)
-#define DEBUG_stream(MES)	(std::cerr MES <<std::endl)
+#define DEBUG_iterator(MES)	//(std::cerr MES <<std::endl)
+#define DEBUG_buffer(MES)	//(std::cerr MES <<std::endl)
+#define DEBUG_stream(MES)	//(std::cerr MES <<std::endl)
 
 class stream_exception : public std::exception
 {
@@ -527,7 +528,8 @@ public:	//GETTERS - только ради получения доступа на
 		
 		//COPYING
 	_forward_stream_const_iterator(const my_t & r)	: point(r.point), endbuf(r.endbuf), itbuf(r.itbuf)	{
-		itbuf->_iterator_counter++;
+		if(point)
+			itbuf->_iterator_counter++;
 		DEBUG_iterator(<<*this <<" - сконструировали копию от " <<r);
 	}
 	my_t & operator=(const my_t & r)	{
@@ -536,7 +538,8 @@ public:	//GETTERS - только ради получения доступа на
 		point=r.point;
 		endbuf=r.endbuf;
 		itbuf=r.itbuf;
-		itbuf->_iterator_counter++;
+		if(point)
+			itbuf->_iterator_counter++;
 		DEBUG_iterator(<<*this <<" - присвоили от " <<r);
 		return *this;
 	}
@@ -591,9 +594,11 @@ public:	//GETTERS - только ради получения доступа на
 
 		//ARITHMETIC
 	bool operator==(const my_t & r)const{
-		return itbuf==r.itbuf && point==r.point;
+		return itbuf==r.itbuf && point==r.point || point==0 && r.point==0;
 	}
 	bool operator<(const my_t & r)const	{
+		if(point==0 || r.point==0)
+			return r.point==0 && point!=0;
 		my_assert(itbuf->base()==r.itbuf->base(),"сравнение итераторов по разным потокам");
 		if(itbuf->nomber()<r.itbuf->nomber())
 			return true;
@@ -610,6 +615,7 @@ public:	//GETTERS - только ради получения доступа на
 template<class buf_t>
 class _forward_stream_iterator
 	:public _forward_stream_const_iterator<buf_t>
+	//для него iterator_traits определен отдельно внизу
 {
 		//private TYPEDEFS
 	typedef typename buf_t::value_type		ch_t;
@@ -649,6 +655,7 @@ public:
 	bool operator<(const parent_t & r)const		{	return parent_t::operator<(r);	}
 };
 
+//что бы постоянно не подключать std::rel_ops
 template <class buf_t> inline bool operator!= 
 	(const _forward_stream_const_iterator<buf_t> &  x, const _forward_stream_const_iterator<buf_t> &  y) { return !(x==y); }
 template <class buf_t> inline bool operator>  
@@ -660,9 +667,9 @@ template <class buf_t> inline bool operator>=
 
 template<class buf_t> inline
 void swap(_forward_stream_const_iterator<buf_t> & it1, _forward_stream_const_iterator<buf_t> & it2){
-	std::swap(it1.point ,it2.point );
-	std::swap(it1.endbuf,it2.endbuf);
-	std::swap(it1.itbuf ,it2.itbuf );
+	swap(it1.point ,it2.point );
+	swap(it1.endbuf,it2.endbuf);
+	swap(it1.itbuf ,it2.itbuf );
 }
 
 template<class buf_t> inline
@@ -685,6 +692,8 @@ distance(const _forward_stream_const_iterator<buf_t> & first1, const _forward_st
 	typedef typename std::iterator_traits<_forward_stream_const_iterator<buf_t>>::difference_type diff_t;
 	_forward_stream_const_iterator<buf_t> first = first1;//todo: оптимизоровать
 	_forward_stream_const_iterator<buf_t> last = last1;
+	if(first.point==0 && last.point==0)	
+		return 0;
 	diff_t factor;
 	if(first > last){
 		swap(first,last);
@@ -692,14 +701,17 @@ distance(const _forward_stream_const_iterator<buf_t> & first1, const _forward_st
 	}
 	else
 		factor = 1;
-	if(first.itbuf->nomber()==last.itbuf->nomber())
+	if(first.point && last.point && first.itbuf->nomber()==last.itbuf->nomber())
 		return factor*(last.point-first.point);
 	typename list<buf_t>::const_iterator it= first.itbuf;
-	diff_t dist= it->end()-first.point;
-	it++;
-	for(; it!=last.itbuf; it++)
+	typename list<buf_t>::const_iterator lastbuf = 
+		last.point ?
+		last.itbuf :
+		--(first.itbuf->base()->bufs().end());
+	diff_t dist= it++ ->end()-first.point;
+	for(; it!=lastbuf; it++)
 		dist+= it->size();
-	dist+= last.point-it->begin();
+	dist+= (last.point ? last.point : it->end())-it->begin();
 	return dist*factor;
 }
 template<class buf_t> 
@@ -894,6 +906,12 @@ public:
 
 // ============ ПОТОК ============
 
+template <typename buf_t>
+std::ostream & operator<<(std::ostream & str, const forward_stream<buf_t> & s){
+	for(auto i = s.cbufs().begin(); i!=s.cbufs().end(); i++)
+		str <<" |" << *i;
+	return str;
+}
 // ----****----		
 // ----****---- CONTEINER forward_stream ----****----
 // ----****----
@@ -982,26 +1000,15 @@ public:
 		: _file(f)
 		, _data(dat)
 	{
-		DEBUG_stream(
-			<< "forward_stream - начали конструировать "
-			<< "internal _iterator"
-			<<"["<<hex(&_iterator)<<"]"
-		);
-
 		_bufs.push_back(buf_t(this,_file,typename buf_t::tail_type(),0));
-		DEBUG_stream(
-			<<"forward_stream - в конструкторе создали первый буфер" 
-			<<"["<<hex(&*_bufs.begin())<<"]"
-			<<"("<<hex(_bufs.begin()->begin())<<","<<hex(_bufs.begin()->end())<<")"
-		);
 		if(_bufs.begin()->size()==0)	{//неожиданный конец файла
-		DEBUG_stream( << "неожиданный конец файла" );
+			DEBUG_stream( << "неожиданный конец файла" );
 			_bufs.pop_front();
 			_iterator = iterator();
 		}
 		else
 			_iterator = iterator(_bufs.begin());//он сам сконструируется от итераора на буфер
-		DEBUG_stream( << "forward_stream - сконструирован" );
+		DEBUG_stream( << "forward_stream ("<<*this<<")- сконструирован" );
 	}
 	
 	forward_stream() = delete;
