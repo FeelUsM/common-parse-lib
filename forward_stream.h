@@ -79,10 +79,11 @@ std::ostream & operator<<(std::ostream & str, basic_dump<ch_t> d){
 	return str;
 }
 
-#define DEBUG_fatal(MES)	(std::cerr <<"--------ОШИБКА В ДЕСТРУКТОРЕ: " MES <<std::endl)
-#define DEBUG_iterator(MES)	//(std::cerr MES <<std::endl)
-#define DEBUG_buffer(MES)	//(std::cerr MES <<std::endl)
-#define DEBUG_stream(MES)	//(std::cerr MES <<std::endl)
+#define DEBUG_fatal(MES)	(std::cerr <<"--------ОШИБКА В ДЕСТРУКТОРЕ: " MES <<std::endl)//никогда не выключать
+#define DEBUG_iterator(MES)	//(std::cerr MES <<std::endl)//итераторы: создание, удаление и прыжки между буферами
+#define DEBUG_buffer(MES)	//(std::cerr MES <<std::endl)//простой буфер: создание и удаление валидных
+#define DEBUG_addrs(MES)	//(std::cerr MES <<std::endl)//адресуемые буферы: создания и изменения адресов
+#define DEBUG_stream(MES)	//(std::cerr MES <<std::endl)//поток и его внутренний итератор
 
 class stream_exception : public std::exception
 {
@@ -498,7 +499,7 @@ class _forward_stream_const_iterator
 	std::ostream & operator<< <buf_t>(std::ostream & str, const my_t & b);
 	
 protected:	//DATA
-	ch_t * 			point;//==0 <=> atend
+	ch_t * 			point;//==0 <=> atend <=>(def) инвалидный
 	ch_t * 			endbuf;
 	super_iterator 	itbuf;
 	
@@ -508,13 +509,13 @@ public:	//GETTERS - только ради получения доступа на
 	ch_t * 			get_endbuf()const	{	return endbuf;	}
 	super_iterator 	get_itbuf()const	{	return itbuf;	}
 		//CONSTRUCTION, DESTRUCTION
-	explicit 
+	explicit // создает итератор, указывающий на начало буфера
 	_forward_stream_const_iterator(super_iterator sit): point(sit->begin()), endbuf(sit->end()), itbuf(sit) {
 		itbuf->_iterator_counter++;
 		DEBUG_iterator(<<*this <<" - сконструировали от super_iterator'а");
 	}
 
-	_forward_stream_const_iterator()					: point(0), endbuf(0)	{
+	_forward_stream_const_iterator()					: point(0)	{
 		DEBUG_iterator(<<*this <<" - сконструировали по умолчанию");
 	}
 	~_forward_stream_const_iterator(){
@@ -523,7 +524,6 @@ public:	//GETTERS - только ради получения доступа на
 		if(--itbuf->_iterator_counter ==0)
 			itbuf->base()->del_buf_request(itbuf);
 		point=0;
-		endbuf=0;
 	}
 		
 		//COPYING
@@ -767,10 +767,14 @@ void advance(_forward_stream_const_iterator<buf_t> & it,
 }
 
 // ============ БУФЕР С ВЫЧИСЛЕНИЕМ СТРОКИ-СТОЛБЦА ============
-struct linecol{
+struct linecol{ //eof <=> 0:0
 	int line,col;
 	linecol(int l=1, int c=1):line(l),col(c){}
 };
+std::ostream & operator<<(std::ostream & str, linecol lc){
+	return str <<lc.line <<":" <<lc.col;
+}
+
 
 template <typename ch_t, class file_t, int buf_size, class alloc_t>
 class basic_adressed_buffer;
@@ -778,8 +782,17 @@ class basic_adressed_buffer;
 template <typename ch_t, class file_t, int buf_size, class alloc_t>
 linecol get_linecol(const _forward_stream_const_iterator<basic_adressed_buffer<ch_t,file_t,buf_size,alloc_t> > & it);
 template <typename ch_t, class file_t, int buf_size, class alloc_t>
-void set_linecol(const _forward_stream_const_iterator<basic_adressed_buffer<ch_t,file_t,buf_size,alloc_t> > & it, linecol lc);
+void set_linecol(_forward_stream_const_iterator<basic_adressed_buffer<ch_t,file_t,buf_size,alloc_t> > & it, linecol lc);
 
+//{ DEBUG basic_adressed_buffer
+template <typename ch_t, class file_t, int buf_size, class alloc_t>
+std::ostream & operator<<(std::ostream & str, const basic_adressed_buffer<ch_t,file_t,buf_size,alloc_t> & b){
+	typedef basic_simple_buffer<ch_t,file_t,buf_size,alloc_t> parent_t;
+	str <<(const parent_t &)b;
+	b.printNLs(str);	
+	return str;
+}
+//}
 // ----****----
 // ----****---- CLASS basic_adressed_buffer ----****----
 // ----****----
@@ -789,12 +802,19 @@ class basic_adressed_buffer : public basic_simple_buffer<ch_t,file_t,buf_size,al
 	typedef basic_simple_buffer<ch_t,file_t,buf_size,alloc_t> parent_t;
 	typedef basic_adressed_buffer<ch_t, file_t, buf_size, alloc_t> my_t;
 	friend linecol 	get_linecol<ch_t,file_t,buf_size,alloc_t>(const _forward_stream_const_iterator<my_t> &);
-	friend void 	set_linecol<ch_t,file_t,buf_size,alloc_t>(const _forward_stream_const_iterator<my_t> & , linecol);
+	friend void 	set_linecol<ch_t,file_t,buf_size,alloc_t>(_forward_stream_const_iterator<my_t> & , linecol);
+	friend std::ostream & operator<< <ch_t,file_t,buf_size,alloc_t>(std::ostream & str, const my_t & b);
 	
-	/*
-	 * самый первый символ и каждый символ ПОСЛЕ '\n' содержится в таблице
-	 */
-	typedef std::vector<pair<const ch_t *,linecol>> NLs_type;
+	// самый первый символ и каждый символ ПОСЛЕ '\n' содержится в таблице
+	typedef std::vector<pair<const ch_t *,linecol>> NLs_type;//а можно было и map сделать
+	std::ostream & printNLs(std::ostream & str)const{
+		if(NLs.empty())	
+			str<<"void";
+		else
+			for(typename NLs_type::const_iterator it=NLs.begin(); it!=NLs.end(); it++)
+				str <<"," <<it->first-parent_t::begin() <<"("<<it->second <<")";
+		return str;
+	}
 	NLs_type NLs;
 	void NLs_init(linecol lc){
 		NLs.clear();
@@ -821,47 +841,66 @@ public:
 	:parent_t(reinterpret_cast<typename parent_t::basic_type*>(b),f,typename parent_t::tail_type(),n)
 	{
 		NLs_init(lc);
+		DEBUG_addrs(<<*this << " - сконструирован");
 	}
 		//COPYING
 	my_t & operator=		(const	my_t &	) = delete;	
 	basic_adressed_buffer	(const	my_t &	) = delete;
 	my_t & operator=		(		my_t &&	) = delete;
-	basic_adressed_buffer	(		my_t &&	r)	: parent_t(static_cast<my_t&&>(r)){}	
+	basic_adressed_buffer	(		my_t &&	r)	: parent_t(static_cast<my_t&&>(r)),NLs(r.NLs){}	
 };
 
-template <typename ch_t>
+template <typename ch_t> inline
 bool _NL_pair_lt(const pair<const ch_t *,linecol> & l, const pair<const ch_t *,linecol> & r){
 	return l.first < r.first;
 }
 
 template <typename ch_t, class file_t, int buf_size, class alloc_t>
 linecol get_linecol(const _forward_stream_const_iterator<basic_adressed_buffer<ch_t,file_t,buf_size,alloc_t> > & it){
+	if(atend(it))	return linecol(0,0);
 	typename basic_adressed_buffer<ch_t,file_t,buf_size,alloc_t>::NLs_type::iterator q= 
-		std::lower_bound(it.get_itbuf()->NLs.begin(),it.get_itbuf()->NLs.end(),
+		std::upper_bound(it.get_itbuf()->NLs.begin(),it.get_itbuf()->NLs.end(),
 			make_pair(it.get_point(),linecol()),_NL_pair_lt<ch_t>);
+	q--;
+	DEBUG_addrs(<<*it.get_itbuf() <<" - для позиции " <<(void*)it.get_point() <<" найдено: " <<(void*)q->first <<"("<<q->second<<")");
 	return linecol(q->second.line,q->second.col+it.get_point()-q->first);
 }
+
 template <typename ch_t, class file_t, int buf_size, class alloc_t>
-void set_linecol(const _forward_stream_const_iterator<basic_adressed_buffer<ch_t,file_t,buf_size,alloc_t> > & it, linecol lc){
-	typename basic_adressed_buffer<ch_t,file_t,buf_size,alloc_t>::NLs_type::iterator q= 
-		std::lower_bound(it.get_itbuf()->NLs.begin(),it.get_itbuf()->NLs.end(),
+void set_linecol(_forward_stream_const_iterator<basic_adressed_buffer<ch_t,file_t,buf_size,alloc_t> > & it, linecol lc){
+	//DEBUG_addrs(<<*it.get_itbuf() <<" - ищу "<<(it.get_point()-it.get_itbuf()->begin()) );
+	typedef typename basic_adressed_buffer<ch_t,file_t,buf_size,alloc_t>::NLs_type NLs_t;
+ 	NLs_t & _NLs = it.get_itbuf()->NLs;
+	typename NLs_t::iterator q= 
+		std::lower_bound(_NLs.begin(),_NLs.end(),
 			make_pair(it.get_point(),linecol()),_NL_pair_lt<ch_t>);
-	if(q->first == it->get_point())//вставляем или переприсваиваем
+	/*
+	std::cerr <<"нашел ";
+	if(q==it.get_itbuf()->NLs.end())
+		std::cerr <<"end" <<std::endl;
+	else
+		std::cerr <<q->first-it.get_itbuf()->begin() <<"("<<q->second.line<<","<<q->second.col<<")"<<std::endl;
+	*/
+	if(q!=it.get_itbuf()->NLs.end() && q->first == it.get_point())//вставляем или переприсваиваем
 		q->second = lc;
 	else{
-		it.get_itbuf()->NLs.insert(q,make_pair(it->get_point(),lc));
+		it.get_itbuf()->NLs.insert(q,make_pair(it.get_point(),lc));
 		q++;
 	}
+	
 	q++;
 	size_t line=lc.line;
 	line++;
 	for(; q!=it.get_itbuf()->NLs.end(); q++,line++)//доделываем текущий буфер
 		q->second.line = line;
+	DEBUG_addrs(<<"в результате установки " <<lc <<" на " <<it <<" получаем " <<*it.get_itbuf() );
 	typedef basic_adressed_buffer<ch_t,file_t,buf_size,alloc_t> buf_t;
 	//обрабатываем последующие буфера, NLs.init() не пригодился
-	for(typename list<buf_t>::iterator bit = ++it.get_itbuf() ; bit!=it.get_itbuf()->base()->bufs().end(); bit++)
+	for(typename list<buf_t>::iterator bit = ++it.get_itbuf() ; bit!=it.get_itbuf()->base()->bufs().end(); bit++){
 		for(q=it.get_itbuf()->NLs.begin() ; q!=it.get_itbuf()->NLs.end(); q++,line++)
 			q->second.line = line;
+		DEBUG_addrs(<<"наведенное изменение lc " <<*it.get_itbuf() );
+	}
 }
 
 template <typename ch_t, class file_t, int buf_size, class alloc_t>

@@ -13,12 +13,17 @@
 
 namespace str{
 
-	STRIN_EXTERN string_file_on_FILE 		FILEin(stdin);
-	typedef basic_simple_buffer<char,string_file_on_FILE> 	str_FILE_buffer;
-	STRIN_EXTERN forward_stream<str_FILE_buffer> 			STREAMin(&FILEin);
+	STRIN_EXTERN string_file_on_FILE 						FILEin(stdin);
+	typedef basic_adressed_buffer<char,string_file_on_FILE> addr_str_FILE_buffer;
+	STRIN_EXTERN forward_stream<addr_str_FILE_buffer> 		STREAMin(&FILEin);
 	//интересно, чем следующие конструкции отличаются?
 	#define	strin STREAMin.internal_iterator()
 	//STRIN_EXTERN forward_stream<str_FILE_buffer>::iterator & strin = STREAMin.internal_iterator();
+	int __set01(typename forward_stream<addr_str_FILE_buffer>::iterator & it){
+		set_linecol(it,linecol(0,1));
+		return 0;
+	}
+	int __unused_int = __set01(strin);
 
 	struct parse_exception : public std::exception
 	{

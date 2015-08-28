@@ -101,22 +101,18 @@ int main()
 	{
 		try{
 			while(!atend(strin)){
-				cout <<"введите арифметическое выражение, заканчивающееся символами 'END'" <<endl;
+				cout <<"введите арифметическое выражение с целыми числами, заканчивающееся символами 'end'" <<endl;
 				start_read_line(strin);
-						//cout <<"ввели" <<endl;
 				const char * err;
 				double rez=0;
-				auto tmpp = strin;
-						//cout <<"создали стартовый итератор" <<endl;
 				err=read_sum(strin,&rez);
-						//cout <<"закончили читать сумму" <<endl;
-				read_until_str(strin,"END");
-						//cout <<"дочитали выражение" <<endl;
-						//cout << STREAMin <<endl;
+				linecol lc=get_linecol(strin);
+				read_until_str(strin,"end");
 				r_if(err)
 					cout << "результат: " << rez << endl;
-				else
-					cout <<"на позиции " <<distance(tmpp,strin) <<" произошла ошибка: " <<err <<endl;
+				else{
+					cout <<"на позиции " <<lc <<" произошла ошибка: " <<err <<endl;
+				}
 			}
 		}
 		catch(const char * mes){
