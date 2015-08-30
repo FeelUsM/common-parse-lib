@@ -56,16 +56,19 @@ bool atend(ch_t * pc)
  * а писать r_if(errcode=read_smth(...))
  * по моему так удобней
  */
-#define r_if(expr)        if((expr)==0)
-#define r_while(expr)  while((expr)==0)
-#define rm_if(expr)       if((expr)>=0)     //типа рег. выр.  '.*' * - multiple -> m
-#define rm_while(expr) while((expr)>=0)
-#define rp_if(expr)       if((expr)>0)      //типа рег. выр.  '.+' + - plus -> p
-#define rp_while(expr) while((expr)>0)
-#define re_if(expr)       if((expr)<=0)     //типа прочитать заданное выражение или обнаружить конец файла (end)
-#define re_while(expr) while((expr)<=0)
-#define r_ifnot(expr)      if(expr)
-#define r_whilenot(expr) while(expr)
+#define r_if(expr)             if((expr)==0)
+#define r_while(expr)       while((expr)==0)
+#define r_ifnot(expr)           if(expr)
+#define r_whilenot(expr)     while(expr)
+#define rm_if(expr)            if((expr)>=0)     //типа рег. выр.  '.*' * - multiple -> m
+#define rm_while(expr)      while((expr)>=0)
+#define rm_ifnot(expr)         if((expr)<0)
+#define rm_whilenot(expr) 	while((expr)<0)
+	
+#define rp_if(expr)            if((expr)>0)      //типа рег. выр.  '.+' + - plus -> p
+#define rp_while(expr)      while((expr)>0)
+#define re_if(expr)            if((expr)<=0)     //типа прочитать заданное выражение или обнаружить конец файла (end)
+#define re_while(expr)      while((expr)<=0)
 
 /*
  * использование этой фигни следующее:
@@ -139,7 +142,7 @@ struct span{
  * оптимальнее задавать дипозоны парами символов (bispan("anAK\0"))
  * т.о. происходит проверка, что заданный символ x: bs[0]<=x && x<=bs[1] || bs[2]<=x && x<=bs[3] || bs[4]<=x && x<=bs[5] || ....
  * для задания отдельного символа - указываются одинаковые символы для нижней и верхней границы
- * символов в строке должно быть четное кол-во, если это не так может произойти что угодно
+ * символов в строке должно быть четное кол-во, если это не так, может произойти что угодно
  * поэтому на всякий случай лучше будет, если строка будет заканчиваться двумя нулевыми символами 
  * "sdfghj\0" - один ваш, один проставляется компилятором
  * также в связи с тем, что ch_t может быть как signed, так и unsigned
@@ -218,7 +221,7 @@ int read_until_eof          (it&,    pstr*)     .*$             len         len 
 int read_fix_length         (it&, n)            .{n}            -1          0                   OK
 int read_fix_length         (it&, n, pstr*)     .{n}            -(1+len)    0                   OK
 
-int read_fix_str            (it&, s)            str             -(1+len)    0 или len       1   OK
+int read_fix_str            (it&, s)            str             -(1+len)    0 или (len+1)   1   OK
 int read_fix_char           (it&, c)            c               -1          0 или 1         8   OK
 int read_charclass          (it&, is)           [ ]             -1          0 или 1             OK
 int read_charclass          (it&, spn)          [ ]             -1          0 или 1             OK
@@ -251,8 +254,8 @@ int read_until_str          (it&, s)            .*str           -(1+len)    len 
 int read_until_str          (it&, s, pstr*)     .*str           -(1+len)    len                 OK
 int read_until_pattern      (it&, pf)           .*( )           -(1+len)    len                 OK
 int read_until_pattern      (it&, pf, rez*)     .*( )           -(1+len)    len                 OK
-int read_until_pattern_s    (it&, pf, pstr*)    .*( )           -(1+len)    len                 
-int read_until_pattern_s    (it&, pf, pstr*, rez*)  .*( )       -(1+len)    len                 
+int read_until_pattern_s    (it&, pf, pstr*)    .*( )           -(1+len)    len                 OK
+int read_until_pattern_s    (it&, pf, pstr*, rez*)  .*( )       -(1+len)    len                 OK
 чтение целых и плавающих чисел - в отдельных табличках
 */
 /* ? интересно, а что эффективней:
@@ -361,7 +364,7 @@ int read_until_pattern_s    (it&, pf, pstr*, rez*)  .*( )       -(1+len)    len
 				return 0;
 			else if(*it!=*s){
 				it = tmp;
-				return i;
+				return i+1;
 			}
 			else
 				it++, s++, i++;
@@ -515,8 +518,8 @@ int read_until_pattern_s    (it&, pf, pstr*, rez*)  .*( )       -(1+len)    len
 	template<typename it_t, typename ch_t> inline
 	int 
 	read_c(it_t & it, ch_t * c){
-		if(atend(c))	return -1;
-		it++;
+		if(atend(it))	return -1;
+		*c = *it++;
 		return 0;
 	}
 //}
@@ -539,8 +542,10 @@ int read_until_pattern_s    (it&, pf, pstr*, rez*)  .*( )       -(1+len)    len
 	read_until_char(it_t & it, ch_t ch){
 		int i=0;
 		while(!atend(it))
-			if(*it==ch)
+			if(*it==ch){
+				it++;
 				return i;
+			}
 			else{
 				it++;
 				i++;
@@ -662,8 +667,10 @@ int read_until_pattern_s    (it&, pf, pstr*, rez*)  .*( )       -(1+len)    len
 	read_until_char(it_t & it, ch_t ch, str_t * pstr){
 		int i=0;
 		while(!atend(it))
-			if(*it==ch)
+			if(*it==ch){
+				it++;
 				return i;
+			}
 			else{
 				*pstr += *it++;
 				i++;

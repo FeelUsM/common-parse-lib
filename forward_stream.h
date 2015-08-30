@@ -80,6 +80,7 @@ std::ostream & operator<<(std::ostream & str, basic_dump<ch_t> d){
 }
 
 #define DEBUG_fatal(MES)	(std::cerr <<"--------ОШИБКА В ДЕСТРУКТОРЕ: " MES <<std::endl)//никогда не выключать
+#define DEBUG_file(MES)		//(std::cerr MES <<std::endl)//ошибки при чтении файлов
 #define DEBUG_iterator(MES)	//(std::cerr MES <<std::endl)//итераторы: создание, удаление и прыжки между буферами
 #define DEBUG_buffer(MES)	//(std::cerr MES <<std::endl)//простой буфер: создание и удаление валидных
 #define DEBUG_addrs(MES)	//(std::cerr MES <<std::endl)//адресуемые буферы: создания и изменения адресов
@@ -165,7 +166,14 @@ public:
 	
 		//MEMBERS
 	size_t read(ch_t * buf, size_t size){
-		return fread(buf,size,sizeof(ch_t),_file);
+		size_t x = fread(buf,size,sizeof(ch_t),_file);
+		if(ferror(_file))
+			DEBUG_file( <<"ERROR in FILE" );
+		if(x!=size && !(feof(_file) || ferror(_file))){
+			DEBUG_file( <<"запрошено: " <<size <<" прочитано: " <<x <<" - по неизвестной причине");
+			return size;
+		}
+		return x;
 	}
 	bool eof(){
 		return feof(_file);
