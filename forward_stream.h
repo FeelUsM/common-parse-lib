@@ -166,7 +166,7 @@ public:
 	
 		//MEMBERS
 	size_t read(ch_t * buf, size_t size){
-		size_t x = fread(buf,size,sizeof(ch_t),_file);
+		size_t x = fread(buf,sizeof(ch_t),size,_file);
 		if(ferror(_file))
 			DEBUG_file( <<"ERROR in FILE" );
 		if(x!=size && !(feof(_file) || ferror(_file))){

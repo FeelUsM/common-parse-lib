@@ -60,15 +60,15 @@ bool atend(ch_t * pc)
 #define r_while(expr)       while((expr)==0)
 #define r_ifnot(expr)           if(expr)
 #define r_whilenot(expr)     while(expr)
+//следующие используются совместно с read_wile и read_until
 #define rm_if(expr)            if((expr)>=0)     //типа рег. выр.  '.*' * - multiple -> m
 #define rm_while(expr)      while((expr)>=0)
 #define rm_ifnot(expr)         if((expr)<0)
 #define rm_whilenot(expr) 	while((expr)<0)
-	
 #define rp_if(expr)            if((expr)>0)      //типа рег. выр.  '.+' + - plus -> p
 #define rp_while(expr)      while((expr)>0)
-#define re_if(expr)            if((expr)<=0)     //типа прочитать заданное выражение или обнаружить конец файла (end)
-#define re_while(expr)      while((expr)<=0)
+#define rp_ifnot(expr)         if((expr)<=0)
+#define rp_whilenot(expr) 	while((expr)<=0)
 
 /*
  * использование этой фигни следующее:
@@ -213,16 +213,16 @@ func_obj    err pf(it*, rez*)
 
 len - кол-во символов, добавлненных в *pstr
 .                                                                                                   специализация для
-.                                                                                                   [w]char char16/32   stream_string
+.                                                                                                   [w]char char16/32   forward_stream
 .                                                               возвращаемое значение в случае  реализованность 
 название                    аргументы           рег.выр.        если EOF    если не EOF     статистика использования
 int read_until_eof          (it&)               .*$             0           0               1   OK
 int read_until_eof          (it&,    pstr*)     .*$             len         len                 OK
 int read_fix_length         (it&, n)            .{n}            -1          0                   OK
-int read_fix_length         (it&, n, pstr*)     .{n}            -(1+len)    0                   OK
+int read_fix_length         (it&, n, pstr*)     .{n}            -(1+len)    0               2   OK
 
-int read_fix_str            (it&, s)            str             -(1+len)    0 или (len+1)   1   OK
-int read_fix_char           (it&, c)            c               -1          0 или 1         8   OK
+int read_fix_str            (it&, s)            str             -(1+len)    0 или (1+len)   1   OK
+int read_fix_char           (it&, c)            c               -1          0 или 1         11  OK
 int read_charclass          (it&, is)           [ ]             -1          0 или 1             OK
 int read_charclass          (it&, spn)          [ ]             -1          0 или 1             OK
 int read_charclass          (it&, bspn)         [ ]             -1          0 или 1             OK
@@ -250,7 +250,7 @@ int read_until_char         (it&, c)            .*c             -(1+len)    len 
 int read_until_char         (it&, c, pstr*)     .*c             -(1+len)    len                 OK
 <- - говорит о том, что что после прочтения последнего символа итератор стоит не после него а на нем
 
-int read_until_str          (it&, s)            .*str           -(1+len)    len                 OK
+int read_until_str          (it&, s)            .*str           -(1+len)    len             2   OK
 int read_until_str          (it&, s, pstr*)     .*str           -(1+len)    len                 OK
 int read_until_pattern      (it&, pf)           .*( )           -(1+len)    len                 OK
 int read_until_pattern      (it&, pf, rez*)     .*( )           -(1+len)    len                 OK
@@ -791,7 +791,7 @@ int read_until_pattern_s    (it&, pf, pstr*, rez*)  .*( )       -(1+len)    len 
 		for(;;){
 			it_t lit = it;
 			int err;
-			re_if(err=read_fix_str(lit,s)){//если прочитал фиксированную строку или встретил конец файла
+			if((err=read_fix_str(lit,s))<=0){//если прочитал фиксированную строку или встретил конец файла
 				it = lit;
 				return err<0 ? i : -(1+i);
 			}
@@ -807,7 +807,7 @@ int read_until_pattern_s    (it&, pf, pstr*, rez*)  .*( )       -(1+len)    len 
 		for(;;){
 			it_t lit = it;
 			int err;
-			re_if(err=read_fix_str(lit,s)){//если прочитал фиксированную строку или встретил конец файла
+			if((err=read_fix_str(lit,s))<=0){//если прочитал фиксированную строку или встретил конец файла
 				it = lit;
 				return err>0 ? i : -(1+i);
 			}
@@ -909,14 +909,14 @@ int read_s_fix_str          (it&, s)            [:space:]*str   -(1+len)    0 и
 int read_s_fix_char         (it&, c)            [:space:]*c     -1          0 или 1         8   OK
 int read_s_charclass        (it&, is)           [:space:][ ]    -1          0 или 1             OK
 int read_s_charclass_s      (it&, is, pstr*)    [:space:][ ]    -1          0 или 1             OK
-int read_s_charclass_c      (it&, is, pc*)      [:space:][ ]    -1          0 или 1             OK
+int read_s_charclass_c      (it&, is, pc*)      [:space:][ ]    -1          0 или 1         2   OK
 int read_bln                (it&)               [:blank:]       -(1+len)    len                 OK
-int read_blns               (it&)               [:blank:]*      -(1+len)    len             4   OK
-int read_b_fix_str          (it&, s)            [:blank:]*str   -(1+len)    0 или len       1   OK
-int read_b_fix_char         (it&, c)            [:blank:]*c     -1          0 или 1         8   OK
-int read_b_charclass        (it&, is)           [:space:][ ]    -1          0 или 1             OK
-int read_b_charclass_s      (it&, is, pstr*)    [:space:][ ]    -1          0 или 1             OK
-int read_b_charclass_c      (it&, is, pc*)      [:space:][ ]    -1          0 или 1             OK
+int read_blns               (it&)               [:blank:]*      -(1+len)    len                 OK
+int read_b_fix_str          (it&, s)            [:blank:]*str   -(1+len)    0 или len           OK
+int read_b_fix_char         (it&, c)            [:blank:]*c     -1          0 или 1             OK
+int read_b_charclass        (it&, is)           [:blank:][ ]    -1          0 или 1             OK
+int read_b_charclass_s      (it&, is, pstr*)    [:blank:][ ]    -1          0 или 1             OK
+int read_b_charclass_c      (it&, is, pc*)      [:blank:][ ]    -1          0 или 1             OK
 */
 	template<typename it_t, typename str_t> inline
 	int 
@@ -1040,7 +1040,7 @@ int         ::= spcs[sign]spcs[:digit:]+
 int read_digit          (it*, int ss, int_t*)   [:digit:]                   1       -1(EOF)                 OK
 int read_uint           (it*, int ss, int_t*)   [:digit:]+                  1       -1                      OK
 int read_sign_uint      (it*, int ss, int_t*)   [sign][:digit:]+            1       -1                      OK
-int read_sign_spcs_uint (it*, int ss, int_t*)   [sign]spcs[:digit:]+        1       -1                      OK
+int read_sign_s_uint    (it*, int ss, int_t*)   [sign]spcs[:digit:]+        1       -1                      OK
 int read_int            (it*, int ss, int_t*)   spcs[sign]spcs[:digit:]+    1       -1                      OK      OK
 int read_dec            (it*, int_t*)           int#[:digit:]=[0-9]         1       -1              1       OK      OK
 int read_hex            (it*, int_t*)           int#[:digit:]=[:xdigit:]    1       -1                      OK      OK

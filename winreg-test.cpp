@@ -9,8 +9,8 @@ using std::endl;
 template <class it_t>
 void dump(it_t tmp, const char * mes){
 	string s;
-	read_fix_length(tmp,20,&s);
-	cout <<mes <<dump(s.c_str(),20) <<endl;
+	read_fix_length(tmp,50,&s);
+	cout <<mes <<dump(s.c_str(),50) <<endl;
 }
 
 template <class it_t>
@@ -211,9 +211,10 @@ const char * read_all_reg(it_t & it){
 }
 
 int main(){
-	basic_block_file_on_FILE<char> reg_file("../../regstore/little-test.reg","rb");
+	basic_block_file_on_FILE<char> reg_file("../../regstore/hklm.reg-utf8","r");
 	forward_stream<basic_adressed_buffer<char,basic_block_file_on_FILE<char>>> reg_stream(&reg_file);
 	const char * err;
+	//dump(reg_stream.internal_iterator(),"dump:\n");
 	r_ifnot(err=read_all_reg(reg_stream.internal_iterator())){
 		cout << "на позиции " <<get_linecol(reg_stream.internal_iterator()) 
 			<<" произошла ошибка: " <<err <<endl;
