@@ -1,2 +1,10 @@
 #! /bin/bash
-rm *.exe *.out *.stackdump
+mkdir -p trash
+mv *.exe 2>/dev/null
+mv *.out 2>/dev/null
+mv *.stackdump 2>/dev/null
+mv *.i 2>/dev/null
+mv .*.exe 2>/dev/null
+mv .*.out 2>/dev/null
+mv .*.stackdump 2>/dev/null
+mv .*.i 2>/dev/null
