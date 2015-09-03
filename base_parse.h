@@ -3,14 +3,6 @@
 #define BASE_PARSE_H
 
 /*
- * я тут обратил внимание, что ВСЕ алгоритмы, кроме read_fix_str, read_until_str и read_until_pattern
- * требуют не forward, а input итераторы, которые требуют от потока только ungetc()
- * и следовательно, можно специализровать эти алгоритмы специально для input итерторов
- * что бы они осуществляли собственную буферизацию, 
- * что впрочем может быть полезно только для удачных исходов выполнения этих алгоритмов
- */
-
-/*
  * форматирование в данном файле:
  * после редактирования надо всю табуляцию заменить на пробелы а НАЧАЛЬНЫЕ пробелы заменить на табуляцию
  * это связано в основном с табличкой
@@ -27,7 +19,7 @@
 #include <wchar.h>  //для wcstol, wcstoll, wcstoul, wcstoull, wcstof, wcstod, wcstold
 #include <iostream>	//для дебага
 namespace str{//нечто среднее между string и stream
-using std::iterator_traits;  
+//using std::iterator_traits;  
 using std::numeric_limits;
 
 /*
@@ -70,8 +62,8 @@ bool atend(ch_t * pc)
 #define rp_ifnot(expr)         if((expr)<=0)
 #define rp_whilenot(expr) 	while((expr)<=0)
 
-/*
- * использование этой фигни следующее:
+//{DEF_STRING
+/* использование этой фигни следующее:
  * DEF_STRING(name,"qwerty") - объявление (вне функции)
  * foo(name<wchar_t>())		- использование в случае void foo(const char *)
  * foo(name<wchar_t>().s)   - использование в случае template<typename ch_t> void foo(const ch_t *)
@@ -103,6 +95,10 @@ struct name<char32_t>{\
 	const char32_t * s = U##str;\
 	operator const char32_t *(){ return s; }\
 };
+//}
+
+template<class it_t>
+using char_type = typename std::iterator_traits<it_t>::value_type;
 
 /* === стандартные КЛАССЫ СИМВОЛОВ ===
  * его я реализую сам, а не использую из <ctype.h> или <wctype.h>, 
@@ -407,7 +403,7 @@ int read_until_pattern_s    (it&, pf, pstr*, rez*)  .*( )       -(1+len)    len 
 
 	template<typename it_t> inline
 	int 
-	read_charclass(it_t & it, span<typename iterator_traits<it_t>::value_type> s){
+	read_charclass(it_t & it, span<char_type<it_t>> s){
 		if(atend(it)) return -1;
 		while(*s.s)
 			if(*it==*s.s++){
@@ -419,7 +415,7 @@ int read_until_pattern_s    (it&, pf, pstr*, rez*)  .*( )       -(1+len)    len 
 		
 	template<typename it_t> inline
 	int 
-	read_charclass(it_t & it, bispan<typename iterator_traits<it_t>::value_type> s){
+	read_charclass(it_t & it, bispan<char_type<it_t>> s){
 		if(atend(it)) return -1;
 		while(*s.s)
 			if(*s.s++<=*it && *it<=*s.s++){
@@ -447,7 +443,7 @@ int read_until_pattern_s    (it&, pf, pstr*, rez*)  .*( )       -(1+len)    len 
 
 	template<typename it_t, typename str_t> inline
 	int 
-	read_charclass_s(it_t & it, span<typename iterator_traits<it_t>::value_type> s, str_t * pstr){
+	read_charclass_s(it_t & it, span<char_type<it_t>> s, str_t * pstr){
 		if(atend(it)) return -1;
 		while(*s.s)
 			if(*it == *s.s++){
@@ -459,7 +455,7 @@ int read_until_pattern_s    (it&, pf, pstr*, rez*)  .*( )       -(1+len)    len 
 		
 	template<typename it_t, typename str_t> inline
 	int 
-	read_charclass_s(it_t & it, bispan<typename iterator_traits<it_t>::value_type> s, str_t * pstr){
+	read_charclass_s(it_t & it, bispan<char_type<it_t>> s, str_t * pstr){
 		if(atend(it)) return -1;
 		while(*s.s)
 			if(*s.s++<=*it && *it<=*s.s++){
@@ -487,7 +483,7 @@ int read_until_pattern_s    (it&, pf, pstr*, rez*)  .*( )       -(1+len)    len 
 	
 	template<typename it_t, typename ch_t> inline
 	int 
-	read_charclass_c(it_t & it, span<typename iterator_traits<it_t>::value_type> s, ch_t * pch){
+	read_charclass_c(it_t & it, span<char_type<it_t>> s, ch_t * pch){
 		if(atend(it)) return -1;
 		while(*s.s)
 			if(*it == *s.s++){
@@ -499,7 +495,7 @@ int read_until_pattern_s    (it&, pf, pstr*, rez*)  .*( )       -(1+len)    len 
 		
 	template<typename it_t, typename ch_t> inline
 	int 
-	read_charclass_c(it_t & it, bispan<typename iterator_traits<it_t>::value_type> s, ch_t * pch){
+	read_charclass_c(it_t & it, bispan<char_type<it_t>> s, ch_t * pch){
 		if(atend(it)) return -1;
 		while(*s.s)
 			if(*s.s++<=*it && *it<=*s.s++){
@@ -569,10 +565,10 @@ int read_until_pattern_s    (it&, pf, pstr*, rez*)  .*( )       -(1+len)    len 
 	
 			template<typename it_t> inline
 			int 
-			read_until_charclass(it_t & it, span<typename iterator_traits<it_t>::value_type> s){
+			read_until_charclass(it_t & it, span<char_type<it_t>> s){
 				int i=0;
 				while(!atend(it)){
-					const typename iterator_traits<it_t>::value_type * ss=s.s;
+					const char_type<it_t> * ss=s.s;
 					while(*ss)
 						if(*it==*ss++)
 							return i;
@@ -584,10 +580,10 @@ int read_until_pattern_s    (it&, pf, pstr*, rez*)  .*( )       -(1+len)    len 
 
 			template<typename it_t> inline
 			int 
-			read_until_charclass(it_t & it, bispan<typename iterator_traits<it_t>::value_type> s){
+			read_until_charclass(it_t & it, bispan<char_type<it_t>> s){
 				int i=0;
 				while(!atend(it)){
-					const typename iterator_traits<it_t>::value_type * ss=s.s;
+					const char_type<it_t> * ss=s.s;
 					while(*ss)
 						if(*ss++<=*it && *it<=*ss++)
 							return i;
@@ -613,10 +609,10 @@ int read_until_pattern_s    (it&, pf, pstr*, rez*)  .*( )       -(1+len)    len 
 	
 			template<typename it_t> inline
 			int 
-			read_while_charclass(it_t & it, span<typename iterator_traits<it_t>::value_type> s){
+			read_while_charclass(it_t & it, span<char_type<it_t>> s){
 				int i=0;
 				while(!atend(it)){
-					const typename iterator_traits<it_t>::value_type * ss=s.s;
+					const char_type<it_t> * ss=s.s;
 					while(*ss)
 						if(*it==*ss++){
 							it++;
@@ -631,10 +627,10 @@ int read_until_pattern_s    (it&, pf, pstr*, rez*)  .*( )       -(1+len)    len 
 
 			template<typename it_t> inline
 			int 
-			read_while_charclass(it_t & it, bispan<typename iterator_traits<it_t>::value_type> s){
+			read_while_charclass(it_t & it, bispan<char_type<it_t>> s){
 				int i=0;
 				while(!atend(it)){
-					const typename iterator_traits<it_t>::value_type * ss=s.s;
+					const char_type<it_t> * ss=s.s;
 					while(*ss)
 						if(*ss++<=*it && *it<=*ss++){
 							it++;
@@ -694,10 +690,10 @@ int read_until_pattern_s    (it&, pf, pstr*, rez*)  .*( )       -(1+len)    len 
 
 			template<typename it_t, typename str_t> inline
 			int 
-			read_until_charclass(it_t & it, span<typename iterator_traits<it_t>::value_type> s, str_t * pstr){
+			read_until_charclass(it_t & it, span<char_type<it_t>> s, str_t * pstr){
 				int i=0;
 				while(!atend(it)){
-					const typename iterator_traits<it_t>::value_type * ss=s.s;
+					const char_type<it_t> * ss=s.s;
 					while(*ss)
 						if(*it==*ss++)
 							return i;
@@ -709,10 +705,10 @@ int read_until_pattern_s    (it&, pf, pstr*, rez*)  .*( )       -(1+len)    len 
 
 			template<typename it_t, typename str_t> inline
 			int 
-			read_until_charclass(it_t & it, bispan<typename iterator_traits<it_t>::value_type> s, str_t * pstr){
+			read_until_charclass(it_t & it, bispan<char_type<it_t>> s, str_t * pstr){
 				int i=0;
 				while(!atend(it)){
-					const typename iterator_traits<it_t>::value_type * ss=s.s;
+					const char_type<it_t> * ss=s.s;
 					while(*ss)
 						if(*ss++<=*it && *it<=*ss++)
 							return i;
@@ -738,10 +734,10 @@ int read_until_pattern_s    (it&, pf, pstr*, rez*)  .*( )       -(1+len)    len 
 
 			template<typename it_t, typename str_t> inline
 			int 
-			read_while_charclass(it_t & it, span<typename iterator_traits<it_t>::value_type> s, str_t * pstr){
+			read_while_charclass(it_t & it, span<char_type<it_t>> s, str_t * pstr){
 				int i=0;
 				while(!atend(it)){
-					const typename iterator_traits<it_t>::value_type * ss=s.s;
+					const char_type<it_t> * ss=s.s;
 					while(*ss)
 						if(*it==*ss++){
 							*pstr += *it++;
@@ -756,10 +752,10 @@ int read_until_pattern_s    (it&, pf, pstr*, rez*)  .*( )       -(1+len)    len 
 
 			template<typename it_t, typename str_t> inline
 			int 
-			read_while_charclass(it_t & it, bispan<typename iterator_traits<it_t>::value_type> s, str_t * pstr){
+			read_while_charclass(it_t & it, bispan<char_type<it_t>> s, str_t * pstr){
 				int i=0;
 				while(!atend(it)){
-					const typename iterator_traits<it_t>::value_type * ss=s.s;
+					const char_type<it_t> * ss=s.s;
 					while(*ss)
 						if(*ss++<=*it && *it<=*ss++){
 							*pstr += *it++;
@@ -900,7 +896,7 @@ func_obj    err pf(it*, rez*)
 len - кол-во символов, добавлненных в *pstr                                                         [w]char char16/32   stream_string
 .                                                               возвращаемое значение в случае  реализованность 
 название                    аргументы           рег.выр.        если EOF    если не EOF     статистика использования
-int read_line               (it&, s)            .*\n            -(1+len)    len                 OK
+int read_line               (it&, s)            .*\n            -1 или len  len                 OK
 int start_read_line         (it&)               \n              -1          0 или 1         8   OK
 
 int read_spc                (it&)               [:space:]       -(1+len)    len                 OK
@@ -918,30 +914,70 @@ int read_b_charclass        (it&, is)           [:blank:][ ]    -1          0 и
 int read_b_charclass_s      (it&, is, pstr*)    [:blank:][ ]    -1          0 или 1             OK
 int read_b_charclass_c      (it&, is, pc*)      [:blank:][ ]    -1          0 или 1             OK
 */
+
+	DEF_STRING(CRLF,"\r\n")
+	/*
+	 * line(it_t & it, str_t * ps)
+	 * line(it_t & it)
+	 * считывает все до перевода строки (в каком бы формате он ни был (CR,LF,CRLF))
+	 * если не встретился конец файла - в строку добавляет '\n' (не зависимо от формата конца строки)
+	 * если встретился конец файла в самом начале - возвращает -1
+	 * иначе возвращает размер прочтанного
+	 */
 	template<typename it_t, typename str_t> inline
 	int 
 	read_line(it_t & it, str_t * ps){
-		typedef typename std::iterator_traits<it_t>::value_type ch_t;
-		return read_until_char(it,(ch_t)'\n',ps);
+		typedef char_type<it_t> ch_t;
+		int err;
+		if((err=read_until_charclass(it,span<ch_t>(CRLF<ch_t>().s),ps))<0)
+			return err==-1 ? -1 : -err-1;
+		else{
+			*ps +=(ch_t)'\n';
+			return err+1;
+		}
 	}
 
 	template<typename it_t> inline
 	int 
+	read_line(it_t & it){
+		typedef char_type<it_t> ch_t;
+		int err;
+		if((err=read_until_charclass(it,span<ch_t>(CRLF<ch_t>().s)))<0)
+			return err==-1 ? -1 : -err-1;
+		else
+			return err+1;
+	}
+
+	/*
+	 * start_read_line(it_t & it)
+	 * передвигает итератор в начало следующей строки
+	 * 
+	 */
+	template<typename it_t> inline
+	int 
 	start_read_line(it_t & it){
-		typedef typename std::iterator_traits<it_t>::value_type ch_t;
-		return read_fix_char(it,(ch_t)'\n');
+		typedef char_type<it_t> ch_t;
+		read_line(it);
+		ch_t c;
+		r_ifnot(read_charclass_c(it,span<ch_t>(CRLF<ch_t>().s),&c))
+			return -1;
+		if(c==(ch_t)'\n')
+			return 0;
+		if(read_fix_char(it,(ch_t)'\n')<0)
+			return -1;
+		return 0;
 	}
 
 	template<typename it_t> inline
 	int 
 	read_spc(it_t & it){
-		return read_charclass(it,spn_space<typename iterator_traits<it_t>::value_type>());
+		return read_charclass(it,spn_space<char_type<it_t>>());
 	}
 	
 	template<typename it_t> inline
 	int 
 	read_spcs(it_t & it){
-		return read_while_charclass(it,spn_space<typename iterator_traits<it_t>::value_type>());
+		return read_while_charclass(it,spn_space<char_type<it_t>>());
 	}
 
 	template<typename it_t, typename ch_t> inline
@@ -982,13 +1018,13 @@ int read_b_charclass_c      (it&, is, pc*)      [:blank:][ ]    -1          0 и
 	template<typename it_t> inline
 	int 
 	read_bln(it_t & it){
-		return read_charclass(it,spn_blank<typename iterator_traits<it_t>::value_type>());
+		return read_charclass(it,spn_blank<char_type<it_t>>());
 	}
 	
 	template<typename it_t> inline
 	int 
 	read_blns(it_t & it){
-		return read_while_charclass(it,spn_blank<typename iterator_traits<it_t>::value_type>());
+		return read_while_charclass(it,spn_blank<char_type<it_t>>());
 	}
 
 	template<typename it_t, typename ch_t> inline
@@ -1058,7 +1094,7 @@ int read_bin            (it*, int_t*)           int#[:digit:]=[01]          1   
 	template<typename it_t, typename int_t> inline
 	int 
 	read_digit(it_t & it, int ss, int_t * prez){
-		typedef typename std::iterator_traits<it_t>::value_type ch_t;
+		typedef char_type<it_t> ch_t;
 		if(atend(it)) 
 			return -1;
 		if(2<=ss && ss<=10){
@@ -1250,6 +1286,44 @@ int read_com_ifloat     (it*, flt_t*)
 	int 
 	read_com_ifloat(it_t & it, flt_t * prez);
 //}
+//{======================= input_fix_str, input_until_str
+/*
+ * я тут обратил внимание, что ВСЕ алгоритмы, кроме read_fix_str, read_until_str и read_until_pattern
+ * требуют не forward, а input итераторы, которые требуют от потока только ungetc()
+ * и следовательно, можно специализровать эти алгоритмы специально для input итерторов
+ * что бы они осуществляли собственную буферизацию, 
+ * что впрочем может быть полезно только для удачных исходов выполнения этих алгоритмов
+ */
 
+struct parse_exception : public std::exception
+{
+	std::string _what;
+	parse_exception(){}
+	parse_exception(std::string s):_what(s){}
+	virtual const char * what()const noexcept	{	return _what.c_str();	}
+};
+
+	template<typename it_t, typename ch_t> inline
+	int
+	input_fix_str(it_t & it, const ch_t * s){
+		if(!*s) return 0;
+		r_ifnot(read_fix_char(*s++))
+			return -1;
+		while(!atend(it))
+			if(!*s)
+				return 0;
+			else if(*it!=*s){
+				throw parse_exception("exception in input_fix_str");
+			}
+			else
+				it++, s++;
+		if(!*s) return 0;
+		throw parse_exception("exception in input_fix_str");
+	}
+
+	template<typename it_t, typename ch_t> inline
+	int
+	input_until_str(it_t & it, const ch_t * s);
+//}
 }//namespace str
 #endif //BASE_PARSE_H

@@ -1,16 +1,19 @@
 #include <iostream>
 #include "forward_stream.h"
 #include "base_parse.h"
+#define one_source
+#include "strin.h"
 
 using namespace str;
 using std::cout;
+using std::cerr;
 using std::endl;
 
 template <class it_t>
 void dump(it_t tmp, const char * mes){
 	string s;
 	read_fix_length(tmp,50,&s);
-	cout <<mes <<dump(s.c_str(),50) <<endl;
+	cerr <<mes <<dump(s.c_str(),50) <<endl;
 }
 
 template <class it_t>
@@ -72,12 +75,12 @@ const char * read_string(it_t & it, string * ps){
 		int err;
 		rm_ifnot(err=read_until_charclass(it,span<char>("\"\\"),ps)<0)
 			return "неожиданный конец файла";
-		//cout <<"read_until_charclass = " <<err <<endl;
-		//cout << ps->size() <<endl;
+		//cerr <<"read_until_charclass = " <<err <<endl;
+		//cerr << ps->size() <<endl;
 		//dump(it,"перед read_c:\n");
 		char c;
 		r_ifnot(err=read_c(it,&c)){
-			//cout <<"read_c = " <<err <<endl;
+			//cerr <<"read_c = " <<err <<endl;
 			return "неожиданный конец файла";
 		}
 		if(c=='"'){
@@ -173,11 +176,11 @@ const char * read_content(it_t & it, string * ps){
 	auto it3=it;
 	it=prom_it;
 	
-	cout << "на позиции " <<get_linecol(it1) 
+	cerr << "на позиции " <<get_linecol(it1) 
 		<<" произошла ошибка: " <<err1 <<endl;
-	cout << "на позиции " <<get_linecol(it2) 
+	cerr << "на позиции " <<get_linecol(it2) 
 		<<" произошла ошибка: " <<err2 <<endl;
-	cout << "на позиции " <<get_linecol(it3) 
+	cerr << "на позиции " <<get_linecol(it3) 
 		<<" произошла ошибка: " <<err3 <<endl;
 	dump(it,"");
 	
@@ -199,9 +202,8 @@ const char * read_all_reg(it_t & it){
 			r_ifnot(err=read_content(it,&content))
 				return err;
 			//prom_it = it;
-			cout<<">>>" << dir <<'\\' <<file <<endl 
-				<<">>>" //<<content 
-					<<endl 
+			cout<< dir <<'\\' <<file <<endl 
+				<<content <<endl 
 				<<endl;
 		}
 		r_ifnot(read_fix_str(it,"\r\n"))
@@ -210,14 +212,99 @@ const char * read_all_reg(it_t & it){
 	return 0;
 }
 
-int main(){
-	basic_block_file_on_FILE<char> reg_file("../../regstore/hklm.reg-utf8","r");
-	forward_stream<basic_adressed_buffer<char,basic_block_file_on_FILE<char>>> reg_stream(&reg_file);
+/*
+ * Здесь обнаруживается и решается еще одна проблема:
+ * все функции параметризуются итераторами, а итераторы - буферами
+ * и для двух разных типов буферов будут генерироваться абсолютно разные наборы всех парсинговых функций
+ * в то время как если буферы один наследуется от другого, или различаются типом файла, 
+ * то операции с итераторами будут абсолютно одинаковыми за исключением конструирования буфера
+ * вывод: для уменьшения кол-ва генерируемого кода надо файлы наследовать от интерфейса
+ * т.е. файл больше не будет параметром буфера
+ */
+
+//делать неиспользуемые копии итераторов не нужно, это препятствует выгрузке отработанных (прочитанных и разоранных) буферов
+
+//можно делать указатели на итераторы
+int main2(int argc, const char * argv[]){
+	typename forward_stream<basic_adressed_buffer<char>>::iterator * pit;
+	basic_block_file_on_FILE<char> * pf;
+	forward_stream<basic_adressed_buffer<char>> * ps;
+	if(argc==2){
+		pf = new basic_block_file_on_FILE<char>(argv[1],"r");
+		ps = new forward_stream<basic_adressed_buffer<char>>(pf);
+		pit = &ps->internal_iterator();
+	}
+	else{
+		pit = &strin;
+		start_read_line(*pit);
+	}
+	const char * err;
+	//dump(*pit,"dump:\n");
+	r_ifnot(err=read_all_reg(*pit)){
+		cerr << "на позиции " <<get_linecol(*pit) 
+			<<" произошла ошибка: " <<err <<endl;
+		dump(*pit,"");
+		return 1;
+	}
+	if(argc==2){
+		delete pf;
+		delete ps;
+	}
+	return 0;
+}
+
+//можно делать ссылки на итераторы, но это удобнее при вызове отдельной функции
+int submain(typename forward_stream<basic_adressed_buffer<char>>::iterator & it){
+	const char * err;
+	//dump(it,"dump:\n");
+	r_ifnot(err=read_all_reg(it)){
+		cerr << "на позиции " <<get_linecol(it) 
+			<<" произошла ошибка: " <<err <<endl;
+		dump(it,"");
+		return 1;
+	}
+	return 0;
+}
+int main3(int argc, const char * argv[]){
+	if(argc==2){
+		basic_block_file_on_FILE<char> file(argv[1],"r");
+		forward_stream<basic_adressed_buffer<char>> stream(&file);
+		return submain(stream.internal_iterator());
+	}
+	else{
+		start_read_line(strin);
+		return submain(strin);
+	}
+	return 0;
+}
+
+//можно поток инициализировать разными файлами
+int main1(int argc, const char * argv[]){
+	basic_file_i<char> * pf;
+	if(argc==2)
+		pf = new basic_block_file_on_FILE<char>(argv[1],"r");
+	else
+		pf = &FILEin;
+	forward_stream<basic_adressed_buffer<char>> reg_stream(pf);
+	if(argc==1)
+		start_read_line(reg_stream.internal_iterator());
 	const char * err;
 	//dump(reg_stream.internal_iterator(),"dump:\n");
 	r_ifnot(err=read_all_reg(reg_stream.internal_iterator())){
-		cout << "на позиции " <<get_linecol(reg_stream.internal_iterator()) 
+		cerr << "на позиции " <<get_linecol(reg_stream.internal_iterator()) 
 			<<" произошла ошибка: " <<err <<endl;
 		dump(reg_stream.internal_iterator(),"");
+		return 1;
 	}
+	if(argc==2)
+		delete pf;
+	return 0;
+}
+
+int main(int argc, const char * argv[]){
+	if(argc>2){
+		cerr << "должно быть 0 или 1 аргументов";
+		return 2;
+	}
+	return main1(argc,argv);
 }

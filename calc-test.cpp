@@ -34,7 +34,7 @@ const char * read_expr(it_t & it, double * prez){
 DEF_STRING(md,"*/")
 template<class it_t>
 const char * read_mul(it_t & it, double * prez){
-	typedef typename std::iterator_traits<it_t>::value_type ch_t;
+	typedef char_type<it_t> ch_t;
 	const char * err;
 	r_ifnot(err = read_expr(it,prez))
 		return err;
@@ -55,7 +55,7 @@ const char * read_mul(it_t & it, double * prez){
 DEF_STRING(pm,"+-")
 template<class it_t>
 const char * read_sum(it_t & it, double * prez){
-	typedef typename std::iterator_traits<it_t>::value_type ch_t;
+	typedef char_type<it_t> ch_t;
 	const char * err;
 	r_ifnot(err = read_mul(it,prez))
 		return err;
