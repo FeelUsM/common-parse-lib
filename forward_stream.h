@@ -1112,7 +1112,7 @@ public:
 	{	return _data;	}
 		
 	iterator & 
-	internal_iterator()
+	iter()
 	{	return _iterator;	}
 	const_iterator & 
 	internal_citerator()const

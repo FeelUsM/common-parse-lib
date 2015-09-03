@@ -43,7 +43,7 @@ namespace str{
 	STRIN_EXTERN string_file_on_FILE 						FILEin(stdin);
 	STRIN_EXTERN forward_stream<basic_adressed_buffer<char>> 		STREAMin(&FILEin);
 	//интересно, чем следующие конструкции отличаются?
-	#define	strin STREAMin.internal_iterator()
+	#define	strin STREAMin.iter()
 	//STRIN_EXTERN forward_stream<str_FILE_buffer>::iterator & strin = STREAMin.internal_iterator();
 	int __set01(typename forward_stream<basic_adressed_buffer<char>>::iterator & it){
 		set_linecol(it,linecol(0,1));

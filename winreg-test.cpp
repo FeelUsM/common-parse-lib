@@ -232,7 +232,7 @@ int main2(int argc, const char * argv[]){
 	if(argc==2){
 		pf = new basic_block_file_on_FILE<char>(argv[1],"r");
 		ps = new forward_stream<basic_adressed_buffer<char>>(pf);
-		pit = &ps->internal_iterator();
+		pit = &ps->iter();
 	}
 	else{
 		pit = &strin;
@@ -269,7 +269,7 @@ int main3(int argc, const char * argv[]){
 	if(argc==2){
 		basic_block_file_on_FILE<char> file(argv[1],"r");
 		forward_stream<basic_adressed_buffer<char>> stream(&file);
-		return submain(stream.internal_iterator());
+		return submain(stream.iter());
 	}
 	else{
 		start_read_line(strin);
@@ -286,14 +286,16 @@ int main1(int argc, const char * argv[]){
 	else
 		pf = &FILEin;
 	forward_stream<basic_adressed_buffer<char>> reg_stream(pf);
-	if(argc==1)
-		start_read_line(reg_stream.internal_iterator());
+	if(argc==1){
+		set_linecol(reg_stream.iter(),linecol(0,1));
+		start_read_line(reg_stream.iter());
+	}
 	const char * err;
 	//dump(reg_stream.internal_iterator(),"dump:\n");
-	r_ifnot(err=read_all_reg(reg_stream.internal_iterator())){
-		cerr << "на позиции " <<get_linecol(reg_stream.internal_iterator()) 
+	r_ifnot(err=read_all_reg(reg_stream.iter())){
+		cerr << "на позиции " <<get_linecol(reg_stream.iter()) 
 			<<" произошла ошибка: " <<err <<endl;
-		dump(reg_stream.internal_iterator(),"");
+		dump(reg_stream.iter(),"");
 		return 1;
 	}
 	if(argc==2)
