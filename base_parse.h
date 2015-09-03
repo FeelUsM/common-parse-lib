@@ -883,7 +883,7 @@ int read_until_pattern_s    (it&, pf, pstr*, rez*)  .*( )       -(1+len)    len 
 	}
 
 //}
-//{======================= spc, spcs, s_fix_str, s_fix_char, bln, blns, b_fix_str, b_fix_char, line, start_read_line
+//{======================= line, start_read_line, spc, spcs, s_fix_str, s_fix_char, bln, blns, b_fix_str, b_fix_char
 /*
 ch_t        c
 ch_t *      s
@@ -896,8 +896,9 @@ func_obj    err pf(it*, rez*)
 len - кол-во символов, добавлненных в *pstr                                                         [w]char char16/32   stream_string
 .                                                               возвращаемое значение в случае  реализованность 
 название                    аргументы           рег.выр.        если EOF    если не EOF     статистика использования
-int read_line               (it&, s)            .*\n            -1 или len  len                 OK
-int start_read_line         (it&)               \n              -1          0 или 1         8   OK
+int read_line               (it&, s)            .*[\r\n]<-      -1 или len  len                 OK
+int start_read_line         (it&)               .*(\n|\r\n?)    -1          0 или 1         8   OK
+<- - говорит о том, что что после прочтения последнего символа итератор стоит не после него а на нем
 
 int read_spc                (it&)               [:space:]       -(1+len)    len                 OK
 int read_spcs               (it&)               [:space:]*      -(1+len)    len             4   OK
@@ -963,8 +964,7 @@ int read_b_charclass_c      (it&, is, pc*)      [:blank:][ ]    -1          0 и
 			return -1;
 		if(c==(ch_t)'\n')
 			return 0;
-		if(read_fix_char(it,(ch_t)'\n')<0)
-			return -1;
+		read_fix_char(it,(ch_t)'\n');
 		return 0;
 	}
 

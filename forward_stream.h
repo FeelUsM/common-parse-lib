@@ -167,8 +167,7 @@ public:
 	basic_block_file_on_FILE(const char * name, const char * mode){
 		_file = fopen(name,mode);
 		my_assert(_file,"не смог открыть файл");
-		//todo попробовать с и без FILEйных буферов
-		//my_assert(!setvbuf(file,NULL,_IONBF,0),"не получилось отключить буферизацию FILE");
+		my_assert(!setvbuf(_file,NULL,_IONBF,0),"не получилось отключить буферизацию FILE");
 	}
 	basic_block_file_on_FILE() = delete;
 	~basic_block_file_on_FILE(){

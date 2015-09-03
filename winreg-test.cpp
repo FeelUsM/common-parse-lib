@@ -14,6 +14,7 @@ void dump(it_t tmp, const char * mes){
 	string s;
 	read_fix_length(tmp,50,&s);
 	cerr <<mes <<dump(s.c_str(),50) <<endl;
+	//это не реекурсия, это в forward_stream.h определено для дебага, и здесь тоже пригодилось
 }
 
 template <class it_t>
