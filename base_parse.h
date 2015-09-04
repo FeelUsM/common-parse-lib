@@ -17,7 +17,7 @@
 #include <errno.h>  //для чтения чисел из си-строк
 #include <stdlib.h> //для strtol, strtoll, strtoul, strtoull, strtof, strtod, strtold
 #include <wchar.h>  //для wcstol, wcstoll, wcstoul, wcstoull, wcstof, wcstod, wcstold
-#include <iostream>	//для дебага
+#include <iostream> //для дебага
 namespace str{//нечто среднее между string и stream
 //using std::iterator_traits;  
 using std::numeric_limits;
@@ -56,16 +56,16 @@ bool atend(ch_t * pc)
 #define rm_if(expr)            if((expr)>=0)     //типа рег. выр.  '.*' * - multiple -> m
 #define rm_while(expr)      while((expr)>=0)
 #define rm_ifnot(expr)         if((expr)<0)
-#define rm_whilenot(expr) 	while((expr)<0)
+#define rm_whilenot(expr)   while((expr)<0)
 #define rp_if(expr)            if((expr)>0)      //типа рег. выр.  '.+' + - plus -> p
 #define rp_while(expr)      while((expr)>0)
 #define rp_ifnot(expr)         if((expr)<=0)
-#define rp_whilenot(expr) 	while((expr)<=0)
+#define rp_whilenot(expr)   while((expr)<=0)
 
 //{DEF_STRING
 /* использование этой фигни следующее:
  * DEF_STRING(name,"qwerty") - объявление (вне функции)
- * foo(name<wchar_t>())		- использование в случае void foo(const char *)
+ * foo(name<wchar_t>())     - использование в случае void foo(const char *)
  * foo(name<wchar_t>().s)   - использование в случае template<typename ch_t> void foo(const ch_t *)
  * работает только для char, wchar_t, char16_t и char32_t
  */
@@ -217,37 +217,37 @@ int read_until_eof          (it&,    pstr*)     .*$             len         len 
 int read_fix_length         (it&, n)            .{n}            -1          0                   OK
 int read_fix_length         (it&, n, pstr*)     .{n}            -(1+len)    0               2   OK
 
-int read_fix_str            (it&, s)            str             -(1+len)    0 или (1+len)   1   OK
+int read_fix_str            (it&, s)            str             -(1+len)    0 или (1+len)   9   OK
 int read_fix_char           (it&, c)            c               -1          0 или 1         11  OK
 int read_charclass          (it&, is)           [ ]             -1          0 или 1             OK
 int read_charclass          (it&, spn)          [ ]             -1          0 или 1             OK
 int read_charclass          (it&, bspn)         [ ]             -1          0 или 1             OK
 int read_charclass_s        (it&, is, pstr*)    [ ]             -1          0 или 1             OK
-int read_charclass_s        (it&, spn, pstr*)   [ ]             -1          0 или 1             OK
-int read_charclass_s        (it&, bspn, pstr*)  [ ]             -1          0 или 1         1   OK
+int read_charclass_s        (it&, spn, pstr*)   [ ]             -1          0 или 1         1   OK
+int read_charclass_s        (it&, bspn, pstr*)  [ ]             -1          0 или 1         5   OK
 int read_charclass_c        (it&, is, ch*)      [ ]             -1          0 или 1             OK
-int read_charclass_c        (it&, spn, ch*)     [ ]             -1          0 или 1             OK
+int read_charclass_c        (it&, spn, ch*)     [ ]             -1          0 или 1         1   OK
 int read_charclass_c        (it&, bspn, ch*)    [ ]             -1          0 или 1             OK
-int read_c					(it&, ch*)			.				-1			0					OK
+int read_c                  (it&, ch*)          .               -1          0               5   OK
 
 int read_while_charclass    (it&, is)           [ ]*            -(1+len)    len                 OK
-int read_while_charclass    (it&, spn)          [ ]*            -(1+len)    len                 OK
+int read_while_charclass    (it&, spn)          [ ]*            -(1+len)    len             2   OK
 int read_while_charclass    (it&, bspn)         [ ]*            -(1+len)    len                 OK
 int read_while_charclass    (it&, is, pstr*)    [ ]*            -(1+len)    len                 OK
 int read_while_charclass    (it&, spn, pstr*)   [ ]*            -(1+len)    len                 OK
 int read_while_charclass    (it&, bspn, pstr*)  [ ]*            -(1+len)    len             1   OK
 int read_until_charclass    (it&, is)           .*[ ]<-         -(1+len)    len                 OK
-int read_until_charclass    (it&, spn)          .*[ ]<-         -(1+len)    len                 OK
+int read_until_charclass    (it&, spn)          .*[ ]<-         -(1+len)    len             1   OK
 int read_until_charclass    (it&, bspn)         .*[ ]<-         -(1+len)    len                 OK
 int read_until_charclass    (it&, is, pstr*)    .*[ ]<-         -(1+len)    len                 OK
-int read_until_charclass    (it&, spn, pstr*)   .*[ ]<-         -(1+len)    len                 OK
+int read_until_charclass    (it&, spn, pstr*)   .*[ ]<-         -(1+len)    len             2   OK
 int read_until_charclass    (it&, bspn, pstr*)  .*[ ]<-         -(1+len)    len                 OK
 int read_until_char         (it&, c)            .*c             -(1+len)    len                 OK
 int read_until_char         (it&, c, pstr*)     .*c             -(1+len)    len                 OK
 <- - говорит о том, что что после прочтения последнего символа итератор стоит не после него а на нем
 
 int read_until_str          (it&, s)            .*str           -(1+len)    len             2   OK
-int read_until_str          (it&, s, pstr*)     .*str           -(1+len)    len                 OK
+int read_until_str          (it&, s, pstr*)     .*str           -(1+len)    len             1   OK
 int read_until_pattern      (it&, pf)           .*( )           -(1+len)    len                 OK
 int read_until_pattern      (it&, pf, rez*)     .*( )           -(1+len)    len                 OK
 int read_until_pattern_s    (it&, pf, pstr*)    .*( )           -(1+len)    len                 OK
@@ -514,7 +514,7 @@ int read_until_pattern_s    (it&, pf, pstr*, rez*)  .*( )       -(1+len)    len 
 	template<typename it_t, typename ch_t> inline
 	int 
 	read_c(it_t & it, ch_t * c){
-		if(atend(it))	return -1;
+		if(atend(it))   return -1;
 		*c = *it++;
 		return 0;
 	}
@@ -897,18 +897,19 @@ len - кол-во символов, добавлненных в *pstr           
 .                                                               возвращаемое значение в случае  реализованность 
 название                    аргументы           рег.выр.        если EOF    если не EOF     статистика использования
 int read_line               (it&, s)            .*[\r\n]<-      -1 или len  len                 OK
+int read_line               (it&)               .*[\r\n]<-      -1 или len  len             1   OK
 int start_read_line         (it&)               .*(\n|\r\n?)    -1          0 или 1         8   OK
 <- - говорит о том, что что после прочтения последнего символа итератор стоит не после него а на нем
 
 int read_spc                (it&)               [:space:]       -(1+len)    len                 OK
-int read_spcs               (it&)               [:space:]*      -(1+len)    len             4   OK
+int read_spcs               (it&)               [:space:]*      -(1+len)    len             5   OK
 int read_s_fix_str          (it&, s)            [:space:]*str   -(1+len)    0 или len       1   OK
 int read_s_fix_char         (it&, c)            [:space:]*c     -1          0 или 1         8   OK
 int read_s_charclass        (it&, is)           [:space:][ ]    -1          0 или 1             OK
 int read_s_charclass_s      (it&, is, pstr*)    [:space:][ ]    -1          0 или 1             OK
 int read_s_charclass_c      (it&, is, pc*)      [:space:][ ]    -1          0 или 1         2   OK
 int read_bln                (it&)               [:blank:]       -(1+len)    len                 OK
-int read_blns               (it&)               [:blank:]*      -(1+len)    len                 OK
+int read_blns               (it&)               [:blank:]*      -(1+len)    len             1   OK
 int read_b_fix_str          (it&, s)            [:blank:]*str   -(1+len)    0 или len           OK
 int read_b_fix_char         (it&, c)            [:blank:]*c     -1          0 или 1             OK
 int read_b_charclass        (it&, is)           [:blank:][ ]    -1          0 или 1             OK
@@ -1070,14 +1071,14 @@ int_t может быть : long, long long, unsigned long, unsigned long long -
 sign        ::= ('+'|'-')
 int         ::= spcs[sign]spcs[:digit:]+
 .                                                                                                                   специализация для
-.                                                                                                   статистика использования
-.                                                                           возвращаемое значение в случае          [w]char char16/32   stream_string     
-название                аргументы               рег.выр.                    неудача переполнение            реализованность     
-int read_digit          (it*, int ss, int_t*)   [:digit:]                   1       -1(EOF)                 OK
-int read_uint           (it*, int ss, int_t*)   [:digit:]+                  1       -1                      OK
+.                                                                                                                   [w]char char16/32   stream_string     
+.                                                                           возвращаемое значение в случае  реализованность     
+название                аргументы               рег.выр.                    неудача переполнение    статистика использования
+int read_digit          (it*, int ss, int_t*)   [:digit:]                   1       -1(EOF)         1       OK
+int read_uint           (it*, int ss, int_t*)   [:digit:]+                  1       -1              1       OK
 int read_sign_uint      (it*, int ss, int_t*)   [sign][:digit:]+            1       -1                      OK
-int read_sign_s_uint    (it*, int ss, int_t*)   [sign]spcs[:digit:]+        1       -1                      OK
-int read_int            (it*, int ss, int_t*)   spcs[sign]spcs[:digit:]+    1       -1                      OK      OK
+int read_sign_s_uint    (it*, int ss, int_t*)   [sign]spcs[:digit:]+        1       -1              1       OK
+int read_int            (it*, int ss, int_t*)   spcs[sign]spcs[:digit:]+    1       -1              1       OK      OK
 int read_dec            (it*, int_t*)           int#[:digit:]=[0-9]         1       -1              1       OK      OK
 int read_hex            (it*, int_t*)           int#[:digit:]=[:xdigit:]    1       -1                      OK      OK
 int read_oct            (it*, int_t*)           int#[:digit:]=[0-7]         1       -1                      OK      OK
@@ -1300,7 +1301,7 @@ struct parse_exception : public std::exception
 	std::string _what;
 	parse_exception(){}
 	parse_exception(std::string s):_what(s){}
-	virtual const char * what()const noexcept	{	return _what.c_str();	}
+	virtual const char * what()const noexcept   {   return _what.c_str();   }
 };
 
 	template<typename it_t, typename ch_t> inline
