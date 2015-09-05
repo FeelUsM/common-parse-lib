@@ -106,8 +106,8 @@ void my_assert(bool b, X x){
 template <typename ch_t>
 class basic_file_i{
 public:
-	basic_file_i & operator=	(const	basic_file_i &	) = default;	
-	basic_file_i				(const	basic_file_i &	) = default;
+	basic_file_i & operator=	(const	basic_file_i & ) = default;	
+	basic_file_i				(const	basic_file_i & ) = default;
 	basic_file_i & operator=	(		basic_file_i &&) = default;
 	basic_file_i				(		basic_file_i &&) = default;
 	basic_file_i() = default;
@@ -152,7 +152,11 @@ public:
 		return !*_file;
 	}
 };
-	
+typedef basic_block_file_on_c_str<char> block_file_on_c_str;
+typedef basic_block_file_on_c_str<wchar_t> block_wfile_on_c_str;
+typedef basic_block_file_on_c_str<char16_t> block_u16file_on_c_str;
+typedef basic_block_file_on_c_str<char32_t> block_u32file_on_c_str;
+
 // ----****----
 // ----****---- CLASS basic_block_file_on_FILE ----****----
 // ----****----
@@ -194,6 +198,10 @@ public:
 		return _file;
 	}
 };
+typedef basic_block_file_on_FILE<char> block_file_on_FILE;
+typedef basic_block_file_on_FILE<wchar_t> block_wfile_on_FILE;
+typedef basic_block_file_on_FILE<char16_t> block_u16file_on_FILE;
+typedef basic_block_file_on_FILE<char32_t> block_u32file_on_FILE;
 	
 // ----****----
 // ----****---- CLASS string_file_on_FILE ----****----
@@ -256,32 +264,32 @@ public:
 // ----****---- CLASS wstring_file_on_FILE ----****----
 // ----****----
 // файл, выдающий wстроки, в начале добавляет \n для start_read_line()
-class wstring_file_on_FILE
+class string_wfile_on_FILE
 	: public basic_file_i<wchar_t>
 {
 	FILE * _file;
 	bool external;
 public:
 		//CONSTRUCTION DESTRUCTION
-	wstring_file_on_FILE(const char * name, const char * mode)	: external(false)	{
+	string_wfile_on_FILE(const char * name, const char * mode)	: external(false)	{
 		_file = fopen(name,mode);
 		my_assert(_file,"не смог открыть файл");
 	}
-	wstring_file_on_FILE(FILE * f)	: _file(f), external(true) 	{
+	string_wfile_on_FILE(FILE * f)	: _file(f), external(true) 	{
 	}
 
-	wstring_file_on_FILE() = delete;
-	~wstring_file_on_FILE()	{
+	string_wfile_on_FILE() = delete;
+	~string_wfile_on_FILE()	{
 		if(external)	return;
 		fclose(_file);
 	}
 
 		//COPYING
 	//файлы можно копировать как хочешь ибо они не содержат буферов
-	wstring_file_on_FILE & operator=	(const	wstring_file_on_FILE &	) = default;	
-	wstring_file_on_FILE				(const	wstring_file_on_FILE &	) = default;
-	wstring_file_on_FILE & operator=	(		wstring_file_on_FILE &&) = default;
-	wstring_file_on_FILE				(		wstring_file_on_FILE &&) = default;
+	string_wfile_on_FILE & operator=	(const	string_wfile_on_FILE &	) = default;	
+	string_wfile_on_FILE				(const	string_wfile_on_FILE &	) = default;
+	string_wfile_on_FILE & operator=	(		string_wfile_on_FILE &&) = default;
+	string_wfile_on_FILE				(		string_wfile_on_FILE &&) = default;
 
 		//MEMBERS
 	size_t read(wchar_t * buf, size_t size){
@@ -453,6 +461,10 @@ public:
 		//DEBUG_buffer(<<*this <<" - сконструирован из - " <<r);
 	}
 }; //CLASS simple_buffer
+typedef basic_simple_buffer<char> simple_buffer;
+typedef basic_simple_buffer<wchar_t> simple_wbuffer;
+typedef basic_simple_buffer<char16_t> simple_u16buffer;
+typedef basic_simple_buffer<char32_t> simple_u32buffer;
 
 /* итератор и конст_итератор отличаются тем, что разыменованный итератор можно изменять
  * да да, считанное из файла в буфера можно изменять
@@ -471,8 +483,7 @@ bool advance_or_end(_forward_stream_const_iterator<buf_t> & it,
 template<class buf_t> 
 void advance(_forward_stream_const_iterator<buf_t> & it, 
 	typename std::iterator_traits<_forward_stream_const_iterator<buf_t>>::difference_type);
-
-//
+	
 //{DEBUG _forward_stream_const_iterator
 template <typename buf_t>
 std::ostream & operator<<(std::ostream & str, const _forward_stream_const_iterator<buf_t> & b){
@@ -872,6 +883,10 @@ public:
 	my_t & operator=		(		my_t &&	) = delete;
 	basic_adressed_buffer	(		my_t &&	r)	: parent_t(static_cast<my_t&&>(r)),NLs(r.NLs){}	
 };
+typedef basic_adressed_buffer<char> adressed_buffer;
+typedef basic_adressed_buffer<wchar_t> adressed_wbuffer;
+typedef basic_adressed_buffer<char16_t> adressed_u16buffer;
+typedef basic_adressed_buffer<char32_t> adressed_u32buffer;
 
 template <typename ch_t> inline
 bool _NL_pair_lt(const pair<const ch_t *,linecol> & l, const pair<const ch_t *,linecol> & r){
@@ -1004,6 +1019,7 @@ private: //{
 	
 		//DATA DEFINES
 	file_type * _file;
+	bool need_del_file;
 	//bool _has_internal_file; //todo сделать internal file
 
 	/*
@@ -1059,8 +1075,9 @@ public:
 	 * и создает первый (internal) iterator
 	 */
 	explicit
-	forward_stream(file_type * f, typename buf_t::stream_data_type dat= typename buf_t::stream_data_type())
+	forward_stream(bool ndf, file_type * f, typename buf_t::stream_data_type dat= typename buf_t::stream_data_type())
 		: _file(f)
+		, need_del_file(ndf)
 		, _data(dat)
 	{
 		_bufs.push_back(buf_t(this,_file,typename buf_t::tail_type(),0));
@@ -1074,6 +1091,10 @@ public:
 		DEBUG_stream( << "forward_stream ("<<*this<<")- сконструирован" );
 	}
 	
+	explicit
+	forward_stream(file_type * f, typename buf_t::stream_data_type dat= typename buf_t::stream_data_type())
+		: forward_stream(false,f,dat){}
+
 	forward_stream() = delete;
 	
 	/*
@@ -1096,6 +1117,8 @@ public:
 		else
 			DEBUG_stream( <<"деструктирование потока идет упешно" );
 		DEBUG_stream( <<"forward_stream - закончили разрушаться" );
+		if(need_del_file)
+			delete _file;
 		//если потом начнут разрушаться итераторы - это пиздец
 	}
 
@@ -1151,6 +1174,14 @@ public:
 	{	return const_iterator();	}
 //}
 };//CLASS basic_stream_string
+typedef forward_stream<adressed_buffer> 	forward_adressed_stream;
+typedef forward_stream<adressed_wbuffer> 	forward_adressed_wstream;
+typedef forward_stream<adressed_u16buffer> 	forward_adressed_u16stream;
+typedef forward_stream<adressed_u32buffer> 	forward_adressed_u32stream;
+typedef forward_stream<simple_buffer> 	forward_simple_stream;
+typedef forward_stream<simple_wbuffer> 	forward_simple_wstream;
+typedef forward_stream<simple_u16buffer> 	forward_simple_u16stream;
+typedef forward_stream<simple_u32buffer> 	forward_simple_u32stream;
 
 }//namespace str
 namespace std{

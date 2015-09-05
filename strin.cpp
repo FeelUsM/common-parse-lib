@@ -1,10 +1,9 @@
 #include "strin.h"
 
 namespace str{
-	string_file_on_FILE 						FILEin(stdin);
-	forward_stream<basic_adressed_buffer<char>> STREAMin(&FILEin);
-	//интересно, чем следующие конструкции отличаются?
+	forward_adressed_stream STREAMin(true, new string_file_on_FILE(stdin));
+	int __unused_int = __set01(strin);
 #ifndef strin
-	forward_stream<basic_adressed_buffer<char>>::iterator & strin = STREAMin.iter();
+	forward_stream<adressed_buffer>::iterator & strin = STREAMin.iter();
 #endif
 }

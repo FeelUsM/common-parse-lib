@@ -1074,15 +1074,15 @@ int         ::= spcs[sign]spcs[:digit:]+
 .                                                                                                                   [w]char char16/32   stream_string     
 .                                                                           возвращаемое значение в случае  реализованность     
 название                аргументы               рег.выр.                    неудача переполнение    статистика использования
-int read_digit          (it*, int ss, int_t*)   [:digit:]                   1       -1(EOF)         1       OK
-int read_uint           (it*, int ss, int_t*)   [:digit:]+                  1       -1              1       OK
-int read_sign_uint      (it*, int ss, int_t*)   [sign][:digit:]+            1       -1                      OK
-int read_sign_s_uint    (it*, int ss, int_t*)   [sign]spcs[:digit:]+        1       -1              1       OK
-int read_int            (it*, int ss, int_t*)   spcs[sign]spcs[:digit:]+    1       -1              1       OK      OK
-int read_dec            (it*, int_t*)           int#[:digit:]=[0-9]         1       -1              1       OK      OK
-int read_hex            (it*, int_t*)           int#[:digit:]=[:xdigit:]    1       -1                      OK      OK
-int read_oct            (it*, int_t*)           int#[:digit:]=[0-7]         1       -1                      OK      OK
-int read_bin            (it*, int_t*)           int#[:digit:]=[01]          1       -1                      OK      OK
+int read_digit          (it&, int ss, int_t*)   [:digit:]                   1       -1(EOF)         1       OK
+int read_uint           (it&, int ss, int_t*)   [:digit:]+                  1       -1              1       OK
+int read_sign_uint      (it&, int ss, int_t*)   [sign][:digit:]+            1       -1                      OK
+int read_sign_s_uint    (it&, int ss, int_t*)   [sign]spcs[:digit:]+        1       -1              1       OK
+int read_int            (it&, int ss, int_t*)   spcs[sign]spcs[:digit:]+    1       -1              1       OK      OK
+int read_dec            (it&, int_t*)           int#[:digit:]=[0-9]         1       -1              1       OK      OK
+int read_hex            (it&, int_t*)           int#[:digit:]=[:xdigit:]    1       -1                      OK      OK
+int read_oct            (it&, int_t*)           int#[:digit:]=[0-7]         1       -1                      OK      OK
+int read_bin            (it&, int_t*)           int#[:digit:]=[01]          1       -1                      OK      OK
 */
 
 	/*

@@ -40,16 +40,23 @@ namespace str{
 	 *		analys(strin);
 	 *	}
 	 */
-	STRIN_EXTERN string_file_on_FILE 						FILEin(stdin);
-	STRIN_EXTERN forward_stream<basic_adressed_buffer<char>> 		STREAMin(&FILEin);
+	STRIN_EXTERN forward_adressed_stream STREAMin
+#ifdef one_source
+	(true, new string_file_on_FILE(stdin))
+#endif
+	;
 	//интересно, чем следующие конструкции отличаются?
 	#define	strin STREAMin.iter()
 	//STRIN_EXTERN forward_stream<str_FILE_buffer>::iterator & strin = STREAMin.internal_iterator();
-	int __set01(typename forward_stream<basic_adressed_buffer<char>>::iterator & it){
+	inline int __set01(typename forward_stream<adressed_buffer>::iterator & it){
 		set_linecol(it,linecol(0,1));
 		return 0;
 	}
-	int __unused_int = __set01(strin);
+	STRIN_EXTERN int __unused_int 
+#ifdef one_source
+	= __set01(strin)
+#endif
+	;
 
 	/*
 	 * считывает строку до перевода строки

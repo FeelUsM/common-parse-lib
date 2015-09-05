@@ -1,3 +1,10 @@
+/*
+ * преобразует файл реестра так, чтобы 
+ * на одной строке находился путь и имя значения
+ * а на другой строке - данные
+ * - для удобного поиска изменений при помощи утилиты diff
+ */
+
 #include <iostream>
 #include "forward_stream.h"
 #include "base_parse.h"
@@ -227,13 +234,11 @@ const char * read_all_reg(it_t & it){
 
 //можно делать указатели на итераторы
 int main2(int argc, const char * argv[]){
-	typename forward_stream<basic_adressed_buffer<char>>::iterator * pit;
-	basic_block_file_on_FILE<char> * pf;
-	forward_stream<basic_adressed_buffer<char>> * ps;
+	typename forward_adressed_stream::iterator * pit;
+	forward_adressed_stream * ps;
 	if(argc==2){
-		pf = new basic_block_file_on_FILE<char>(argv[1],"r");
-		ps = new forward_stream<basic_adressed_buffer<char>>(pf);
-		pit = &ps->iter();
+		ps = new forward_adressed_stream(true, new block_file_on_FILE(argv[1],"r"));
+		pit = &ps->iter();						//true - говорит о том, что поток сам удалит этот файл
 	}
 	else{
 		pit = &strin;
@@ -247,15 +252,13 @@ int main2(int argc, const char * argv[]){
 		dump(*pit,"");
 		return 1;
 	}
-	if(argc==2){
-		delete pf;
+	if(argc==2)
 		delete ps;
-	}
 	return 0;
 }
 
 //можно делать ссылки на итераторы, но это удобнее при вызове отдельной функции
-int submain(typename forward_stream<basic_adressed_buffer<char>>::iterator & it){
+int submain(typename forward_adressed_stream::iterator & it){
 	const char * err;
 	//dump(it,"dump:\n");
 	r_ifnot(err=read_all_reg(it)){
@@ -268,8 +271,8 @@ int submain(typename forward_stream<basic_adressed_buffer<char>>::iterator & it)
 }
 int main3(int argc, const char * argv[]){
 	if(argc==2){
-		basic_block_file_on_FILE<char> file(argv[1],"r");
-		forward_stream<basic_adressed_buffer<char>> stream(&file);
+		forward_adressed_stream stream(true, new block_file_on_FILE(argv[1],"r"));
+												//true - говорит о том, что поток сам удалит этот файл
 		return submain(stream.iter());
 	}
 	else{
@@ -279,35 +282,10 @@ int main3(int argc, const char * argv[]){
 	return 0;
 }
 
-//можно поток инициализировать разными файлами
-int main1(int argc, const char * argv[]){
-	basic_file_i<char> * pf;
-	if(argc==2)
-		pf = new basic_block_file_on_FILE<char>(argv[1],"r");
-	else
-		pf = &FILEin;
-	forward_stream<basic_adressed_buffer<char>> reg_stream(pf);
-	if(argc==1){
-		set_linecol(reg_stream.iter(),linecol(0,1));
-		start_read_line(reg_stream.iter());
-	}
-	const char * err;
-	//dump(reg_stream.internal_iterator(),"dump:\n");
-	r_ifnot(err=read_all_reg(reg_stream.iter())){
-		cerr << "на позиции " <<get_linecol(reg_stream.iter()) 
-			<<" произошла ошибка: " <<err <<endl;
-		dump(reg_stream.iter(),"");
-		return 1;
-	}
-	if(argc==2)
-		delete pf;
-	return 0;
-}
-
 int main(int argc, const char * argv[]){
 	if(argc>2){
 		cerr << "должно быть 0 или 1 аргументов";
 		return 2;
 	}
-	return main1(argc,argv);
+	return main3(argc,argv);
 }

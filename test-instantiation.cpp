@@ -150,7 +150,7 @@ int main()
 		basic_block_file_on_c_str<char> file(s);
 		buffer_t buffer(0, &file, buffer_t::tail_type(), 0);
 		forward_stream<buffer_t> str(&file);
-		atend(str.internal_iterator());
+		atend(str.iter());
 	}
 	catch(char * mes){
 		cerr << "ошибка: " << mes << endl;
