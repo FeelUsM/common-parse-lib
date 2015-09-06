@@ -42,25 +42,8 @@ template<typename ch_t>
 bool atend(ch_t * pc)
 {   return !*pc;    }
 
-/*
- * это для того, что бы  не писать типа
- * if(!(errcode=read_smpt(...)))
- * а писать r_if(errcode=read_smth(...))
- * по моему так удобней
- */
-#define r_if(expr)             if((expr)==0)
-#define r_while(expr)       while((expr)==0)
-#define r_ifnot(expr)           if(expr)
-#define r_whilenot(expr)     while(expr)
-//следующие используются совместно с read_wile и read_until
-#define rm_if(expr)            if((expr)>=0)     //типа рег. выр.  '.*' * - multiple -> m
-#define rm_while(expr)      while((expr)>=0)
-#define rm_ifnot(expr)         if((expr)<0)
-#define rm_whilenot(expr)   while((expr)<0)
-#define rp_if(expr)            if((expr)>0)      //типа рег. выр.  '.+' + - plus -> p
-#define rp_while(expr)      while((expr)>0)
-#define rp_ifnot(expr)         if((expr)<=0)
-#define rp_whilenot(expr)   while((expr)<=0)
+template<class it_t>
+using char_type = typename std::iterator_traits<it_t>::value_type;
 
 //{DEF_STRING
 /* использование этой фигни следующее:
@@ -96,9 +79,6 @@ struct name<char32_t>{\
 	operator const char32_t *(){ return s; }\
 };
 //}
-
-template<class it_t>
-using char_type = typename std::iterator_traits<it_t>::value_type;
 
 //{ === стандартные КЛАССЫ СИМВОЛОВ ===
 /* см. спраку: http://www.cplusplus.com/reference/cctype/
@@ -144,6 +124,10 @@ typedef basic_span<char> 	span;
 typedef basic_span<wchar_t> wspan;
 typedef basic_span<char16_t> u16span;
 typedef basic_span<char32_t> u32span;
+template<typename ch_t> inline
+basic_span<ch_t> make_span(const ch_t * ss){	return basic_span<ch_t>(ss);	}
+//template<typename ch_t> inline
+//basic_span<ch_t> make_span(const basic_span_string<ch_t> & str){	return basic_span<ch_t>(str);	}
 /*
  * при больших множествах идущих друг за другом символов (например span("abcdefghijklnABCDEFGHIJK")) проверять, 
  * равен ли заданный символ одному из данного множества, неоптимально
@@ -174,6 +158,10 @@ typedef basic_bispan<char> 	bispan;
 typedef basic_bispan<wchar_t> wbispan;
 typedef basic_bispan<char16_t> u16bispan;
 typedef basic_bispan<char32_t> u32bispan;
+template<typename ch_t> inline
+basic_bispan<ch_t> make_bispan(const ch_t * ss){	return basic_bispan<ch_t>(ss);	}
+//template<typename ch_t> inline
+//basic_bispan<ch_t> make_bispan(const basic_bispan_string<ch_t> & str){	return basic_bispan<ch_t>(str);	}
 
 /*
  * использовать следующие функции так: 
@@ -232,6 +220,27 @@ class basic_span_string{
 };
 
 //}
+
+/*
+ * это для того, что бы  не писать типа
+ * if(!(errcode=read_smpt(...)))
+ * а писать r_if(errcode=read_smth(...))
+ * по моему так удобней
+ */
+#define r_if(expr)             if((expr)==0)
+#define r_while(expr)       while((expr)==0)
+#define r_ifnot(expr)           if(expr)
+#define r_whilenot(expr)     while(expr)
+//следующие используются совместно с read_wile и read_until
+#define rm_if(expr)            if((expr)>=0)     //типа рег. выр.  '.*' * - multiple -> m
+#define rm_while(expr)      while((expr)>=0)
+#define rm_ifnot(expr)         if((expr)<0)
+#define rm_whilenot(expr)   while((expr)<0)
+#define rp_if(expr)            if((expr)>0)      //типа рег. выр.  '.+' + - plus -> p
+#define rp_while(expr)      while((expr)>0)
+#define rp_ifnot(expr)         if((expr)<=0)
+#define rp_whilenot(expr)   while((expr)<=0)
+
 /* ТАБЛИЧКА
 функции возвращают код ошибки
 при успешном прочтении итератор указывает на следующий символ после последнего прочитанного
