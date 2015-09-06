@@ -100,13 +100,12 @@ struct name<char32_t>{\
 template<class it_t>
 using char_type = typename std::iterator_traits<it_t>::value_type;
 
-/* === стандартные КЛАССЫ СИМВОЛОВ ===
+//{ === стандартные КЛАССЫ СИМВОЛОВ ===
+/* см. спраку: http://www.cplusplus.com/reference/cctype/
  * его я реализую сам, а не использую из <ctype.h> или <wctype.h>, 
  * т.к. функции оттуда зависят от локали
- * см. спраку: http://www.cplusplus.com/reference/cctype/
  * но это не будет работать с ASCII несовместимой (т.е. по первым 128 символам) кодировкой
  */
-//{ is_smth(c)
 template<typename ch_t> inline bool is_cntr(ch_t c)    {   return c>=0 && c<0x20 || c==0x7f;   }
 template<typename ch_t> inline bool is_blank(ch_t c)   {   return c==' ' || c=='\t';   }
 template<typename ch_t> inline bool is_space(ch_t c)   {   return c==' ' || c=='\t' || c=='\n' || c=='\r' || c=='\f' || c=='\v';   }
@@ -119,19 +118,32 @@ template<typename ch_t> inline bool is_alnum(ch_t c)   {   return is_alpha(c) ||
 template<typename ch_t> inline bool is_punct(ch_t c)   {   return c>='!' && c<='/' || c>=':' && c<='@' || c>='[' && c<='`' || c>='{' && c<='~';    }
 template<typename ch_t> inline bool is_graph(ch_t c)   {   return c>='!' && c<='~';    }
 template<typename ch_t> inline bool is_print(ch_t c)   {   return c>=' ' && c<='~';    }
-//}
 
 /*
  * когда в функции read_while_charclass и until_charclass попадает объект span
- * они вызывают функции стандартной библиотеки strspn, strcspn, wcsspn, wcscspn
+ * они вызывают функции стандартной библиотеки strspn, strcspn, wcsspn, wcscspn 
+ * (по крайней мере так будет, когда функции будут специализированы)
  * т.е. span - строка набора символов
  * для консистентности read_charclass, read_charclass_s и read_charclass_c также могут принимать это объект
  */
 template<typename ch_t>
-struct span{
+class basic_span_string;
+typedef basic_span_string<char> span_string;
+typedef basic_span_string<wchar_t> wspan_string;
+typedef basic_span_string<char16_t> u16span_string;
+typedef basic_span_string<char32_t> u32span_string;
+
+template<typename ch_t>
+struct basic_span{
 	const ch_t * s;
-	span(const ch_t * ss) :s(ss) {}
+	basic_span(const ch_t * ss) :s(ss) {}
+	//basic_span_string<ch_t> str(){	return s;	}
+	//explicit basic_span(const basic_span_string<ch_t> & str) :s(str.c_str()) {}
 };
+typedef basic_span<char> 	span;
+typedef basic_span<wchar_t> wspan;
+typedef basic_span<char16_t> u16span;
+typedef basic_span<char32_t> u32span;
 /*
  * при больших множествах идущих друг за другом символов (например span("abcdefghijklnABCDEFGHIJK")) проверять, 
  * равен ли заданный символ одному из данного множества, неоптимально
@@ -145,53 +157,81 @@ struct span{
  * не желательно, что бы диапозоны пересекали точку 0 и точку изменения знака
  */
 template<typename ch_t>
-struct bispan{
-	const ch_t * s;
-	bispan(const ch_t * ss) :s(ss) {}
-};
+class basic_bispan_string;
+typedef basic_bispan_string<char> bispan_string;
+typedef basic_bispan_string<wchar_t> wbispan_string;
+typedef basic_bispan_string<char16_t> u16bispan_string;
+typedef basic_bispan_string<char32_t> u32bispan_string;
 
-//{ spn_smth
-template<typename ch_t> inline bispan<ch_t>     spn_cntr() ;
-template<typename ch_t> inline span <ch_t>  spn_blank();
-template<typename ch_t> inline span <ch_t>  spn_space();
-template<typename ch_t> inline bispan <ch_t>    spn_upper();
-template<typename ch_t> inline bispan<ch_t>     spn_lower();
-template<typename ch_t> inline bispan<ch_t>     spn_alpha();
-template<typename ch_t> inline bispan<ch_t>     spn_digit();
-template<typename ch_t> inline bispan<ch_t>     spn_xdigit();
-template<typename ch_t> inline bispan<ch_t>     spn_alnum();
-template<typename ch_t> inline bispan<ch_t>     spn_punct();
-template<typename ch_t> inline bispan<ch_t>     spn_graph();
-template<typename ch_t> inline bispan<ch_t>     spn_print();
+template<typename ch_t>
+struct basic_bispan{
+	const ch_t * s;
+	basic_bispan(const ch_t * ss) :s(ss) {}
+	//basic_bispan_string<ch_t> str(){	return s;	}
+	//explicit basic_bispan(const basic_bispan_string<ch_t> & str) :s(str.c_str()) {}
+};
+typedef basic_bispan<char> 	bispan;
+typedef basic_bispan<wchar_t> wbispan;
+typedef basic_bispan<char16_t> u16bispan;
+typedef basic_bispan<char32_t> u32bispan;
 
 /*
  * использовать следующие функции так: 
- * read_charclass(it,spn_smth<тип>())
- * не забывайте скобочки после spn_smth<тип>
+ * read_charclass(it,make_spn_smth<тип>())
+ * или read_charclass(it,spn_smth)
  */
+template<typename ch_t> inline basic_bispan<ch_t>     make_spn_cntr() ;
+template<typename ch_t> inline basic_span <ch_t>  make_spn_blank();
+template<typename ch_t> inline basic_span <ch_t>  make_spn_space();
+template<typename ch_t> inline basic_bispan <ch_t>    make_spn_upper();
+template<typename ch_t> inline basic_bispan<ch_t>     make_spn_lower();
+template<typename ch_t> inline basic_bispan<ch_t>     make_spn_alpha();
+template<typename ch_t> inline basic_bispan<ch_t>     make_spn_digit();
+template<typename ch_t> inline basic_bispan<ch_t>     make_spn_xdigit();
+template<typename ch_t> inline basic_bispan<ch_t>     make_spn_alnum();
+template<typename ch_t> inline basic_bispan<ch_t>     make_spn_punct();
+template<typename ch_t> inline basic_bispan<ch_t>     make_spn_graph();
+template<typename ch_t> inline basic_bispan<ch_t>     make_spn_print();
 
-#define DEFSPANS(ch_t,prefix)\
-template<> inline bispan<ch_t>  spn_cntr  <ch_t>()   {   return bispan<ch_t>(prefix##"\1\x20\x7f\x7f\0");   }\
-template<> inline span  <ch_t>  spn_blank <ch_t>()   {   return span  <ch_t>(prefix##" \t");   }\
-template<> inline span  <ch_t>  spn_space <ch_t>()   {   return span  <ch_t>(prefix##" \t\n\r\f\v");   }\
-template<> inline bispan<ch_t>  spn_upper <ch_t>()   {   return bispan<ch_t>(prefix##"AZ\0");    }\
-template<> inline bispan<ch_t>  spn_lower <ch_t>()   {   return bispan<ch_t>(prefix##"az\0");    }\
-template<> inline bispan<ch_t>  spn_alpha <ch_t>()   {   return bispan<ch_t>(prefix##"azAZ\0");    }\
-template<> inline bispan<ch_t>  spn_digit <ch_t>()   {   return bispan<ch_t>(prefix##"09\0");    }\
-template<> inline bispan<ch_t>  spn_xdigit<ch_t>()   {   return bispan<ch_t>(prefix##"09afAF\0");    }\
-template<> inline bispan<ch_t>  spn_alnum <ch_t>()   {   return bispan<ch_t>(prefix##"azAZ09\0");    }\
-template<> inline bispan<ch_t>  spn_punct <ch_t>()   {   return bispan<ch_t>(prefix##"!/:@[`{~\0");    }\
-template<> inline bispan<ch_t>  spn_graph <ch_t>()   {   return bispan<ch_t>(prefix##"!~\0"); }\
-template<> inline bispan<ch_t>  spn_print <ch_t>()   {   return bispan<ch_t>(prefix##" ~\0"); }
+#define DEFSPANS(ch_t,s_prefix,prefix)\
+template<> inline basic_bispan<ch_t>  make_spn_cntr  <ch_t>()   {   return basic_bispan<ch_t>(s_prefix##"\1\x20\x7f\x7f\0");   }\
+template<> inline basic_span  <ch_t>  make_spn_blank <ch_t>()   {   return basic_span  <ch_t>(s_prefix##" \t");   }\
+template<> inline basic_span  <ch_t>  make_spn_space <ch_t>()   {   return basic_span  <ch_t>(s_prefix##" \t\n\r\f\v");   }\
+template<> inline basic_bispan<ch_t>  make_spn_upper <ch_t>()   {   return basic_bispan<ch_t>(s_prefix##"AZ\0");    }\
+template<> inline basic_bispan<ch_t>  make_spn_lower <ch_t>()   {   return basic_bispan<ch_t>(s_prefix##"az\0");    }\
+template<> inline basic_bispan<ch_t>  make_spn_alpha <ch_t>()   {   return basic_bispan<ch_t>(s_prefix##"azAZ\0");    }\
+template<> inline basic_bispan<ch_t>  make_spn_digit <ch_t>()   {   return basic_bispan<ch_t>(s_prefix##"09\0");    }\
+template<> inline basic_bispan<ch_t>  make_spn_xdigit<ch_t>()   {   return basic_bispan<ch_t>(s_prefix##"09afAF\0");    }\
+template<> inline basic_bispan<ch_t>  make_spn_alnum <ch_t>()   {   return basic_bispan<ch_t>(s_prefix##"azAZ09\0");    }\
+template<> inline basic_bispan<ch_t>  make_spn_punct <ch_t>()   {   return basic_bispan<ch_t>(s_prefix##"!/:@[`{~\0");    }\
+template<> inline basic_bispan<ch_t>  make_spn_graph <ch_t>()   {   return basic_bispan<ch_t>(s_prefix##"!~\0"); }\
+template<> inline basic_bispan<ch_t>  make_spn_print <ch_t>()   {   return basic_bispan<ch_t>(s_prefix##" ~\0"); }\
+prefix##bispan	prefix##spn_cntr 	= make_spn_cntr	  <ch_t>();\
+prefix##span	prefix##spn_blabk 	= make_spn_blank  <ch_t>();\
+prefix##span	prefix##spn_space 	= make_spn_space  <ch_t>();\
+prefix##bispan	prefix##spn_upper 	= make_spn_upper  <ch_t>();\
+prefix##bispan	prefix##spn_lower 	= make_spn_lower  <ch_t>();\
+prefix##bispan	prefix##spn_alpha 	= make_spn_alpha  <ch_t>();\
+prefix##bispan	prefix##spn_digit 	= make_spn_digit  <ch_t>();\
+prefix##bispan	prefix##spn_xdigit 	= make_spn_xdigit <ch_t>();\
+prefix##bispan	prefix##spn_alnum 	= make_spn_alnum  <ch_t>();\
+prefix##bispan	prefix##spn_punct 	= make_spn_punct  <ch_t>();\
+prefix##bispan	prefix##spn_graph 	= make_spn_graph  <ch_t>();\
+prefix##bispan	prefix##spn_print 	= make_spn_print  <ch_t>();
 
-DEFSPANS(char,)
-DEFSPANS(wchar_t,L)
-DEFSPANS(char16_t,u)
-DEFSPANS(char32_t,U)
+DEFSPANS(char,,)
+DEFSPANS(wchar_t,L,w)
+DEFSPANS(char16_t,u,u16)
+DEFSPANS(char32_t,U,u32)
 
 #undef DEFSPANS
-//}
 
+template<typename ch_t>
+class basic_span_string{
+	
+};
+
+//}
 /* ТАБЛИЧКА
 функции возвращают код ошибки
 при успешном прочтении итератор указывает на следующий символ после последнего прочитанного
@@ -403,7 +443,7 @@ int read_until_pattern_s    (it&, pf, pstr*, rez*)  .*( )       -(1+len)    len 
 
 	template<typename it_t> inline
 	int 
-	read_charclass(it_t & it, span<char_type<it_t>> s){
+	read_charclass(it_t & it, basic_span<char_type<it_t>> s){
 		if(atend(it)) return -1;
 		while(*s.s)
 			if(*it==*s.s++){
@@ -415,7 +455,7 @@ int read_until_pattern_s    (it&, pf, pstr*, rez*)  .*( )       -(1+len)    len 
 		
 	template<typename it_t> inline
 	int 
-	read_charclass(it_t & it, bispan<char_type<it_t>> s){
+	read_charclass(it_t & it, basic_bispan<char_type<it_t>> s){
 		if(atend(it)) return -1;
 		while(*s.s)
 			if(*s.s++<=*it && *it<=*s.s++){
@@ -443,7 +483,7 @@ int read_until_pattern_s    (it&, pf, pstr*, rez*)  .*( )       -(1+len)    len 
 
 	template<typename it_t, typename str_t> inline
 	int 
-	read_charclass_s(it_t & it, span<char_type<it_t>> s, str_t * pstr){
+	read_charclass_s(it_t & it, basic_span<char_type<it_t>> s, str_t * pstr){
 		if(atend(it)) return -1;
 		while(*s.s)
 			if(*it == *s.s++){
@@ -455,7 +495,7 @@ int read_until_pattern_s    (it&, pf, pstr*, rez*)  .*( )       -(1+len)    len 
 		
 	template<typename it_t, typename str_t> inline
 	int 
-	read_charclass_s(it_t & it, bispan<char_type<it_t>> s, str_t * pstr){
+	read_charclass_s(it_t & it, basic_bispan<char_type<it_t>> s, str_t * pstr){
 		if(atend(it)) return -1;
 		while(*s.s)
 			if(*s.s++<=*it && *it<=*s.s++){
@@ -483,7 +523,7 @@ int read_until_pattern_s    (it&, pf, pstr*, rez*)  .*( )       -(1+len)    len 
 	
 	template<typename it_t, typename ch_t> inline
 	int 
-	read_charclass_c(it_t & it, span<char_type<it_t>> s, ch_t * pch){
+	read_charclass_c(it_t & it, basic_span<char_type<it_t>> s, ch_t * pch){
 		if(atend(it)) return -1;
 		while(*s.s)
 			if(*it == *s.s++){
@@ -495,7 +535,7 @@ int read_until_pattern_s    (it&, pf, pstr*, rez*)  .*( )       -(1+len)    len 
 		
 	template<typename it_t, typename ch_t> inline
 	int 
-	read_charclass_c(it_t & it, bispan<char_type<it_t>> s, ch_t * pch){
+	read_charclass_c(it_t & it, basic_bispan<char_type<it_t>> s, ch_t * pch){
 		if(atend(it)) return -1;
 		while(*s.s)
 			if(*s.s++<=*it && *it<=*s.s++){
@@ -565,7 +605,7 @@ int read_until_pattern_s    (it&, pf, pstr*, rez*)  .*( )       -(1+len)    len 
 	
 			template<typename it_t> inline
 			int 
-			read_until_charclass(it_t & it, span<char_type<it_t>> s){
+			read_until_charclass(it_t & it, basic_span<char_type<it_t>> s){
 				int i=0;
 				while(!atend(it)){
 					const char_type<it_t> * ss=s.s;
@@ -580,7 +620,7 @@ int read_until_pattern_s    (it&, pf, pstr*, rez*)  .*( )       -(1+len)    len 
 
 			template<typename it_t> inline
 			int 
-			read_until_charclass(it_t & it, bispan<char_type<it_t>> s){
+			read_until_charclass(it_t & it, basic_bispan<char_type<it_t>> s){
 				int i=0;
 				while(!atend(it)){
 					const char_type<it_t> * ss=s.s;
@@ -609,7 +649,7 @@ int read_until_pattern_s    (it&, pf, pstr*, rez*)  .*( )       -(1+len)    len 
 	
 			template<typename it_t> inline
 			int 
-			read_while_charclass(it_t & it, span<char_type<it_t>> s){
+			read_while_charclass(it_t & it, basic_span<char_type<it_t>> s){
 				int i=0;
 				while(!atend(it)){
 					const char_type<it_t> * ss=s.s;
@@ -627,7 +667,7 @@ int read_until_pattern_s    (it&, pf, pstr*, rez*)  .*( )       -(1+len)    len 
 
 			template<typename it_t> inline
 			int 
-			read_while_charclass(it_t & it, bispan<char_type<it_t>> s){
+			read_while_charclass(it_t & it, basic_bispan<char_type<it_t>> s){
 				int i=0;
 				while(!atend(it)){
 					const char_type<it_t> * ss=s.s;
@@ -690,7 +730,7 @@ int read_until_pattern_s    (it&, pf, pstr*, rez*)  .*( )       -(1+len)    len 
 
 			template<typename it_t, typename str_t> inline
 			int 
-			read_until_charclass(it_t & it, span<char_type<it_t>> s, str_t * pstr){
+			read_until_charclass(it_t & it, basic_span<char_type<it_t>> s, str_t * pstr){
 				int i=0;
 				while(!atend(it)){
 					const char_type<it_t> * ss=s.s;
@@ -705,7 +745,7 @@ int read_until_pattern_s    (it&, pf, pstr*, rez*)  .*( )       -(1+len)    len 
 
 			template<typename it_t, typename str_t> inline
 			int 
-			read_until_charclass(it_t & it, bispan<char_type<it_t>> s, str_t * pstr){
+			read_until_charclass(it_t & it, basic_bispan<char_type<it_t>> s, str_t * pstr){
 				int i=0;
 				while(!atend(it)){
 					const char_type<it_t> * ss=s.s;
@@ -734,7 +774,7 @@ int read_until_pattern_s    (it&, pf, pstr*, rez*)  .*( )       -(1+len)    len 
 
 			template<typename it_t, typename str_t> inline
 			int 
-			read_while_charclass(it_t & it, span<char_type<it_t>> s, str_t * pstr){
+			read_while_charclass(it_t & it, basic_span<char_type<it_t>> s, str_t * pstr){
 				int i=0;
 				while(!atend(it)){
 					const char_type<it_t> * ss=s.s;
@@ -752,7 +792,7 @@ int read_until_pattern_s    (it&, pf, pstr*, rez*)  .*( )       -(1+len)    len 
 
 			template<typename it_t, typename str_t> inline
 			int 
-			read_while_charclass(it_t & it, bispan<char_type<it_t>> s, str_t * pstr){
+			read_while_charclass(it_t & it, basic_bispan<char_type<it_t>> s, str_t * pstr){
 				int i=0;
 				while(!atend(it)){
 					const char_type<it_t> * ss=s.s;
@@ -931,7 +971,7 @@ int read_b_charclass_c      (it&, is, pc*)      [:blank:][ ]    -1          0 и
 	read_line(it_t & it, str_t * ps){
 		typedef char_type<it_t> ch_t;
 		int err;
-		if((err=read_until_charclass(it,span<ch_t>(CRLF<ch_t>().s),ps))<0)
+		if((err=read_until_charclass(it,basic_span<ch_t>(CRLF<ch_t>().s),ps))<0)
 			return err==-1 ? -1 : -err-1;
 		else{
 			*ps +=(ch_t)'\n';
@@ -944,7 +984,7 @@ int read_b_charclass_c      (it&, is, pc*)      [:blank:][ ]    -1          0 и
 	read_line(it_t & it){
 		typedef char_type<it_t> ch_t;
 		int err;
-		if((err=read_until_charclass(it,span<ch_t>(CRLF<ch_t>().s)))<0)
+		if((err=read_until_charclass(it,basic_span<ch_t>(CRLF<ch_t>().s)))<0)
 			return err==-1 ? -1 : -err-1;
 		else
 			return err+1;
@@ -961,7 +1001,7 @@ int read_b_charclass_c      (it&, is, pc*)      [:blank:][ ]    -1          0 и
 		typedef char_type<it_t> ch_t;
 		read_line(it);
 		ch_t c;
-		r_ifnot(read_charclass_c(it,span<ch_t>(CRLF<ch_t>().s),&c))
+		r_ifnot(read_charclass_c(it,basic_span<ch_t>(CRLF<ch_t>().s),&c))
 			return -1;
 		if(c==(ch_t)'\n')
 			return 0;
@@ -972,13 +1012,13 @@ int read_b_charclass_c      (it&, is, pc*)      [:blank:][ ]    -1          0 и
 	template<typename it_t> inline
 	int 
 	read_spc(it_t & it){
-		return read_charclass(it,spn_space<char_type<it_t>>());
+		return read_charclass(it,make_spn_space<char_type<it_t>>());
 	}
 	
 	template<typename it_t> inline
 	int 
 	read_spcs(it_t & it){
-		return read_while_charclass(it,spn_space<char_type<it_t>>());
+		return read_while_charclass(it,make_spn_space<char_type<it_t>>());
 	}
 
 	template<typename it_t, typename ch_t> inline
@@ -1019,13 +1059,13 @@ int read_b_charclass_c      (it&, is, pc*)      [:blank:][ ]    -1          0 и
 	template<typename it_t> inline
 	int 
 	read_bln(it_t & it){
-		return read_charclass(it,spn_blank<char_type<it_t>>());
+		return read_charclass(it,make_spn_blank<char_type<it_t>>());
 	}
 	
 	template<typename it_t> inline
 	int 
 	read_blns(it_t & it){
-		return read_while_charclass(it,spn_blank<char_type<it_t>>());
+		return read_while_charclass(it,make_spn_blank<char_type<it_t>>());
 	}
 
 	template<typename it_t, typename ch_t> inline
@@ -1083,7 +1123,7 @@ int read_dec            (it&, int_t*)           int#[:digit:]=[0-9]         1   
 int read_hex            (it&, int_t*)           int#[:digit:]=[:xdigit:]    1       -1                      OK      OK
 int read_oct            (it&, int_t*)           int#[:digit:]=[0-7]         1       -1                      OK      OK
 int read_bin            (it&, int_t*)           int#[:digit:]=[01]          1       -1                      OK      OK
-*/
+ */
 
 	/*
 	 * считывает 1 цифру в заданной системе счисления (СС) в ASCII-совместимой кодировке

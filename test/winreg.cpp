@@ -6,10 +6,10 @@
  */
 
 #include <iostream>
-#include "forward_stream.h"
-#include "base_parse.h"
+#include "../forward_stream.h"
+#include "../base_parse.h"
 #define one_source
-#include "strin.h"
+#include "../strin.h"
 
 using namespace str;
 using std::cout;
@@ -20,8 +20,8 @@ template <class it_t>
 void dump(it_t tmp, const char * mes){
 	string s;
 	read_fix_length(tmp,50,&s);
-	cerr <<mes <<dump(s.c_str(),50) <<endl;
-	//это не реекурсия, это в forward_stream.h определено для дебага, и здесь тоже пригодилось
+	cerr <<mes <<dump(s.c_str()) <<endl;
+	//это не рекурсия, это в forward_stream.h определено для дебага, и здесь тоже пригодилось
 }
 
 template <class it_t>
@@ -46,7 +46,7 @@ const char * read_file(it_t & it, string * ps){
 		*ps +='"';
 		while(true){
 			int err;
-			rm_ifnot(err=read_until_charclass(it,span<char>("\"\\"),ps)<0)
+			rm_ifnot(err=read_until_charclass(it,span("\"\\"),ps)<0)
 				return "неожиданный конец файла";
 			char c;
 			r_ifnot(err=read_c(it,&c))
@@ -81,7 +81,7 @@ const char * read_string(it_t & it, string * ps){
 	*ps +='"';
 	while(true){
 		int err;
-		rm_ifnot(err=read_until_charclass(it,span<char>("\"\\"),ps)<0)
+		rm_ifnot(err=read_until_charclass(it,span("\"\\"),ps)<0)
 			return "неожиданный конец файла";
 		//cerr <<"read_until_charclass = " <<err <<endl;
 		//cerr << ps->size() <<endl;
@@ -121,11 +121,11 @@ const char * read_hex(it_t & it, string * ps){
 	*ps += "hex";
 	r_if(read_fix_char(it,'(')){
 		*ps +='(';
-		r_ifnot(read_charclass_s(it,spn_xdigit<char>(),ps))
+		r_ifnot(read_charclass_s(it,spn_xdigit,ps))
 			return "ожидалась шестначцатеричная цифра";
 		//[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\.NETFramework\v2.0.50727\NGenService\State]
 		//"LastSuccess"=hex(b):6e,fe,f7,58,df,ff,d1,08
-		r_while(read_charclass_s(it,spn_xdigit<char>(),ps))
+		r_while(read_charclass_s(it,spn_xdigit,ps))
 			;
 		//[HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\Control\Class\{4d36e96e-e325-11ce-bfc1-08002be10318}\Configuration\Driver\MODES]
 		//@=hex(200000):
@@ -144,11 +144,11 @@ const char * read_hex(it_t & it, string * ps){
 				return "ожидался перевод строки";
 			read_blns(it);
 		}
-		r_ifnot(read_charclass_s(it,spn_xdigit<char>(),ps))
+		r_ifnot(read_charclass_s(it,spn_xdigit,ps))
 			return "ожидалась шестнадцатеричная цифра";
-		r_ifnot(read_charclass_s(it,spn_xdigit<char>(),ps))
+		r_ifnot(read_charclass_s(it,spn_xdigit,ps))
 			return "ожидалась шестнадцатеричная цифра";
-	}r_while(read_charclass_s(it,span<char>(","),ps));//read_fix_char_s нету, а read_charclass_s есть
+	}r_while(read_charclass_s(it,span(","),ps));//read_fix_char_s нету, а read_charclass_s есть
 	r_ifnot(read_fix_str(it,"\r\n"))
 		return "ожидался перевод строки";
 	return 0;
@@ -161,7 +161,7 @@ const char * read_dword(it_t & it, string * ps){
 		return "ожидалась строка 'dword:'";
 	*ps += "dword:";
 	for(int i=0; i<8; i++)
-		r_ifnot(read_charclass_s(it,spn_xdigit<char>(),ps))
+		r_ifnot(read_charclass_s(it,spn_xdigit,ps))
 			return "ожидалась шестнадцатеричная цифра";
 	r_ifnot(read_fix_str(it,"\r\n"))
 		return "ожидался перевод строки";

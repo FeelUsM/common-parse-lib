@@ -4,7 +4,7 @@
  */
 
 #define one_source//что бы не линковать strin.cpp
-#include "strin.h"
+#include "../strin.h"
 
 /*
  * я тут обратил внимание, что для этого калькулятора вполне достаточно input итераторов
@@ -45,7 +45,7 @@ const char * read_mul(it_t & it, double * prez){
 		return err;
 	while(true){
 		ch_t zn;
-		r_ifnot(read_s_charclass_c(it,span<ch_t>(md<ch_t>()),&zn))//не для char работать не будет
+		r_ifnot(read_s_charclass_c(it,basic_span<ch_t>(md<ch_t>()),&zn))
 			return 0;
 		double x;
 		r_ifnot(err=read_expr(it,&x))
@@ -66,7 +66,7 @@ const char * read_sum(it_t & it, double * prez){
 		return err;
 	while(true){
 		ch_t zn;
-		r_ifnot(read_s_charclass_c(it,span<ch_t>(pm<ch_t>()),&zn))
+		r_ifnot(read_s_charclass_c(it,basic_span<ch_t>(pm<ch_t>()),&zn))
 			return 0;
 		double x;
 		r_ifnot(err = read_mul(it,&x))
