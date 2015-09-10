@@ -11,10 +11,7 @@
 /*
 todo:
 перекодировка
-вычисление строки-столбца по итератору
 файлы на фаловых дескрипторах unix
-
-internal_file и конструкоры
 */
 
 #include <stdio.h>	//для файлов
@@ -38,6 +35,19 @@ using std::pair;
 using std::make_pair;
 using std::swap;
 
+#define DEBUG_fatal(MES)	(std::cerr <<"--------ОШИБКА В ДЕСТРУКТОРЕ: " MES <<std::endl)//никогда не выключать
+#define DEBUG_iterator(MES)	//(std::cerr MES <<std::endl)//итераторы: создание, удаление и прыжки между буферами
+#define DEBUG_buffer(MES)	//(std::cerr MES <<std::endl)//простой буфер: создание и удаление валидных
+#define DEBUG_addrs(MES)	//(std::cerr MES <<std::endl)//адресуемые буферы: создания и изменения адресов
+#define DEBUG_stream(MES)	//(std::cerr MES <<std::endl)//поток и его внутренний итератор
+
+#define COPYING_DECL(type)\
+	my_t & operator=(const	my_t & ) = type;\
+	constructor		(const	my_t & ) = type;\
+	my_t & operator=(		my_t &&) = type;\
+	constructor		(		my_t &&) = type;
+
+//{ debug declarations
 struct hex{
 	const void * x;
 	hex(const void * m):x(m){}
@@ -79,12 +89,6 @@ std::ostream & operator<<(std::ostream & str, basic_dump<ch_t> d){
 	return str;
 }
 
-#define DEBUG_fatal(MES)	(std::cerr <<"--------ОШИБКА В ДЕСТРУКТОРЕ: " MES <<std::endl)//никогда не выключать
-#define DEBUG_iterator(MES)	//(std::cerr MES <<std::endl)//итераторы: создание, удаление и прыжки между буферами
-#define DEBUG_buffer(MES)	//(std::cerr MES <<std::endl)//простой буфер: создание и удаление валидных
-#define DEBUG_addrs(MES)	//(std::cerr MES <<std::endl)//адресуемые буферы: создания и изменения адресов
-#define DEBUG_stream(MES)	//(std::cerr MES <<std::endl)//поток и его внутренний итератор
-
 class stream_exception : public std::exception
 {
 	string _what;
@@ -97,6 +101,7 @@ template<typename X> inline//X - string или const char *
 void my_assert(bool b, X x){
 	if(!b)	throw stream_exception(string("АВАРИЙНОЕ ИСКЛЮЧЕНИЕ В FORWARD_STREAM_H: ")+x);
 }
+//}
 
 // ============ ФАЙЛЫ ============
 // ----****----
@@ -105,15 +110,15 @@ void my_assert(bool b, X x){
 //interface
 template <typename ch_t>
 class basic_file_i{
+#define constructor basic_file_i
+typedef basic_file_i<ch_t> my_t;
 public:
-	basic_file_i & operator=	(const	basic_file_i & ) = default;	
-	basic_file_i				(const	basic_file_i & ) = default;
-	basic_file_i & operator=	(		basic_file_i &&) = default;
-	basic_file_i				(		basic_file_i &&) = default;
-	basic_file_i() = default;
-	virtual ~basic_file_i() = default;
+	COPYING_DECL(default);
+	constructor() = default;
+	virtual ~constructor() = default;
 	virtual size_t read(ch_t * buf, size_t size) =0;
 	virtual bool eof() =0;
+#undef constructor
 };
 
 // ----****----
@@ -124,19 +129,15 @@ template <typename ch_t>
 class basic_block_file_on_c_str
 	: public basic_file_i<ch_t>
 {
+#define constructor basic_block_file_on_c_str
+typedef basic_block_file_on_c_str<ch_t> my_t;
 	ch_t * _file;
 public:
-		//CONSTRUCTION DESTRUCTION
-	basic_block_file_on_c_str(ch_t * str)	: _file(str)	{	}
-	basic_block_file_on_c_str() = delete;
-	~basic_block_file_on_c_str() = default;
-	
-		//COPYING
-	//файлы можно копировать как хочешь ибо они не содержат буферов
-	basic_block_file_on_c_str & operator=	(const	basic_block_file_on_c_str &	) = default;	
-	basic_block_file_on_c_str				(const	basic_block_file_on_c_str &	) = default;
-	basic_block_file_on_c_str & operator=	(		basic_block_file_on_c_str &&) = default;
-	basic_block_file_on_c_str				(		basic_block_file_on_c_str &&) = default;
+		//CONSTRUCTION DESTRUCTION COPYING
+	constructor(ch_t * str)	: _file(str)	{	}
+	constructor() : _file(0){}
+	~constructor() = default;
+	COPYING_DECL(default);
 	
 		//MEMBERS
 	size_t read(ch_t * buf, size_t size){
@@ -151,6 +152,7 @@ public:
 	bool eof(){
 		return !*_file;
 	}
+#undef constructor
 };
 typedef basic_block_file_on_c_str<char> block_file_on_c_str;
 typedef basic_block_file_on_c_str<wchar_t> block_wfile_on_c_str;
@@ -165,25 +167,21 @@ template <typename ch_t>
 class basic_block_file_on_FILE
 	: public basic_file_i<ch_t>
 {
+#define constructor basic_block_file_on_FILE
+typedef basic_block_file_on_FILE<ch_t> my_t;
 	FILE * _file;
 public:
-		//CONSTRUCTION DESTRUCTION
-	basic_block_file_on_FILE(const char * name, const char * mode){
+		//CONSTRUCTION DESTRUCTION COPYING
+	constructor(const char * name, const char * mode){
 		_file = fopen(name,mode);
 		my_assert(_file,"не смог открыть файл");
 		my_assert(!setvbuf(_file,NULL,_IONBF,0),"не получилось отключить буферизацию FILE");
 	}
-	basic_block_file_on_FILE() = delete;
-	~basic_block_file_on_FILE(){
+	constructor() : _file(0){}
+	~constructor(){
 		fclose(_file);
 	}
-	
-		//COPYING
-	//файлы можно копировать как хочешь ибо они не содержат буферов
-	basic_block_file_on_FILE & operator=	(const	basic_block_file_on_FILE &	) = default;	
-	basic_block_file_on_FILE				(const	basic_block_file_on_FILE &	) = default;
-	basic_block_file_on_FILE & operator=	(		basic_block_file_on_FILE &&) = default;
-	basic_block_file_on_FILE				(		basic_block_file_on_FILE &&) = default;
+	COPYING_DECL(default);
 	
 		//MEMBERS
 	size_t read(ch_t * buf, size_t size){
@@ -197,6 +195,7 @@ public:
 	FILE * file(){
 		return _file;
 	}
+#undef constructor
 };
 typedef basic_block_file_on_FILE<char> block_file_on_FILE;
 typedef basic_block_file_on_FILE<wchar_t> block_wfile_on_FILE;
@@ -210,30 +209,26 @@ typedef basic_block_file_on_FILE<char32_t> block_u32file_on_FILE;
 class string_file_on_FILE
 	: public basic_file_i<char>
 {
+#define constructor string_file_on_FILE
+typedef string_file_on_FILE my_t;
 	FILE * _file;
 	bool external;
 	bool init = false;
 public:
-		//CONSTRUCTION DESTRUCTION
-	string_file_on_FILE(const char * name, const char * mode)	: external(false)	{
+		//CONSTRUCTION DESTRUCTION COPYING
+	constructor(const char * name, const char * mode)	: external(false)	{
 		_file = fopen(name,mode);
 		my_assert(_file,"не смог открыть файл");
 	}
-	string_file_on_FILE(FILE * f)	: _file(f)	, external(true) {
+	constructor(FILE * f)	: _file(f)	, external(true) {
 	}
 
-	string_file_on_FILE() = delete;
-	~string_file_on_FILE(){
+	constructor() : _file(0){}
+	~constructor(){
 		if(external)	return;
 		fclose(_file);
 	}
-
-		//COPYING
-	//файлы можно копировать как хочешь ибо они не содержат буферов
-	string_file_on_FILE & operator=	(const	string_file_on_FILE &	) = default;	
-	string_file_on_FILE				(const	string_file_on_FILE &	) = default;
-	string_file_on_FILE & operator=	(		string_file_on_FILE &&) = default;
-	string_file_on_FILE				(		string_file_on_FILE &&) = default;
+	COPYING_DECL(default);
 	
 		//MEMBERS
 	size_t read(char * buf, size_t size){
@@ -258,6 +253,7 @@ public:
 	bool has_internal(){
 		return !external;
 	}
+#undef constructor
 };
 	
 // ----****----
@@ -267,29 +263,24 @@ public:
 class string_wfile_on_FILE
 	: public basic_file_i<wchar_t>
 {
+#define constructor string_wfile_on_FILE
+typedef string_wfile_on_FILE my_t;
 	FILE * _file;
 	bool external;
 public:
-		//CONSTRUCTION DESTRUCTION
-	string_wfile_on_FILE(const char * name, const char * mode)	: external(false)	{
+		//CONSTRUCTION DESTRUCTION COPYING
+	constructor(const char * name, const char * mode)	: external(false)	{
 		_file = fopen(name,mode);
 		my_assert(_file,"не смог открыть файл");
 	}
-	string_wfile_on_FILE(FILE * f)	: _file(f), external(true) 	{
+	constructor(FILE * f)	: _file(f), external(true) 	{
 	}
-
-	string_wfile_on_FILE() = delete;
-	~string_wfile_on_FILE()	{
+	constructor() : _file(0),external(true){}
+	~constructor()	{
 		if(external)	return;
 		fclose(_file);
 	}
-
-		//COPYING
-	//файлы можно копировать как хочешь ибо они не содержат буферов
-	string_wfile_on_FILE & operator=	(const	string_wfile_on_FILE &	) = default;	
-	string_wfile_on_FILE				(const	string_wfile_on_FILE &	) = default;
-	string_wfile_on_FILE & operator=	(		string_wfile_on_FILE &&) = default;
-	string_wfile_on_FILE				(		string_wfile_on_FILE &&) = default;
+	COPYING_DECL(default);
 
 		//MEMBERS
 	size_t read(wchar_t * buf, size_t size){
@@ -308,6 +299,7 @@ public:
 	bool has_internal(){
 		return external;
 	}
+#undef constructor
 };
 
 /*
@@ -329,10 +321,10 @@ class _forward_stream_const_iterator;
 template<class buf_t>
 class _forward_stream_iterator;
 
-//буфер #№[адрес структуры] (кол-во итераторов) [размер буфера] 'первые 10 символов содержимого'
 //{DEBUG basic_simple_buffer
 template <typename ch_t, int buf_size, class alloc_t>
 class basic_simple_buffer ;
+//буфер #№[адрес структуры] (кол-во итераторов) [размер буфера] 'первые 10 символов содержимого' end?
 template <typename ch_t, int buf_size, class alloc_t>
 std::ostream & operator<<(std::ostream & str, const basic_simple_buffer<ch_t,buf_size,alloc_t> & b){
 	str <<"буфер "
@@ -357,6 +349,7 @@ std::ostream & operator<<(std::ostream & str, const basic_simple_buffer<ch_t,buf
 template <typename ch_t, int buf_size=1025, class alloc_t = std::allocator<ch_t>>
 class basic_simple_buffer 
 {
+#define constructor basic_simple_buffer
 	//можно сделать buf_size = alloc_t().init_page_size()
 	//но его из мануалов почему-то убрали
 	typedef basic_simple_buffer<ch_t, buf_size, alloc_t> my_t;
@@ -388,7 +381,7 @@ private: //{ //DATA
 	int _iterator_counter;	//счетчик итераторов, находящихся на этом буфере
 //}
 protected:
-	basic_simple_buffer(basic_type * b, file_type * f, int n)	//доступ к полям выше для наследников
+	constructor(basic_type * b, file_type * f, int n)	//доступ к полям выше для наследников
 		: _base(b), _file(f), _nomber(n), _iterator_counter(0)	{}
 
 	ch_t * _begin, * _end;	//начало буфера и логический конец буфера (физически может быть больше)
@@ -415,8 +408,8 @@ public:
 	 * или будет сконструирован по умолчанию
 	 * но на всякий случай все равно лучше, что бы было все при себе
 	 */
-	basic_simple_buffer(basic_type * b, file_type * f, tail_type tail, int n)	
-		: basic_simple_buffer{b,f,n}	{
+	constructor(basic_type * b, file_type * f, tail_type tail, int n)	
+		: constructor{b,f,n}	{
 		//т.к. tail() всегда возвращает pair(0,0) в simple_buffer
 		_begin = alloc_t().allocate(buf_size);
 		_end = _begin+ _file->read(_begin,buf_size-1);
@@ -432,11 +425,11 @@ public:
 		DEBUG_buffer(<<*this<<" - сконструирован");
 	}
 	
-	basic_simple_buffer()	: basic_simple_buffer{0,0,-1}	{
+	constructor()	: constructor{0,0,-1}	{
 		_begin = 0;
 		//DEBUG_buffer(<<*this<<" - сконструирован по умолчанию");
 	}
-	~basic_simple_buffer(){
+	~constructor(){
 		if(!_begin)	return;
 		DEBUG_buffer(<<*this<<" - разрушаем");
 		//эта проверка очень желательна
@@ -449,10 +442,10 @@ public:
 
 		//COPYING
 // http://sergeyteplyakov.blogspot.ru/2012/05/c-11-faq.html#default2
-	my_t & operator=	(const	my_t &	) = delete;	
-	basic_simple_buffer	(const	my_t &	) = delete;
-	my_t & operator=	(		my_t &&	) = delete;
-	basic_simple_buffer	(		my_t &&	r)	: _base(r._base), _file(r._file), _nomber(r._nomber)	{	
+	my_t & operator=(const	my_t &	) = delete;	
+	constructor		(const	my_t &	) = delete;
+	my_t & operator=(		my_t &&	) = delete;
+	constructor		(		my_t &&	r)	: _base(r._base), _file(r._file), _nomber(r._nomber)	{	
 		_iterator_counter=r._iterator_counter;
 		_begin			= r._begin;
 		_end			= r._end;
@@ -460,6 +453,7 @@ public:
 		r._begin=0;
 		//DEBUG_buffer(<<*this <<" - сконструирован из - " <<r);
 	}
+#undef constructor
 }; //CLASS simple_buffer
 typedef basic_simple_buffer<char> simple_buffer;
 typedef basic_simple_buffer<wchar_t> simple_wbuffer;
@@ -512,6 +506,7 @@ class _forward_stream_const_iterator
 		typename buf_t::const_reference
 	>
 {
+#define constructor _forward_stream_const_iterator
 		//private TYPEDEFS
 	typedef typename buf_t::value_type				ch_t;
 	typedef _forward_stream_const_iterator<buf_t> 	my_t;
@@ -543,15 +538,15 @@ public:	//GETTERS - только ради получения доступа на
 	super_iterator 	get_itbuf()const	{	return itbuf;	}
 		//CONSTRUCTION, DESTRUCTION
 	explicit // создает итератор, указывающий на начало буфера
-	_forward_stream_const_iterator(super_iterator sit): point(sit->begin()), endbuf(sit->end()), itbuf(sit) {
+	constructor(super_iterator sit): point(sit->begin()), endbuf(sit->end()), itbuf(sit) {
 		itbuf->_iterator_counter++;
 		DEBUG_iterator(<<*this <<" - сконструировали от super_iterator'а");
 	}
 
-	_forward_stream_const_iterator()					: point(0)	{
+	constructor()					: point(0)	{
 		DEBUG_iterator(<<*this <<" - сконструировали по умолчанию");
 	}
-	~_forward_stream_const_iterator(){
+	~constructor(){
 		DEBUG_iterator(<<*this <<" - разрушаем");
 		if(!point)	return;
 		if(--itbuf->_iterator_counter ==0)
@@ -560,7 +555,7 @@ public:	//GETTERS - только ради получения доступа на
 	}
 		
 		//COPYING
-	_forward_stream_const_iterator(const my_t & r)	: point(r.point), endbuf(r.endbuf), itbuf(r.itbuf)	{
+	constructor(const my_t & r)	: point(r.point), endbuf(r.endbuf), itbuf(r.itbuf)	{
 		if(point)
 			itbuf->_iterator_counter++;
 		DEBUG_iterator(<<*this <<" - сконструировали копию от " <<r);
@@ -640,6 +635,7 @@ public:	//GETTERS - только ради получения доступа на
 		else
 			return false;
 	}
+#undef constructor
 };
 
 // ----****----		
@@ -650,6 +646,7 @@ class _forward_stream_iterator
 	:public _forward_stream_const_iterator<buf_t>
 	//для него iterator_traits определен отдельно внизу
 {
+#define constructor _forward_stream_iterator
 		//private TYPEDEFS
 	typedef typename buf_t::value_type		ch_t;
 	typedef _forward_stream_iterator<buf_t> 	my_t;
@@ -658,13 +655,13 @@ class _forward_stream_iterator
 public:
 		//CONSTRUCTION, DESTRUCTION
 	explicit 
-	_forward_stream_iterator(super_iterator sit)	: parent_t(sit)	{	}
+	constructor(super_iterator sit)	: parent_t(sit)	{	}
 
-	_forward_stream_iterator()					: parent_t()	{	}
-	~_forward_stream_iterator()					= default;
+	constructor()					: parent_t()	{	}
+	~constructor()					= default;
 		
 		//COPYING
-	_forward_stream_iterator(const parent_t & r)	: parent_t(r)	{	}
+	constructor		(const parent_t & r)	: parent_t(r)	{	}
 	my_t & operator=(const parent_t & r)	{	parent_t::operator=(r);	return *this;	}
 /*	todo
 	_forward_stream_const_iterator( my_t && r)
@@ -675,17 +672,9 @@ public:
 	ch_t & operator*()const		{	return const_cast<ch_t&>  (parent_t::operator*());		}
 	ch_t * operator->()const	{	return const_cast<ch_t*> (parent_t::operator->());	}
 
-		//MOVING
-	my_t & operator++()			{	parent_t::operator++();	return *this;	}	// ++myInstance. 	
-	my_t operator++(int){	// myInstance++.
-		my_t orig = *this;
-		parent_t::operator++();
-		return orig;
-	}
-
-		//ARITHMETIC
-	bool operator==(const parent_t & r)const	{	return parent_t::operator==(r);	}
-	bool operator<(const parent_t & r)const		{	return parent_t::operator<(r);	}
+		//MOVING - наследуется
+		//ARITHMETIC - наследуется
+#undef constructor
 };
 
 //что бы постоянно не подключать std::rel_ops
@@ -832,6 +821,7 @@ std::ostream & operator<<(std::ostream & str, const basic_adressed_buffer<ch_t,b
 template <typename ch_t, int buf_size=1025, class alloc_t = std::allocator<ch_t>>
 class basic_adressed_buffer : public basic_simple_buffer<ch_t,buf_size,alloc_t>
 {
+#define constructor basic_adressed_buffer
 	typedef basic_simple_buffer<ch_t,buf_size,alloc_t> parent_t;
 	typedef basic_adressed_buffer<ch_t, buf_size, alloc_t> my_t;
 	friend linecol 	get_linecol<ch_t,buf_size,alloc_t>(const _forward_stream_const_iterator<my_t> &);
@@ -871,17 +861,18 @@ public:
 			(--NLs.end())->second.line, 
 			(--NLs.end())->second.col + parent_t::end()- (--NLs.end())->first);	
 	}
-	basic_adressed_buffer(basic_type * b, file_type * f, tail_type lc, int n)
+	constructor(basic_type * b, file_type * f, tail_type lc, int n)
 	:parent_t(reinterpret_cast<typename parent_t::basic_type*>(b),f,typename parent_t::tail_type(),n)
 	{
 		NLs_init(lc);
 		DEBUG_addrs(<<*this << " - сконструирован");
 	}
 		//COPYING
-	my_t & operator=		(const	my_t &	) = delete;	
-	basic_adressed_buffer	(const	my_t &	) = delete;
-	my_t & operator=		(		my_t &&	) = delete;
-	basic_adressed_buffer	(		my_t &&	r)	: parent_t(static_cast<my_t&&>(r)),NLs(r.NLs){}	
+	my_t & operator=(const	my_t &	) = delete;	
+	constructor		(const	my_t &	) = delete;
+	my_t & operator=(		my_t &&	) = delete;
+	constructor		(		my_t &&	r)	: parent_t(static_cast<my_t&&>(r)),NLs(r.NLs){}	
+#undef constructor
 };
 typedef basic_adressed_buffer<char> adressed_buffer;
 typedef basic_adressed_buffer<wchar_t> adressed_wbuffer;
@@ -947,7 +938,6 @@ void goto_linecol(_forward_stream_const_iterator<basic_adressed_buffer<ch_t,buf_
 }
 
 /* здесь можно добавить буфер с перекодировкой, 
- * с вычислением строки-столбца по указателю/итератору
  * с блекджеком
  * со шлюхами
  * smth else
@@ -962,6 +952,7 @@ void goto_linecol(_forward_stream_const_iterator<basic_adressed_buffer<ch_t,buf_
 template <typename ch_t, int buf_size=512, class alloc_t = std::allocator<ch_t>>
 class basic_example_buffer : public basic_simple_buffer<ch_t,buf_size,alloc_t>
 {
+#define constructor basic_example_buffer
 	typedef basic_simple_buffer<ch_t,buf_size,alloc_t> parent_t;
 	typedef basic_example_buffer<ch_t, buf_size, alloc_t> my_t;
 public:
@@ -972,14 +963,15 @@ public:
 	typedef linecol tail_type;
 	basic_type * base()const{	return reinterpret_cast<basic_type*>(parent_t::base());	}
 	tail_type 	tail()		{	return tail_type();	}
-	basic_example_buffer(basic_type * b, file_type * f, tail_type tail, int n)
+	constructor(basic_type * b, file_type * f, tail_type tail, int n)
 	:parent_t(reinterpret_cast<typename parent_t::basic_type*>(b),f,typename parent_t::tail_type(),n)
 	{}
 		//COPYING
-	my_t & operator=	(const	my_t &	) = delete;
-	basic_example_buffer(const	my_t &	) = delete;
-	my_t & operator=	(		my_t &&	) = delete;
-	basic_example_buffer(		my_t &&	r)	: parent_t(static_cast<my_t&&>(r)){}
+	my_t & operator=(const	my_t &	) = delete;
+	constructor		(const	my_t &	) = delete;
+	my_t & operator=(		my_t &&	) = delete;
+	constructor		(		my_t &&	r)	: parent_t(static_cast<my_t&&>(r)){}
+#undef constructor
 };
 
 // ============ ПОТОК ============
@@ -996,6 +988,7 @@ std::ostream & operator<<(std::ostream & str, const forward_stream<buf_t> & s){
 template<class buf_t>
 class forward_stream
 {
+#define constructor forward_stream
 		//TYPE DEFINES
 public:
 	typedef typename buf_t::value_type			value_type;
@@ -1075,7 +1068,7 @@ public:
 	 * и создает первый (internal) iterator
 	 */
 	explicit
-	forward_stream(bool ndf, file_type * f, typename buf_t::stream_data_type dat= typename buf_t::stream_data_type())
+	constructor(bool ndf, file_type * f, typename buf_t::stream_data_type dat= typename buf_t::stream_data_type())
 		: _file(f)
 		, need_del_file(ndf)
 		, _data(dat)
@@ -1092,11 +1085,9 @@ public:
 	}
 	
 	explicit
-	forward_stream(file_type * f, typename buf_t::stream_data_type dat= typename buf_t::stream_data_type())
-		: forward_stream(false,f,dat){}
+	constructor(file_type * f, typename buf_t::stream_data_type dat= typename buf_t::stream_data_type())
+		: constructor(false,f,dat){}
 
-	forward_stream() = delete;
-	
 	/*
 	 * нет итераторов - нет буферов
 	 * => перед концом области, где объявлены и контейнер и итераторы
@@ -1104,7 +1095,7 @@ public:
 	 * все итераторы должны дойти до конца или быть удалены, например путем присваивания им stream.end();
 	 * итерторы дошедшие до конца с потоком не связаны
 	 */
-	~forward_stream()	{
+	~constructor()	{
 		_iterator.~iterator();
 		DEBUG_stream(
 			<< "internal _iterator"
@@ -1121,12 +1112,8 @@ public:
 			delete _file;
 		//если потом начнут разрушаться итераторы - это пиздец
 	}
-
-		//COPYING
-	my_t & operator=(const	my_t &	) = delete;	
-	forward_stream	(const	my_t &	) = delete;
-	my_t & operator=(		my_t &&	) = delete;
-	forward_stream	(		my_t &&	) = delete;//возможно можно разрешить
+	constructor() = delete;
+	COPYING_DECL(delete);
 
 //{	//PUBLIC MEMBERS
 	typename buf_t::stream_data_type
@@ -1173,6 +1160,7 @@ public:
 	end()const
 	{	return const_iterator();	}
 //}
+#undef constructor
 };//CLASS basic_stream_string
 typedef forward_stream<adressed_buffer> 	forward_adressed_stream;
 typedef forward_stream<adressed_wbuffer> 	forward_adressed_wstream;
