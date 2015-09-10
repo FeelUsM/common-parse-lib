@@ -932,9 +932,7 @@ int read_until_pattern_s    (it&, pf, pstr*, rez*)  .*( )       -(1+len)    len 
 	}
 
 //}
-
-//{======================= line, start_read_line, spc, spcs, s_fix_str, s_fix_char, bln, blns, b_fix_str, b_fix_char
-/*
+/* ТАБЛИЧКА
 ch_t        c
 ch_t *      s
 func_obj    bool is(c)  //наподобие bool isspace(c)
@@ -966,7 +964,7 @@ int read_b_charclass        (it&, is)           [:blank:][ ]    -1          0 и
 int read_b_charclass_s      (it&, is, pstr*)    [:blank:][ ]    -1          0 или 1             OK
 int read_b_charclass_c      (it&, is, pc*)      [:blank:][ ]    -1          0 или 1             OK
 */
-
+//{======================= line, start_read_line, spc, spcs, s_fix_str, s_fix_char, bln, blns, b_fix_str, b_fix_char
 	DEF_STRING(CRLF,"\r\n")
 	/*
 	 * line(it_t & it, str_t * ps)
@@ -1114,8 +1112,7 @@ int read_b_charclass_c      (it&, is, pc*)      [:blank:][ ]    -1          0 и
 	}
 
 //}
-//{======================= digit, uint, sign_uint, sign_s_uint, int, dec, hex, oct, bin, 
-/*
+/* ТАБЛИЧКА
 int_t может быть : long, long long, unsigned long, unsigned long long - для специализаций
 [:digit:]   ::= [0-"$(($ss-1))"]
 sign        ::= ('+'|'-')
@@ -1134,7 +1131,7 @@ int read_hex            (it&, int_t*)           int#[:digit:]=[:xdigit:]    1   
 int read_oct            (it&, int_t*)           int#[:digit:]=[0-7]         1       -1                      OK      OK
 int read_bin            (it&, int_t*)           int#[:digit:]=[01]          1       -1                      OK      OK
  */
-
+//{======================= digit, uint, sign_uint, sign_s_uint, int, dec, hex, oct, bin, 
 	/*
 	 * считывает 1 цифру в заданной системе счисления (СС) в ASCII-совместимой кодировке
 	 * CC - от 2 до 35(буква Z)
@@ -1309,7 +1306,6 @@ int read_bin            (it&, int_t*)           int#[:digit:]=[01]          1   
 		return read_int(it,2,prez);
 	}
 //}
-//{======================= float
 /* todo придумать рег.выр-я
 flt_t может быть : float, double, long double
 int read_cfloat         (it*, flt_t*)
@@ -1317,6 +1313,7 @@ int read_ifloat         (it*, flt_t*)
 int read_com_cfloat     (it*, flt_t*)
 int read_com_ifloat     (it*, flt_t*)
 */
+//{======================= float
 	//при чтении точка обязательна, если нет экспоненты
 	template<typename it_t, typename flt_t> inline
 	int 
@@ -1337,15 +1334,13 @@ int read_com_ifloat     (it*, flt_t*)
 	int 
 	read_com_ifloat(it_t & it, flt_t * prez);
 //}
-//{======================= input_fix_str, input_until_str
-/*
- * я тут обратил внимание, что ВСЕ алгоритмы, кроме read_fix_str, read_until_str и read_until_pattern
+/* я тут обратил внимание, что ВСЕ алгоритмы, кроме read_fix_str, read_until_str и read_until_pattern
  * требуют не forward, а input итераторы, которые требуют от потока только ungetc()
  * и следовательно, можно специализровать эти алгоритмы специально для input итерторов
  * что бы они осуществляли собственную буферизацию, 
  * что впрочем может быть полезно только для удачных исходов выполнения этих алгоритмов
  */
-
+//{======================= input_fix_str, input_until_str
 struct parse_exception : public std::exception
 {
 	std::string _what;
