@@ -41,12 +41,6 @@ using std::swap;
 #define DEBUG_addrs(MES)	//(std::cerr MES <<std::endl)//адресуемые буферы: создания и изменения адресов
 #define DEBUG_stream(MES)	//(std::cerr MES <<std::endl)//поток и его внутренний итератор
 
-#define COPYING_DECL(type)\
-	my_t & operator=(const	my_t & ) = type;\
-	constructor		(const	my_t & ) = type;\
-	my_t & operator=(		my_t &&) = type;\
-	constructor		(		my_t &&) = type;
-
 //{ debug declarations
 struct hex{
 	const void * x;
@@ -99,38 +93,45 @@ public:
 };
 template<typename X> inline//X - string или const char *
 void my_assert(bool b, X x){
-	if(!b)	throw stream_exception(string("АВАРИЙНОЕ ИСКЛЮЧЕНИЕ В FORWARD_STREAM_H: ")+x);
+	if(!b)	throw stream_exception(x);
 }
 //}
+
+#define COPYING_DECL(type)\
+	my_t & operator=(const	my_t & ) = type;\
+	constructor		(const	my_t & ) = type;\
+	my_t & operator=(	my_t &&) = type;\
+	constructor		(	my_t &&) = type;
 
 // ============ ФАЙЛЫ ============
 // ----****----
 // ----****---- CLASS basic_file_i ----****----
 // ----****----
-//interface
+//basic interface
 template <typename ch_t>
 class basic_file_i{
 #define constructor basic_file_i
 typedef basic_file_i<ch_t> my_t;
 public:
-	COPYING_DECL(default);
-	constructor() = default;
 	virtual ~constructor() = default;
+	virtual bool eof()const =0;
+	virtual bool good()const=0;
+	virtual bool fail()const=0;
+	virtual bool bad()const =0;
 	virtual size_t read(ch_t * buf, size_t size) =0;
-	virtual bool eof() =0;
 #undef constructor
 };
 
 // ----****----
-// ----****---- CLASS basic_block_file_on_c_str ----****----
+// ----****---- CLASS basic_file_on_cstr_block ----****----
 // ----****----
 // стрка, выдающая блоки
 template <typename ch_t>
-class basic_block_file_on_c_str
+class basic_file_on_cstr_block
 	: public basic_file_i<ch_t>
 {
-#define constructor basic_block_file_on_c_str
-typedef basic_block_file_on_c_str<ch_t> my_t;
+#define constructor basic_file_on_cstr_block
+typedef basic_file_on_cstr_block<ch_t> my_t;
 	ch_t * _file;
 public:
 		//CONSTRUCTION DESTRUCTION COPYING
@@ -140,6 +141,10 @@ public:
 	COPYING_DECL(default);
 	
 		//MEMBERS
+	bool eof()const{	return !*_file;	}
+	bool bad()const{	return _file==0;	}
+	bool fail()const{	return bad();	}
+	bool good()const{	return !fail();	}
 	size_t read(ch_t * buf, size_t size){
 		//todo для специализаций подошли бы и strncpy() и wcsncpy()
 		for(size_t i=0; i<size; i++,buf++,_file++)
@@ -149,91 +154,130 @@ public:
 				*buf = *_file;
 		return size;
 	}
-	bool eof(){
-		return !*_file;
-	}
 #undef constructor
 };
-typedef basic_block_file_on_c_str<char> block_file_on_c_str;
-typedef basic_block_file_on_c_str<wchar_t> block_wfile_on_c_str;
-typedef basic_block_file_on_c_str<char16_t> block_u16file_on_c_str;
-typedef basic_block_file_on_c_str<char32_t> block_u32file_on_c_str;
+typedef basic_file_on_cstr_block<char> file_on_cstr_block;
+typedef basic_file_on_cstr_block<wchar_t> wfile_on_cstr_block;
+typedef basic_file_on_cstr_block<char16_t> u16file_on_cstr_block;
+typedef basic_file_on_cstr_block<char32_t> u32file_on_cstr_block;
 
 // ----****----
-// ----****---- CLASS basic_block_file_on_FILE ----****----
+// ----****---- CLASS basic_file_on_FILE_i ----****----
+// ----****----
+//interface on_FILE
+template <typename ch_t>
+class basic_file_on_FILE_i
+  : public basic_file_i<ch_t>
+{
+#define constructor basic_file_on_FILE_i
+typedef basic_file_on_FILE_i<ch_t> my_t;
+typedef basic_file_i<ch_t> base_t;
+protected:
+	FILE * _file;
+	bool _internal;
+	void destroy(){	
+		if(_internal)	fclose(_file);	
+	}
+	my_t & init(const 	my_t & r){	
+		_file=r._file; _internal=false;	
+		return *this;	
+	}
+	my_t & init(		my_t &&r){	
+		_file=r._file; _internal=r._internal; 
+		r._internal=false; return *this;	
+	}
+public:
+	constructor() : _file(0),_internal(false){}
+	~constructor() {	destroy();	}
+
+	constructor(const my_t & r)
+		:_file(r._file),_internal(false){}
+	my_t & operator=(const my_t & r) {
+		destroy();	return init(r);
+		//this->~my_t();  new(this)my_t(r); return *this;
+		//так делать нельзя потому что надо после деструктора 
+		//(вызывающего в конце базовый деструктор, а все они инициализируют 
+		//указатель на табличку своего типа (что с указателями на виртуальные функции)) 
+		//нужно восстановить указатель именно на ту табличку, которая была при вызове
+		//а не на табличку типа my_t
+		//хотя можно почитать про type_onfo
+		//а лучше его вообще не трогать
+	}
+
+	constructor( 	 my_t &&r)
+		:_file(r._file),_internal(r._internal){
+		r._internal=false;
+	}
+	my_t & operator=(	 my_t &&r) {
+		destroy();	return init(r);
+	}
+	constructor(FILE * f): _file(f),_internal(false) {
+		my_assert(!setvbuf(_file,NULL,_IONBF,0),"не получилось отключить буферизацию FILE");
+	}
+
+	bool eof()const{	return feof(_file);	}
+	bool bad()const{	return _file==0;	}
+	bool fail()const{	return bad()||ferror(_file);	}
+	bool good()const{	return !fail();	}
+		//ADDED MEMBER
+	FILE * file()const{		return _file;	}
+	bool has_internal()const{	return _internal;	}
+#undef constructor
+};
+
+// ----****----
+// ----****---- CLASS basic_file_on_FILE_block ----****----
 // ----****----
 // файл, выдающий блоки
 template <typename ch_t>
-class basic_block_file_on_FILE
-	: public basic_file_i<ch_t>
+class basic_file_on_FILE_block
+	: public basic_file_on_FILE_i<ch_t>
 {
-#define constructor basic_block_file_on_FILE
-typedef basic_block_file_on_FILE<ch_t> my_t;
-	FILE * _file;
+#define constructor basic_file_on_FILE_block
+typedef basic_file_on_FILE_block<ch_t> my_t;
+typedef basic_file_on_FILE_i<ch_t> base_t;
 public:
-		//CONSTRUCTION DESTRUCTION COPYING
-	constructor(const char * name, const char * mode){
-		_file = fopen(name,mode);
-		my_assert(_file,"не смог открыть файл");
-		my_assert(!setvbuf(_file,NULL,_IONBF,0),"не получилось отключить буферизацию FILE");
+	COPYING_DECL(default)
+	~constructor() = default;
+	constructor() = default;
+	constructor(FILE * f): base_t(f) {}
+	constructor(const char * name, const char * mode): base_t(fopen(name,mode)) {  
+		base_t::_internal=true;
 	}
-	constructor() : _file(0){}
-	~constructor(){
-		fclose(_file);
-	}
-	COPYING_DECL(default);
-	
-		//MEMBERS
-	size_t read(ch_t * buf, size_t size){
-		size_t x = fread(buf,sizeof(ch_t),size,_file);
-		//if(ferror(_file))	DEBUG_file( <<"ERROR in FILE" );
+	size_t read(ch_t * buf, size_t size) {
+		my_assert(base_t::good(),"не смог открыть файл");
+		size_t x = fread(buf,sizeof(ch_t),size,base_t::_file);
 		return x;
-	}
-	bool eof(){
-		return feof(_file);
-	}
-	FILE * file(){
-		return _file;
-	}
+	};
 #undef constructor
 };
-typedef basic_block_file_on_FILE<char> block_file_on_FILE;
-typedef basic_block_file_on_FILE<wchar_t> block_wfile_on_FILE;
-typedef basic_block_file_on_FILE<char16_t> block_u16file_on_FILE;
-typedef basic_block_file_on_FILE<char32_t> block_u32file_on_FILE;
+typedef basic_file_on_FILE_block<char> file_on_FILE_block;
+typedef basic_file_on_FILE_block<wchar_t> wfile_on_FILE_block;
+typedef basic_file_on_FILE_block<char16_t> u16file_on_FILE_block;
+typedef basic_file_on_FILE_block<char32_t> u32file_on_FILE_block;
 	
 // ----****----
-// ----****---- CLASS string_file_on_FILE ----****----
+// ----****---- CLASS file_on_FILE_string ----****----
 // ----****----
 // файл, выдающий строки, в начале добавляет \n для start_read_line()
-class string_file_on_FILE
-	: public basic_file_i<char>
+class file_on_FILE_string
+	: public basic_file_on_FILE_i<char>
 {
-#define constructor string_file_on_FILE
-typedef string_file_on_FILE my_t;
-	FILE * _file;
-	bool external;
+#define constructor file_on_FILE_string
+typedef file_on_FILE_string my_t;
+typedef basic_file_on_FILE_i<char> base_t;
 	bool init = false;
 public:
-		//CONSTRUCTION DESTRUCTION COPYING
-	constructor(const char * name, const char * mode)	: external(false)	{
-		_file = fopen(name,mode);
-		my_assert(_file,"не смог открыть файл");
+	COPYING_DECL(default)
+	~constructor() = default;
+	constructor() = default;
+	constructor(FILE * f): base_t(f) {}
+	constructor(const char * name, const char * mode): base_t(fopen(name,mode)) {  
+		base_t::_internal=true;
 	}
-	constructor(FILE * f)	: _file(f)	, external(true) {
-	}
-
-	constructor() : _file(0){}
-	~constructor(){
-		if(external)	return;
-		fclose(_file);
-	}
-	COPYING_DECL(default);
-	
-		//MEMBERS
 	size_t read(char * buf, size_t size){
+		my_assert(size>0,"string_file_on_FILE: запрошенный размер буфера =0");
 		if(!init){
-			my_assert(size>0,"string_file_on_FILE: запрошенный размер буфера =0");
 			*buf++ = '\n';
 			init = true;
 			return 1;
@@ -243,67 +287,44 @@ public:
 		else
 			return 0;
 	}
-	bool eof(){
-		return feof(_file);
-	}
-	
-	FILE * file(){
-		return _file;
-	}
-	bool has_internal(){
-		return !external;
-	}
 #undef constructor
 };
 	
 // ----****----
-// ----****---- CLASS wstring_file_on_FILE ----****----
+// ----****---- CLASS wfile_on_FILE_string ----****----
 // ----****----
 // файл, выдающий wстроки, в начале добавляет \n для start_read_line()
-class string_wfile_on_FILE
-	: public basic_file_i<wchar_t>
+class wfile_on_FILE_string
+	: public basic_file_on_FILE_i<wchar_t>
 {
-#define constructor string_wfile_on_FILE
-typedef string_wfile_on_FILE my_t;
-	FILE * _file;
-	bool external;
+#define constructor wfile_on_FILE_string
+typedef wfile_on_FILE_string my_t;
+typedef basic_file_on_FILE_i<wchar_t> base_t;
+	bool init = false;
 public:
-		//CONSTRUCTION DESTRUCTION COPYING
-	constructor(const char * name, const char * mode)	: external(false)	{
-		_file = fopen(name,mode);
-		my_assert(_file,"не смог открыть файл");
+	COPYING_DECL(default)
+	~constructor() = default;
+	constructor() = default;
+	constructor(FILE * f): base_t(f) {}
+	constructor(const char * name, const char * mode): base_t(fopen(name,mode)) {  
+		base_t::_internal=true;
 	}
-	constructor(FILE * f)	: _file(f), external(true) 	{
-	}
-	constructor() : _file(0),external(true){}
-	~constructor()	{
-		if(external)	return;
-		fclose(_file);
-	}
-	COPYING_DECL(default);
-
-		//MEMBERS
 	size_t read(wchar_t * buf, size_t size){
+		my_assert(size>0,"string_file_on_FILE: запрошенный размер буфера =0");
+		if(!init){
+			*buf++ = '\n';
+			init = true;
+			return 1;
+		}
 		if(fgetws(buf,size,_file))
 			return wcslen(buf);
 		else
 			return 0;
 	}
-	bool eof(){
-		return feof(_file);
-	}
-	
-	FILE * file(){
-		return _file;
-	}
-	bool has_internal(){
-		return external;
-	}
 #undef constructor
 };
 
-/*
- * здесь можно добавить файлы не на FILE а на файловых дескрипторах unix 
+/* здесь можно добавить файлы не на FILE а на файловых дескрипторах unix 
  * или на std::istream (последнее - я не знаю зачем)
  */
 
@@ -1073,15 +1094,17 @@ public:
 		, need_del_file(ndf)
 		, _data(dat)
 	{
-		_bufs.push_back(buf_t(this,_file,typename buf_t::tail_type(),0));
-		if(_bufs.begin()->size()==0)	{//неожиданный конец файла
-			DEBUG_stream( << "неожиданный конец файла" );
-			_bufs.pop_front();
-			_iterator = iterator();
+		if(_file->good()){
+			_bufs.push_back(buf_t(this,_file,typename buf_t::tail_type(),0));
+			if(_bufs.begin()->size()==0)	{//неожиданный конец файла
+				DEBUG_stream( << "неожиданный конец файла" );
+				_bufs.pop_front();
+				_iterator = iterator();
+			}
+			else
+				_iterator = iterator(_bufs.begin());//он сам сконструируется от итераора на буфер
+			DEBUG_stream( << "forward_stream ("<<*this<<")- сконструирован" );
 		}
-		else
-			_iterator = iterator(_bufs.begin());//он сам сконструируется от итераора на буфер
-		DEBUG_stream( << "forward_stream ("<<*this<<")- сконструирован" );
 	}
 	
 	explicit
@@ -1116,6 +1139,12 @@ public:
 	COPYING_DECL(delete);
 
 //{	//PUBLIC MEMBERS
+	bool eof()const {	return _file->eof();	}
+	bool good()const{	return _file->good();	}
+	bool fail()const{	return _file->fail();	}
+	bool bad()const {	return _file->bad();	}
+	operator bool()const {	return good();	}
+
 	typename buf_t::stream_data_type
 	stream_data()const
 	{	return _data;	}

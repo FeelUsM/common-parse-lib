@@ -237,7 +237,8 @@ int main2(int argc, const char * argv[]){
 	typename forward_adressed_stream::iterator * pit;
 	forward_adressed_stream * ps;
 	if(argc==2){
-		ps = new forward_adressed_stream(true, new block_file_on_FILE(argv[1],"r"));
+		ps = new forward_adressed_stream(true, new file_on_FILE_block(argv[1],"r"));
+		if(!*ps)	throw "не смог открыть файл";
 		pit = &ps->iter();						//true - говорит о том, что поток сам удалит этот файл
 	}
 	else{
@@ -271,7 +272,8 @@ int submain(typename forward_adressed_stream::iterator & it){
 }
 int main3(int argc, const char * argv[]){
 	if(argc==2){
-		forward_adressed_stream stream(true, new block_file_on_FILE(argv[1],"r"));
+		forward_adressed_stream stream(true, new file_on_FILE_block(argv[1],"r"));
+		if(!stream)	throw "не смог открыть файл";
 												//true - говорит о том, что поток сам удалит этот файл
 		return submain(stream.iter());
 	}

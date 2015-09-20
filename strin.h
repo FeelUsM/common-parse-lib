@@ -42,7 +42,7 @@ namespace str{
 	 */
 	STRIN_EXTERN forward_adressed_stream STREAMin
 #ifdef one_source
-	(true, new string_file_on_FILE(stdin))
+	(true, new file_on_FILE_string(stdin))
 #endif
 	;
 	//интересно, чем следующие конструкции отличаются?

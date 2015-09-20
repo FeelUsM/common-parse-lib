@@ -102,14 +102,14 @@ namespace str{
 
 
 namespace str{
-	template class basic_block_file_on_c_str<char>;
-	template class basic_block_file_on_c_str<wchar_t>;
-	template class basic_block_file_on_c_str<char16_t>;
-	template class basic_block_file_on_c_str<char32_t>;
-	template class basic_block_file_on_FILE<char>;
-	template class basic_block_file_on_FILE<wchar_t>;
-	template class basic_block_file_on_FILE<char16_t>;
-	template class basic_block_file_on_FILE<char32_t>;
+	template class basic_file_on_cstr_block<char>;
+	template class basic_file_on_cstr_block<wchar_t>;
+	template class basic_file_on_cstr_block<char16_t>;
+	template class basic_file_on_cstr_block<char32_t>;
+	template class basic_file_on_FILE_block<char>;
+	template class basic_file_on_FILE_block<wchar_t>;
+	template class basic_file_on_FILE_block<char16_t>;
+	template class basic_file_on_FILE_block<char32_t>;
 	
 	template class basic_simple_buffer<char>;
 	template class basic_simple_buffer<wchar_t>;
@@ -147,7 +147,7 @@ int main()
 	cout <<"================" << endl;
 	try{
 		char s[]="qwert\nyuiop[asdfghjkl;\nzxcvbnm,.  \n    qwerty\nuiopasdfghjkl;z\nxcvbnm,.         qwertyuiop[asdfghjkl;'zxcvbnm,./";
-		basic_block_file_on_c_str<char> file(s);
+		basic_file_on_cstr_block<char> file(s);
 		buffer_t buffer(0, &file, buffer_t::tail_type(), 0);
 		forward_stream<buffer_t> str(&file);
 		atend(str.iter());
