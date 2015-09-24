@@ -11,6 +11,13 @@
  */
 
 using namespace str;
+using std::cout;
+using std::endl;
+
+#define r_if(expr)             if((expr)==0)
+#define r_while(expr)       while((expr)==0)
+#define r_ifnot(expr)           if(expr)
+#define r_whilenot(expr)     while(expr)
 
 template<class it_t>
 const char * read_sum(it_t & it, double * prez);
@@ -19,16 +26,15 @@ const char * read_sum(it_t & it, double * prez);
 template<class it_t>
 const char * read_expr(it_t & it, double * prez){
 	const char * err;
-	r_if(read_s_fix_char(it,'(')){
+	if(read_s_fix_char(it,'(')){
 		r_ifnot(err = read_sum(it,prez))
 			return err;
-		r_ifnot(read_s_fix_char(it,')'))
+		ifnot(read_s_fix_char(it,')'))
 			return "ожидалась закрывающая скобка";
 		return 0;
 	}
 	int x;
-	int errc;
-	r_ifnot(errc=read_dec(it,&x)){
+	ifnot(read_dec(it,&x)){
 		return "ожидалось число";
 	}
 	*prez = x;
@@ -45,7 +51,7 @@ const char * read_mul(it_t & it, double * prez){
 		return err;
 	while(true){
 		ch_t zn;
-		r_ifnot(read_s_charclass_c(it,make_span(md<ch_t>().s),&zn))
+		ifnot(read_s_charclass_c(it,make_span(md<ch_t>().s),&zn))
 			return 0;
 		double x;
 		r_ifnot(err=read_expr(it,&x))
@@ -66,7 +72,7 @@ const char * read_sum(it_t & it, double * prez){
 		return err;
 	while(true){
 		ch_t zn;
-		r_ifnot(read_s_charclass_c(it,make_span(pm<ch_t>().s),&zn))
+		ifnot(read_s_charclass_c(it,make_span(pm<ch_t>().s),&zn))
 			return 0;
 		double x;
 		r_ifnot(err = read_mul(it,&x))

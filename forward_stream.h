@@ -67,9 +67,7 @@ std::ostream & operator<<(std::ostream & str, basic_dump<ch_t> d){
 	if(d.p){
 		size_t i=0;
 		for(; *d.p && (d.s ? i<d.s : true); i++, d.p++)
-			if(*d.p>=32)
-				str<<*d.p;
-			else
+			if(*d.p<32 && *d.p>=0)
 				switch(*d.p){
 					case '\n': 	str<<"\\n";	break;
 					case '\r': 	str<<"\\r";	break;
@@ -77,6 +75,8 @@ std::ostream & operator<<(std::ostream & str, basic_dump<ch_t> d){
 					case '\v': 	str<<"\\v";	break;
 					default:	str<<"\\x"<<std::hex<<(int)*d.p;	break;
 				}
+			else
+				str<<*d.p;
 		if(*d.p)
 			str<<"...";
 	}
@@ -813,6 +813,8 @@ void advance(_forward_stream_const_iterator<buf_t> & it,
 struct linecol{ //eof <=> 0:0
 	int line,col;
 	linecol(int l=1, int c=1):line(l),col(c){}
+	template<class it_t>
+	explicit linecol(const it_t & it){	*this = get_linecol(it);	}
 };
 std::ostream & operator<<(std::ostream & str, linecol lc){
 	return str <<lc.line <<":" <<lc.col;

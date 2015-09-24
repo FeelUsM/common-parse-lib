@@ -16,6 +16,11 @@ using std::cout;
 using std::cerr;
 using std::endl;
 
+#define r_if(expr)             if((expr)==0)
+#define r_while(expr)       while((expr)==0)
+#define r_ifnot(expr)           if(expr)
+#define r_whilenot(expr)     while(expr)
+
 template <class it_t>
 void dump(it_t tmp, const char * mes){
 	string s;
@@ -28,9 +33,9 @@ template <class it_t>
 const char * read_dir(it_t & it, string * ps){
 	//dump(it,"в начале read_dir:\n");
 	ps->clear();
-	r_ifnot(read_fix_char(it,'['))
+	ifnot(read_fix_char(it,'['))
 		return "ожидалась [";
-	rm_ifnot(read_until_str(it,"]\r\n",ps)<0)//возможно экранирование...
+	ifnot(read_until_str(it,"]\r\n",ps))//возможно экранирование...
 		return "неожиданный конец файла";
 	return 0;
 }
@@ -38,18 +43,18 @@ const char * read_dir(it_t & it, string * ps){
 template <class it_t>
 const char * read_file(it_t & it, string * ps){
 	ps->clear();
-	r_if(read_fix_char(it,'@'))
+	if(read_fix_char(it,'@'))
 		*ps +='@';
 	else{
-		r_ifnot(read_fix_char(it,'"'))
+		ifnot(read_fix_char(it,'"'))
 			return "ожидалось \"";
 		*ps +='"';
 		while(true){
 			int err;
-			rm_ifnot(err=read_until_charclass(it,span("\"\\"),ps)<0)
+			ifnot(err=read_until_charclass(it,span("\"\\"),ps))
 				return "неожиданный конец файла";
 			char c;
-			r_ifnot(err=read_c(it,&c))
+			ifnot(err=read_c(it,&c))
 				return "неожиданный конец файла";
 			if(c=='"'){
 				*ps +='"';
@@ -57,7 +62,7 @@ const char * read_file(it_t & it, string * ps){
 			}
 			else{//c=='\\'
 				*ps +='\\';
-				r_ifnot(read_c(it,&c))
+				ifnot(read_c(it,&c))
 					return "неожиданный конец файла";
 				switch(c){
 					case'"': *ps +='"'; break;
@@ -68,7 +73,7 @@ const char * read_file(it_t & it, string * ps){
 		}
 		*ps +='"';
 	}
-	r_ifnot(read_fix_char(it,'='))
+	ifnot(read_fix_char(it,'='))
 		return "ожидался =";
 	return 0;
 }
@@ -76,18 +81,18 @@ const char * read_file(it_t & it, string * ps){
 template <class it_t>
 const char * read_string(it_t & it, string * ps){
 	ps->clear();
-	r_ifnot(read_fix_char(it,'"'))
+	ifnot(read_fix_char(it,'"'))
 		return "ожидалось \"";
 	*ps +='"';
 	while(true){
 		int err;
-		rm_ifnot(err=read_until_charclass(it,span("\"\\"),ps)<0)
+		ifnot(err=read_until_charclass(it,span("\"\\"),ps))
 			return "неожиданный конец файла";
 		//cerr <<"read_until_charclass = " <<err <<endl;
 		//cerr << ps->size() <<endl;
 		//dump(it,"перед read_c:\n");
 		char c;
-		r_ifnot(err=read_c(it,&c)){
+		ifnot(err=read_c(it,&c)){
 			//cerr <<"read_c = " <<err <<endl;
 			return "неожиданный конец файла";
 		}
@@ -97,7 +102,7 @@ const char * read_string(it_t & it, string * ps){
 		}
 		else{//c=='\\'
 			*ps +='\\';
-			r_ifnot(read_c(it,&c))
+			ifnot(read_c(it,&c))
 				return "неожиданный конец файла";
 			switch(c){
 				case'"': *ps +='"'; break;
@@ -108,7 +113,7 @@ const char * read_string(it_t & it, string * ps){
 	}
 	*ps +='"';
 	//dump(it,"перед ожидался перевод строки:\n");
-	r_ifnot(read_fix_str(it,"\r\n"))
+	ifnot(read_fix_str(it,"\r\n"))
 		return "ожидался перевод строки";
 	return 0;
 }
@@ -116,40 +121,40 @@ const char * read_string(it_t & it, string * ps){
 template <class it_t>
 const char * read_hex(it_t & it, string * ps){
 	ps->clear();
-	r_ifnot(read_fix_str(it,"hex"))
+	ifnot(read_fix_str(it,"hex"))
 		return "ожидалась строка 'hex'";
 	*ps += "hex";
-	r_if(read_fix_char(it,'(')){
+	if(read_fix_char(it,'(')){
 		*ps +='(';
-		r_ifnot(read_charclass_s(it,spn_xdigit,ps))
+		ifnot(read_charclass_s(it,spn_xdigit,ps))
 			return "ожидалась шестначцатеричная цифра";
 		//[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\.NETFramework\v2.0.50727\NGenService\State]
 		//"LastSuccess"=hex(b):6e,fe,f7,58,df,ff,d1,08
-		r_while(read_charclass_s(it,spn_xdigit,ps))
+		while(read_charclass_s(it,spn_xdigit,ps))
 			;
 		//[HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\Control\Class\{4d36e96e-e325-11ce-bfc1-08002be10318}\Configuration\Driver\MODES]
 		//@=hex(200000):
-		r_ifnot(read_fix_char(it,')'))
+		ifnot(read_fix_char(it,')'))
 			return "ожидалась )";
 		*ps +=')';
 	}
-	r_ifnot(read_fix_char(it,':'))
+	ifnot(read_fix_char(it,':'))
 		return "ожидалось :";
 	*ps +=':';
-	r_if(read_fix_str(it,"\r\n"))
+	if(read_fix_str(it,"\r\n"))
 		return 0;
 	do{
-		r_if(read_fix_char(it,'\\')){
-			r_ifnot(read_fix_str(it,"\r\n"))
+		if(read_fix_char(it,'\\')){
+			ifnot(read_fix_str(it,"\r\n"))
 				return "ожидался перевод строки";
-			read_blns(it);
+			read_blanks(it);
 		}
-		r_ifnot(read_charclass_s(it,spn_xdigit,ps))
+		ifnot(read_charclass_s(it,spn_xdigit,ps))
 			return "ожидалась шестнадцатеричная цифра";
-		r_ifnot(read_charclass_s(it,spn_xdigit,ps))
+		ifnot(read_charclass_s(it,spn_xdigit,ps))
 			return "ожидалась шестнадцатеричная цифра";
-	}r_while(read_charclass_s(it,span(","),ps));//read_fix_char_s нету, а read_charclass_s есть
-	r_ifnot(read_fix_str(it,"\r\n"))
+	}while(read_charclass_s(it,span(","),ps));//read_fix_char_s нету, а read_charclass_s есть
+	ifnot(read_fix_str(it,"\r\n"))
 		return "ожидался перевод строки";
 	return 0;
 }
@@ -157,13 +162,13 @@ const char * read_hex(it_t & it, string * ps){
 template <class it_t>
 const char * read_dword(it_t & it, string * ps){
 	ps->clear();
-	r_ifnot(read_fix_str(it,"dword:"))
+	ifnot(read_fix_str(it,"dword:"))
 		return "ожидалась строка 'dword:'";
 	*ps += "dword:";
 	for(int i=0; i<8; i++)
-		r_ifnot(read_charclass_s(it,spn_xdigit,ps))
+		ifnot(read_charclass_s(it,spn_xdigit,ps))
 			return "ожидалась шестнадцатеричная цифра";
-	r_ifnot(read_fix_str(it,"\r\n"))
+	ifnot(read_fix_str(it,"\r\n"))
 		return "ожидался перевод строки";
 	return 0;
 }
@@ -197,7 +202,7 @@ const char * read_content(it_t & it, string * ps){
 
 template <class it_t>
 const char * read_all_reg(it_t & it){
-	r_ifnot(read_fix_str(it,"Windows Registry Editor Version 5.00\r\n\r\n"))
+	ifnot(read_fix_str(it,"Windows Registry Editor Version 5.00\r\n\r\n"))
 		return "ожидалась строка: Windows Registry Editor Version 5.00";
 	const char * err;
 	string dir;
@@ -214,7 +219,7 @@ const char * read_all_reg(it_t & it){
 				<<content <<endl 
 				<<endl;
 		}
-		r_ifnot(read_fix_str(it,"\r\n"))
+		ifnot(read_fix_str(it,"\r\n"))
 			return err;
 	}
 	return 0;
