@@ -816,6 +816,11 @@ struct linecol{ //eof <=> 0:0
 	template<class it_t>
 	explicit linecol(const it_t & it){	*this = get_linecol(it);	}
 };
+inline
+bool operator==(linecol l, linecol r){
+	return l.line==r.line && l.col==r.col;
+}
+inline
 std::ostream & operator<<(std::ostream & str, linecol lc){
 	return str <<lc.line <<":" <<lc.col;
 }

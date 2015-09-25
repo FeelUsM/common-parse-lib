@@ -233,7 +233,7 @@ class basic_span_string{
 #define E2F_it(it,expr)				[&]				(decltype(it) & it)	{return expr;}
 
 template<class it_t, class fun_t>
-auto resin(it_t & it, const fun_t & fun) //restore if not
+auto reifnot(it_t & it, const fun_t & fun) //restore if not
 -> decltype(fun(it)){
 	it_t tmp=it;
 	auto err = fun(it);
@@ -241,12 +241,12 @@ auto resin(it_t & it, const fun_t & fun) //restore if not
 	it = tmp;
 	return err;
 }
-#define resin_CYRQ(it,expr,...)	resin(it,E2F_it_cyrq	(it,expr,__VA_ARGS__))
-#define resin_E(it,expr)			resin(it,E2F_it		(it,expr))
-#define resin_E2F(it,expr)			E2F(resin_E(it,expr))
+#define reifnot_CYRQ(it,expr,...)	reifnot(it,E2F_it_cyrq	(it,expr,__VA_ARGS__))
+#define reifnot_E(it,expr)			reifnot(it,E2F_it		(it,expr))
+#define reifnot_E2F(it,expr)			E2F(reifnot_E(it,expr))
 
 //синтаксический сахар
-#define OR(it,expr)	||resin_E2F(it,expr)
+#define OR(it,expr)	||reifnot_E2F(it,expr)
 #define AND(expr)	&&E2F(expr)
 
 //теже ваши операторы && и ||, только с short circuiting
@@ -254,15 +254,24 @@ auto resin(it_t & it, const fun_t & fun) //restore if not
 template<class fun_t>\
 auto operator&&(type l,const fun_t & fun)\
 -> decltype(l&&fun()){\
-	if(l)	return l&&fun();/*true && true - в принципе не игрет роли, но там могут "складываться" предупреждения*/\
-	else	return l;\
+	if(l){\
+		return l&&fun();/*true && true - в принципе не игрет роли, но там могут "складываться" предупреждения*/\
+	}\
+	else{\
+		return l;\
+	}\
 }\
 template<class fun_t>\
 auto operator||(type l,const fun_t & fun)\
 -> decltype(l||fun()){\
-	if(l)	return l;\
-	else	return l||fun();/*false && false - в принципе не игрет роли, но там могут "складываться" ошибки*/\
-}
+	if(l){\
+		return l;/*false && false - в принципе не игрет роли, но там могут "складываться" ошибки*/\
+	}\
+	else{\
+		return l||fun();\
+	}\
+}\
+//end macro
 DECLARE_AND_OR_error_operators_for_short_circuiting(bool)
 
 class base_parse_error{
@@ -285,7 +294,7 @@ public:
 	int code()const	{	return _code;	}
 #undef constructor
 };
-#define DECLARE_AND_OR_default_error_operators_for(type)\
+#define DECLARE_AND_OR_default_error_operators(type)\
 type operator&&(type l, type r){\
 	if(l)	\
 		if(r)	\
@@ -310,9 +319,109 @@ type operator||(type l, type r){\
 		else	\
 			return r;	/*FF*/\
 }
-DECLARE_AND_OR_default_error_operators_for(base_parse_error)
+DECLARE_AND_OR_default_error_operators(base_parse_error)
 DECLARE_AND_OR_error_operators_for_short_circuiting(base_parse_error)
 
+class str_error{
+#define constructor str_error
+typedef str_error my_t;
+protected:
+	const char * message;
+public:
+	constructor():message(0){}
+	constructor(const char * mes):message(mes){}
+	constructor(int x):message(0){	if(x)throw "инициализация от ненулевого int";	}
+	constructor(bool x)	:message(x?0:""){}
+	operator bool()const	{	return message==0;	}
+	const char * what()const {	return message;	}
+#undef constructor
+};
+DECLARE_AND_OR_default_error_operators(str_error)
+DECLARE_AND_OR_error_operators_for_short_circuiting(str_error)
+str_error operator>>(base_parse_error from, str_error to){
+	if(from) return str_error(true);
+	else	return to;
+}
+
+class strpos_error : public str_error{
+#define constructor strpos_error
+typedef strpos_error my_t;
+typedef str_error base_t;
+	linecol lc;
+	friend strpos_error operator&&(strpos_error l, strpos_error r);
+	friend strpos_error operator||(strpos_error l, strpos_error r);
+public:
+	linecol ignored_lc=linecol(0,0);
+	bool ignored()const{	return lc==ignored_lc;	}
+	constructor(){};
+	constructor(const char * mes):base_t(mes){}
+	constructor(int x)	:base_t(x){}
+	constructor(bool x)	:base_t(x){}
+	
+	constructor(const linecol & l)
+		:lc(l){};
+	constructor(const char * mes, const linecol & l)
+		:base_t(mes),lc(l){};
+	constructor(bool mes, const linecol & l)
+		:base_t(mes),lc(l){};
+
+	linecol where()const	
+	{	return lc;	}
+	my_t & set_what(const char * mes)
+	{	base_t::message=mes;	return *this;	}
+	template<class it_t>
+	my_t & set_ignored(const it_t & it)
+	{	ignored_lc =linecol(it);	return *this;	}
+#undef constructor
+};
+
+template <class it_t>
+strpos_error operator>>(str_error from, const it_t * to){
+	return strpos_error(from.what(),linecol(*to));
+}
+std::ostream & operator<<(std::ostream & str, const strpos_error & e){
+	return str<<"("<<"ignored:"<<e.ignored()<<" at "<<e.ignored_lc<<")"<<(bool)e<<";"<<(e?"OK":e.what())<<" at "<<e.where();
+}
+strpos_error operator&&(strpos_error l, strpos_error r){
+	r.set_ignored(l.ignored_lc);
+	if(l)	
+		if(r)	
+			if(r.ignored())
+				return l;
+			else
+				return r;	/*TT*/
+		else	
+			return r;	/*TF*/
+	else	
+		if(r)	
+			return l;	/*FT*/
+		else	
+			if(r.ignored())
+				return l;
+			else
+				return r;	/*FF*/
+}
+strpos_error operator||(strpos_error l, strpos_error r){
+	r.set_ignored(l.ignored_lc);
+	//cerr <<"operator||( "<<l<<" , "<<r<<")"<<endl;
+	if(l)	
+		if(r)	
+			if(r.ignored())
+				return l;
+			else
+				return r;	/*TT*/
+		else	
+			return l;	/*TF*/
+	else	
+		if(r)	
+			return r;	/*FT*/
+		else	
+			if(r.ignored())
+				return l;
+			else
+				return r;	/*FF*/
+}
+DECLARE_AND_OR_error_operators_for_short_circuiting(strpos_error)
 
 //}
 
@@ -396,7 +505,8 @@ bpe read_until_pattern_s    (it&, pf, pstr*, rez*)  .*( )       -(1+len)    len 
  * или это на другом уровне происходит оптимизация
  */
  /* todo:
-  * сделать варианты read_while и read_until функций, берущих указатель на итератор и лимит записанных символов
+  * сделать варианты read_while и read_until функций, берущих вместо указателя на строку,
+  * указатель на итератор и лимит записанных символов
   * и придумать к ним названия (вернее суффикс _n)
   * просто указатель на итератор (или insert_iterator) - не нужно 
   * - для этого сделать string_appender (и его возвращающий appender())
@@ -521,14 +631,14 @@ bpe read_until_pattern_s    (it&, pf, pstr*, rez*)  .*( )       -(1+len)    len 
 	base_parse_error 
 	read_fix_str(it_t & it, const ch_t * s)
 	{
-		return resin_E(it,read_fix_str_pos(it, s));
+		return reifnot_E(it,read_fix_str_pos(it, s));
 	}
 
 	template<typename it_t, typename ch_t, class str_t> inline
 	base_parse_error 
 	read_fix_str(it_t & it, const ch_t * s, str_t * pstr)
 	{
-		return resin_E(it,read_fix_str_pos(it, s,pstr));
+		return reifnot_E(it,read_fix_str_pos(it, s,pstr));
 	}
 
 	/*
@@ -1504,30 +1614,14 @@ bpe read_loc_ifloat     (it*, flt_t*)
  * что впрочем может быть полезно только для удачных исходов выполнения этих алгоритмов
  */
 //{======================= input_fix_str, input_until_str
-struct parse_exception : public std::exception
-{
-	std::string _what;
-	parse_exception(){}
-	parse_exception(std::string s):_what(s){}
-	virtual const char * what()const noexcept   {   return _what.c_str();   }
-};
-
 	template<typename it_t, typename ch_t> inline
 	base_parse_error
 	input_fix_str(it_t & it, const ch_t * s){
 		if(!*s) return 0;
-		ifnot(read_fix_char(*s++))
+		ifnot(read_fix_char(it,*s++))
 			return -1;
-		while(!atend(it))
-			if(!*s)
-				return 0;
-			else if(*it!=*s){
-				throw parse_exception("exception in input_fix_str");
-			}
-			else
-				it++, s++;
-		if(!*s) return 0;
-		throw parse_exception("exception in input_fix_str");
+		auto err= read_fix_str_pos(it,s);
+		ifnot(err)	throw err;
 	}
 
 	template<typename it_t, typename ch_t> inline

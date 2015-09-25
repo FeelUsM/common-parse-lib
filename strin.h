@@ -58,37 +58,6 @@ namespace str{
 #endif
 	;
 
-	/*
-	 * считывает строку до перевода строки
-	 * если конец файла встретился сразу - кидает исключение
-	 * если конец файла не встретился - добавляет перевод строки в конец считанной строки
-	 * в начале адаптируется к strin-у при помощи start_read_line()
-	 */
-	template<typename it_t>
-	it_t & operator>>(it_t & it, string & s){
-		start_read_line(it);
-		s="";
-		int err = read_line(it,&s);
-		if(err==-1)
-			throw parse_exception("неожиданный конец файла");
-		if(err>=0)
-			s+='\n';
-		return it;
-	}
-
-	/*
-	 * считывает фиксированную строку
-	 * если не получилось - кидает исключение 
-	 * в начале адаптируется к strin-у при помощи start_read_line()
-	 */
-	template<typename it_t>
-	it_t & operator>>(it_t & it, const char * s){
-		start_read_line(it);
-		int err	= read_fix_str(it,s);
-		if(err>0)	throw parse_exception(string("заданной строки '")+s+"' не оказалось");
-		if(err<0)	throw parse_exception("неожиданный конец файла");
-		return it;
-	}
 
 }//namespace str
 #endif //STRIN_H
