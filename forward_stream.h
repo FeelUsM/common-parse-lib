@@ -127,25 +127,25 @@ public:
 // ----****----
 // стрка, выдающая блоки
 template <typename ch_t>
-class basic_file_on_cstr_block
+class basic_file_on_cstr
 	: public basic_file_i<ch_t>
 {
-#define constructor basic_file_on_cstr_block
-typedef basic_file_on_cstr_block<ch_t> my_t;
+#define constructor basic_file_on_cstr
+typedef basic_file_on_cstr<ch_t> my_t;
 	ch_t * _file;
 public:
 		//CONSTRUCTION DESTRUCTION COPYING
 	constructor(ch_t * str)	: _file(str)	{	}
 	constructor() : _file(0){}
-	~constructor() = default;
+	~constructor() = default;// override
 	COPYING_DECL(default);
 	
 		//MEMBERS
-	bool eof()const{	return !*_file;	}
-	bool bad()const{	return _file==0;	}
-	bool fail()const{	return bad();	}
-	bool good()const{	return !fail();	}
-	size_t read(ch_t * buf, size_t size){
+	bool eof()const override{	return !*_file;	}
+	bool bad()const override{	return _file==0;	}
+	bool fail()const override{	return bad();	}
+	bool good()const override{	return !fail();	}
+	size_t read(ch_t * buf, size_t size)override{
 		//todo для специализаций подошли бы и strncpy() и wcsncpy()
 		for(size_t i=0; i<size; i++,buf++,_file++)
 			if(!(*_file))
@@ -156,10 +156,10 @@ public:
 	}
 #undef constructor
 };
-typedef basic_file_on_cstr_block<char> file_on_cstr_block;
-typedef basic_file_on_cstr_block<wchar_t> wfile_on_cstr_block;
-typedef basic_file_on_cstr_block<char16_t> u16file_on_cstr_block;
-typedef basic_file_on_cstr_block<char32_t> u32file_on_cstr_block;
+typedef basic_file_on_cstr<char> file_on_cstr;
+typedef basic_file_on_cstr<wchar_t> wfile_on_cstr;
+typedef basic_file_on_cstr<char16_t> u16file_on_cstr;
+typedef basic_file_on_cstr<char32_t> u32file_on_cstr;
 
 // ----****----
 // ----****---- CLASS basic_file_on_FILE_i ----****----
@@ -188,7 +188,7 @@ protected:
 	}
 public:
 	constructor() : _file(0),_internal(false){}
-	~constructor() {	destroy();	}
+	~constructor() override{	destroy();	}
 
 	constructor(const my_t & r)
 		:_file(r._file),_internal(false){}
@@ -215,10 +215,10 @@ public:
 		my_assert(!setvbuf(_file,NULL,_IONBF,0),"не получилось отключить буферизацию FILE");
 	}
 
-	bool eof()const{	return feof(_file);	}
-	bool bad()const{	return _file==0;	}
-	bool fail()const{	return bad()||ferror(_file);	}
-	bool good()const{	return !fail();	}
+	bool eof()const override{	return feof(_file);	}
+	bool bad()const override{	return _file==0;	}
+	bool fail()const override{	return bad()||ferror(_file);	}
+	bool good()const override{	return !fail();	}
 		//ADDED MEMBER
 	FILE * file()const{		return _file;	}
 	bool has_internal()const{	return _internal;	}
@@ -230,52 +230,52 @@ public:
 // ----****----
 // файл, выдающий блоки
 template <typename ch_t>
-class basic_file_on_FILE_block
+class basic_file_on_FILE
 	: public basic_file_on_FILE_i<ch_t>
 {
-#define constructor basic_file_on_FILE_block
-typedef basic_file_on_FILE_block<ch_t> my_t;
+#define constructor basic_file_on_FILE
+typedef basic_file_on_FILE<ch_t> my_t;
 typedef basic_file_on_FILE_i<ch_t> base_t;
 public:
 	COPYING_DECL(default)
-	~constructor() = default;
+	~constructor() = default;//override
 	constructor() = default;
 	constructor(FILE * f): base_t(f) {}
 	constructor(const char * name, const char * mode): base_t(fopen(name,mode)) {  
 		base_t::_internal=true;
 	}
-	size_t read(ch_t * buf, size_t size) {
+	size_t read(ch_t * buf, size_t size) override{
 		my_assert(base_t::good(),"не смог открыть файл");
 		size_t x = fread(buf,sizeof(ch_t),size,base_t::_file);
 		return x;
 	};
 #undef constructor
 };
-typedef basic_file_on_FILE_block<char> file_on_FILE_block;
-typedef basic_file_on_FILE_block<wchar_t> wfile_on_FILE_block;
-typedef basic_file_on_FILE_block<char16_t> u16file_on_FILE_block;
-typedef basic_file_on_FILE_block<char32_t> u32file_on_FILE_block;
+typedef basic_file_on_FILE<char> file_on_FILE;
+typedef basic_file_on_FILE<wchar_t> wfile_on_FILE;
+typedef basic_file_on_FILE<char16_t> u16file_on_FILE;
+typedef basic_file_on_FILE<char32_t> u32file_on_FILE;
 	
 // ----****----
 // ----****---- CLASS file_on_FILE_string ----****----
 // ----****----
 // файл, выдающий строки, в начале добавляет \n для start_read_line()
-class file_on_FILE_string
+class file_on_FILE_stringbuf
 	: public basic_file_on_FILE_i<char>
 {
-#define constructor file_on_FILE_string
-typedef file_on_FILE_string my_t;
+#define constructor file_on_FILE_stringbuf
+typedef file_on_FILE_stringbuf my_t;
 typedef basic_file_on_FILE_i<char> base_t;
 	bool init = false;
 public:
 	COPYING_DECL(default)
-	~constructor() = default;
+	~constructor() = default;//override
 	constructor() = default;
 	constructor(FILE * f): base_t(f) {}
 	constructor(const char * name, const char * mode): base_t(fopen(name,mode)) {  
 		base_t::_internal=true;
 	}
-	size_t read(char * buf, size_t size){
+	size_t read(char * buf, size_t size)override{
 		my_assert(size>0,"string_file_on_FILE: запрошенный размер буфера =0");
 		if(!init){
 			*buf++ = '\n';
@@ -294,22 +294,22 @@ public:
 // ----****---- CLASS wfile_on_FILE_string ----****----
 // ----****----
 // файл, выдающий wстроки, в начале добавляет \n для start_read_line()
-class wfile_on_FILE_string
+class wfile_on_FILE_stringbuf
 	: public basic_file_on_FILE_i<wchar_t>
 {
-#define constructor wfile_on_FILE_string
-typedef wfile_on_FILE_string my_t;
+#define constructor wfile_on_FILE_stringbuf
+typedef wfile_on_FILE_stringbuf my_t;
 typedef basic_file_on_FILE_i<wchar_t> base_t;
 	bool init = false;
 public:
 	COPYING_DECL(default)
-	~constructor() = default;
+	~constructor() = default;//override
 	constructor() = default;
 	constructor(FILE * f): base_t(f) {}
 	constructor(const char * name, const char * mode): base_t(fopen(name,mode)) {  
 		base_t::_internal=true;
 	}
-	size_t read(wchar_t * buf, size_t size){
+	size_t read(wchar_t * buf, size_t size)override{
 		my_assert(size>0,"string_file_on_FILE: запрошенный размер буфера =0");
 		if(!init){
 			*buf++ = '\n';
