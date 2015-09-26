@@ -212,7 +212,9 @@ public:
 		destroy();	return init(r);
 	}
 	constructor(FILE * f): _file(f),_internal(false) {
-		my_assert(!setvbuf(_file,NULL,_IONBF,0),"не получилось отключить буферизацию FILE");
+		if(_file)
+			my_assert(!setvbuf(_file,NULL,_IONBF,0),
+				"не получилось отключить буферизацию FILE");
 	}
 
 	bool eof()const override{	return feof(_file);	}
