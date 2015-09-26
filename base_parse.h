@@ -1354,14 +1354,14 @@ bpe read_bin            (it&, int_t*)           int#[:digit:]=[01]          -2  
 		int_t premax = (numeric_limits<int_t>::max()-ss+1)/ss;
 		ifnot(read_digit(it,ss,prez))
 			return -2;
-		while(*prez<=premax){
-			int_t tmp;
-			ifnot(read_digit(it,ss,&tmp))
-				return 0;
+		int_t tmp;
+		while(read_digit(it,ss,&tmp)){
+			if(*prez>premax)
+				return -1;
 			*prez *= ss;
 			*prez += tmp;
 		}
-		return -1;
+		return 0;
 	}
 
 	//sign - опционально
