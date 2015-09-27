@@ -98,6 +98,8 @@ template<typename ch_t> inline bool is_alnum(ch_t c)   {   return is_alpha(c) ||
 template<typename ch_t> inline bool is_punct(ch_t c)   {   return c>='!' && c<='/' || c>=':' && c<='@' || c>='[' && c<='`' || c>='{' && c<='~';    }
 template<typename ch_t> inline bool is_graph(ch_t c)   {   return c>='!' && c<='~';    }
 template<typename ch_t> inline bool is_print(ch_t c)   {   return c>=' ' && c<='~';    }
+template<typename ch_t> inline bool is_crlf(ch_t c)   {   return c=='\r' || c=='\n';    }
+
 
 /*
  * когда в функции read_while_charclass и until_charclass попадает объект span
@@ -180,6 +182,7 @@ template<typename ch_t> inline basic_bispan<ch_t>     make_spn_alnum();
 template<typename ch_t> inline basic_bispan<ch_t>     make_spn_punct();
 template<typename ch_t> inline basic_bispan<ch_t>     make_spn_graph();
 template<typename ch_t> inline basic_bispan<ch_t>     make_spn_print();
+template<typename ch_t> inline basic_span<ch_t>     make_spn_crlf();
 
 #define DEFSPANS(ch_t,s_prefix,prefix)\
 template<> inline basic_bispan<ch_t>  make_spn_cntr  <ch_t>()   {   return basic_bispan<ch_t>(s_prefix##"\1\x20\x7f\x7f\0");   }\
@@ -194,6 +197,7 @@ template<> inline basic_bispan<ch_t>  make_spn_alnum <ch_t>()   {   return basic
 template<> inline basic_bispan<ch_t>  make_spn_punct <ch_t>()   {   return basic_bispan<ch_t>(s_prefix##"!/:@[`{~\0");    }\
 template<> inline basic_bispan<ch_t>  make_spn_graph <ch_t>()   {   return basic_bispan<ch_t>(s_prefix##"!~\0"); }\
 template<> inline basic_bispan<ch_t>  make_spn_print <ch_t>()   {   return basic_bispan<ch_t>(s_prefix##" ~\0"); }\
+template<> inline basic_span<ch_t>    make_spn_crlf  <ch_t>()   {   return basic_span<ch_t>  (s_prefix##"\r\n"); }\
 prefix##bispan	prefix##spn_cntr 	= make_spn_cntr	  <ch_t>();\
 prefix##span	prefix##spn_blabk 	= make_spn_blank  <ch_t>();\
 prefix##span	prefix##spn_space 	= make_spn_space  <ch_t>();\
@@ -205,7 +209,9 @@ prefix##bispan	prefix##spn_xdigit 	= make_spn_xdigit <ch_t>();\
 prefix##bispan	prefix##spn_alnum 	= make_spn_alnum  <ch_t>();\
 prefix##bispan	prefix##spn_punct 	= make_spn_punct  <ch_t>();\
 prefix##bispan	prefix##spn_graph 	= make_spn_graph  <ch_t>();\
-prefix##bispan	prefix##spn_print 	= make_spn_print  <ch_t>();
+prefix##bispan	prefix##spn_print 	= make_spn_print  <ch_t>();\
+prefix##span	prefix##spn_crlf 	= make_spn_crlf  <ch_t>();\
+//enddef
 
 DEFSPANS(char,,)
 DEFSPANS(wchar_t,L,w)
@@ -1106,7 +1112,6 @@ bpe read_bl_charclass_s     (it&, is, pstr*)    [:blank:][ ]    -1          0 и
 bpe read_bl_charclass_c     (it&, is, pc*)      [:blank:][ ]    -1          0 или -2            OK
 */
 //{======================= line, start_read_line, spc, spcs, s_fix_str, s_fix_char, bln, blns, b_fix_str, b_fix_char
-	DEF_STRING(CRLF,"\r\n")
 	/*
 	 * line(it_t & it, str_t * ps)
 	 * line(it_t & it)
@@ -1120,7 +1125,7 @@ bpe read_bl_charclass_c     (it&, is, pc*)      [:blank:][ ]    -1          0 и
 	read_line(it_t & it, str_t * ps){
 		typedef char_type<it_t> ch_t;
 		base_parse_error err;
-		if(err=read_until_charclass(it,basic_span<ch_t>(CRLF<ch_t>().s),ps)){
+		if(err=read_until_charclass(it,make_spn_crlf<char_type<it_t>>(),ps)){
 			*ps +=(ch_t)'\n';
 			return err.len()+1;
 		}
@@ -1131,9 +1136,8 @@ bpe read_bl_charclass_c     (it&, is, pc*)      [:blank:][ ]    -1          0 и
 	template<typename it_t> inline
 	base_parse_error 
 	read_line(it_t & it){
-		typedef char_type<it_t> ch_t;
 		base_parse_error err;
-		if(err=read_until_charclass(it,basic_span<ch_t>(CRLF<ch_t>().s)))
+		if(err=read_until_charclass(it,make_spn_crlf<char_type<it_t>>()))
 			return err.len()+1;
 		else
 			return err.len()==-1 ? -1 : err.len();
@@ -1150,7 +1154,7 @@ bpe read_bl_charclass_c     (it&, is, pc*)      [:blank:][ ]    -1          0 и
 		typedef char_type<it_t> ch_t;
 		read_line(it);
 		ch_t c;
-		ifnot(read_charclass_c(it,basic_span<ch_t>(CRLF<ch_t>().s),&c))
+		ifnot(read_charclass_c(it,make_spn_crlf<char_type<it_t>>(),&c))
 			return -1;
 		if(c==(ch_t)'\n')
 			return 0;
