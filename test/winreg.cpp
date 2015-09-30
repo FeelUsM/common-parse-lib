@@ -16,6 +16,7 @@ using std::cout;
 using std::cerr;
 using std::endl;
 
+#define ifnot(expr)	if(!(expr))
 #define r_if(expr)             if((expr)==0)
 #define r_while(expr)       while((expr)==0)
 #define r_ifnot(expr)           if(expr)

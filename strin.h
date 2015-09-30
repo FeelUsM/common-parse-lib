@@ -160,7 +160,5 @@ strpos_error operator||(strpos_error l, strpos_error r){
 }
 DECLARE_AND_OR_error_operators_for_short_circuiting(strpos_error)
 
-
-
 }//namespace str
 #endif //STRIN_H

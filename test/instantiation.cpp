@@ -33,32 +33,32 @@ namespace str{
 	template base_parse_error read_fix_str<char16_t*,char16_t>(char16_t*& it, const char16_t * s);
 	template base_parse_error read_fix_char<const char32_t*,char32_t>(const char32_t*& it, char32_t c);
 	template base_parse_error read_charclass<char*,bool (&)(char)>(char*& it, bool (&)(char));
-	template base_parse_error read_charclass<wchar_t*>(wchar_t*& it, wspan s);
-	template base_parse_error read_charclass<char16_t*>(char16_t*& it, u16bispan s);
+	template base_parse_error read_charclass<wchar_t*,wspan>(wchar_t*& it, const wspan & s);
+	template base_parse_error read_charclass<char16_t*,u16bispan>(char16_t*& it, const u16bispan & s);
 	template base_parse_error read_charclass_s<const char32_t*,bool (&)(char),u32string>(const char32_t*& it, bool (&)(char), u32string * pstr);
-	template base_parse_error read_charclass_s<char*,string>(char*& it, span s, string * pstr);
-	template base_parse_error read_charclass_s<wchar_t*,wstring>(wchar_t*& it, wbispan s, wstring * pstr);
+	template base_parse_error read_charclass_s<char*,span,string>(char*& it, const span & s, string * pstr);
+	template base_parse_error read_charclass_s<wchar_t*,wbispan,wstring>(wchar_t*& it, const wbispan & s, wstring * pstr);
 	template base_parse_error read_charclass_c<char16_t*,bool (&)(char16_t),char16_t>(char16_t*& it, bool (&is)(char16_t), char16_t * pch);
-	template base_parse_error read_charclass_c<const char32_t*,char32_t>(const char32_t*& it, u32span s, char32_t * pch);
-	template base_parse_error read_charclass_c<char*,char>(char*& it, bispan s, char * pch);
+	template base_parse_error read_charclass_c<const char32_t*,u32span,char32_t>(const char32_t*& it, const u32span & s, char32_t * pch);
+	template base_parse_error read_charclass_c<char*,bispan,char>(char*& it, const bispan & s, char * pch);
 	void foo1(){	const char * s="qweuirerio"; read_charclass(s,spn_space);	}
 	//void foo2(){	char s[]="qweuirerio"; read_charclass(&s,spn_space<char>());	}
 	void foo2(){	char s[]="qweuirerio", * p=s; read_charclass(p,spn_space);	}
 	
 	template base_parse_error read_until_char     <wchar_t*,wchar_t>(wchar_t*& it, 	wchar_t ch);
 	template base_parse_error read_until_charclass<const char16_t*,bool(&)(char16_t)>(const char16_t*& it, 	bool(&)(char16_t));
-	template base_parse_error read_until_charclass<char32_t*>(char32_t*& it,u32span s);
-	template base_parse_error read_until_charclass<char*>(char*& it,bispan s);
+	template base_parse_error read_until_charclass<char32_t*,u32span>(char32_t*& it, const u32span & s);
+	template base_parse_error read_until_charclass<char*,bispan>(char*& it, const bispan & s);
 	template base_parse_error read_while_charclass<const wchar_t*,bool(&)(wchar_t)>(const wchar_t*& it,bool(&)(wchar_t));
-	template base_parse_error read_while_charclass<char16_t*>(char16_t*& it,u16span s);
-	template base_parse_error read_while_charclass<char32_t*>(char32_t*& it,u32bispan s);
+	template base_parse_error read_while_charclass<char16_t*, u16span>(char16_t*& it, const u16span & s);
+	template base_parse_error read_while_charclass<char32_t*, u32bispan>(char32_t*& it, const u32bispan & s);
 	template base_parse_error read_until_char     <const char*,char,string>(const char*& it,char ch, string * pstr);
 	template base_parse_error read_until_charclass<wchar_t*,bool(&)(wchar_t),wstring>(wchar_t*& it, bool(&)(wchar_t), wstring * pstr);
-	template base_parse_error read_until_charclass<char16_t*,u16string>(char16_t*& it, u16span s, u16string * pstr);
-	template base_parse_error read_until_charclass<const char32_t*,u32string>(const char32_t*& it, u32bispan s, u32string * pstr);
+	template base_parse_error read_until_charclass<char16_t*,u16span,u16string>(char16_t*& it, const u16span & s, u16string * pstr);
+	template base_parse_error read_until_charclass<const char32_t*,u32bispan,u32string>(const char32_t*& it, const u32bispan & s, u32string * pstr);
 	template base_parse_error read_while_charclass<char*,bool(&)(char),string>(char*& it,bool(&)(char), string * pstr);
-	template base_parse_error read_while_charclass<wchar_t*,wstring>(wchar_t*& it,wspan s, wstring * pstr);
-	template base_parse_error read_while_charclass<const char16_t*,u16string>(const char16_t*& it, 	u16bispan s, u16string * pstr);
+	template base_parse_error read_while_charclass<wchar_t*,wspan,wstring>(wchar_t*& it, const wspan & s, wstring * pstr);
+	template base_parse_error read_while_charclass<const char16_t*,u16bispan,u16string>(const char16_t*& it, const u16bispan & s, u16string * pstr);
 
 	template base_parse_error read_until_str		<char32_t*,char32_t>(char32_t*& it, const char32_t * s);
 	template base_parse_error read_until_str		<char*,char,string>(char*& it, const char * s, string * pstr);

@@ -20,9 +20,10 @@ using std::endl;
 #define read_fix_str_s_EXPECTED(mes,it,str,s) read_fix_str(it,str,s)>>str_error(mes "Ожидалась строка '" str "'")
 //#define read_fix_char_EXPECTED(it,str) read_fix_char(it,str[0])>>str_error("Ожидался символ '" str "'")
 //#define read_fix_char_s_EXPECTED(it,str,s) read_fix_char(it,str[0],s)>>str_error("Ожидался символ '" str "'")
+#define ifnot(expr)	if(!(expr))
 
-template <class it_t>
-void dump(it_t tmp, const char * mes){
+template <class it_t, class mes_t>
+void dump(it_t tmp, mes_t mes){
 	string s;
 	read_fix_length(tmp,50,&s);
 	cout <<mes <<dump(s.c_str()) <<endl;
@@ -200,7 +201,7 @@ int main2(int argc, const char * argv[]){
 	typename forward_adressed_stream::iterator * pit;
 	forward_adressed_stream * ps;
 	if(argc==2){
-		ps = new forward_adressed_stream(true, new file_on_FILE_block(argv[1],"r"));
+		ps = new forward_adressed_stream(true, new file_on_FILE(argv[1],"r"));
 			//true - говорит о том, что поток сам удалит этот файл
 		if(!*ps)	throw "не смог открыть файл";
 		pit = &ps->iter();						
@@ -236,7 +237,7 @@ int submain(typename forward_adressed_stream::iterator & it){
 }
 int main3(int argc, const char * argv[]){
 	if(argc==2){
-		forward_adressed_stream stream(true, new file_on_FILE_block(argv[1],"r"));
+		forward_adressed_stream stream(true, new file_on_FILE(argv[1],"r"));
 										//true - говорит о том, что поток сам удалит этот файл
 		if(!stream)	{
 			std::cerr<<"не смог открыть файл"<<endl;

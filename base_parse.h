@@ -225,11 +225,39 @@ class basic_span_string{
 	
 };
 
+/* ТАБЛИЧКА
+bool is_charclass            (is, c)            
+bool is_charclass            (spn, c)            
+bool is_charclass            (bspn, c)           
+*/
+	template<typename ch_t, class fun_t> inline
+	bool 
+	is_charclass(const fun_t & fun, ch_t c){
+		return fun(c);
+	}
+		
+	template<typename ch_t> inline
+	bool 
+	is_charclass(basic_span<ch_t> s, ch_t c){
+		while(*s.s)
+			if(c==*s.s++)
+				return true;
+		return false;
+	}
+		
+	template<typename ch_t> inline
+	bool 
+	is_charclass(basic_bispan<ch_t> s, ch_t c){
+		while(*s.s)
+			if(*s.s++<=c && c<=*s.s++)
+				return true;
+		return false;
+	}
+		
 //}
 
 //{ ОШИБКИ
-#define ifnot(expr)			if(!(expr))
-#define RETURN_IFNOT(expr)	{	auto err=expr;	ifnot(err)return err;	}
+#define RETURN_IFNOT(expr)	{	auto err=expr;	if(!(err))return err;	}
 
 //выражение передаем в другую функцию, что бы та его выполнила или не выполнила
 #define E2F_cyrq(expr,...)			[__VA_ARGS__]	()					{return expr;}
@@ -346,56 +374,50 @@ func_obj    err pf(it*, rez*)
 
 len - кол-во символов, добавлненных в *pstr
 
-.                                                                                                   специализация для
-.                                                                                                   [w]char char16/32   forward_stream
-.                                                               возвращаемое значение в случае  реализованность 
+.                                                                                               специализация для
+.                                                                                               [w]char char16/32   forward_stream
+.                                                               возвращаемое значение в случае  
 название                    аргументы           рег.выр.        если EOF    если не EOF     статистика использования
 '<-' в рег.выр. - говорит о том, что что после прочтения последнего символа итератор стоит не после него а на нем
 //в сдучае неудачи итератор НЕ восстанавливают
-bpe read_until_eof          (it&)               .*$             0           0               1   OK
-bpe read_until_eof          (it&,    pstr*)     .*$             len         len                 OK
-bpe read_fix_length         (it&, n)            .{n}            -1          0                   OK
-bpe read_fix_length         (it&, n, pstr*)     .{n}            -(1+len)    0               2   OK
-bpe read_fix_str_pos        (it&, s)            str             -1          0 или -2            OK
-bpe read_fix_str_pos        (it&, s, pstr*)     str             -1          0 или -2            OK
+bpe read_until_eof          (it&)               .*$             0           0               1   
+bpe read_until_eof          (it&,    pstr*)     .*$             len         len                 
+bpe read_fix_length         (it&, n)            .{n}            -1          0                   
+bpe read_fix_length         (it&, n, pstr*)     .{n}            -(1+len)    0               2   
+bpe read_fix_str_pos        (it&, s)            str             -1          0 или -2            
+bpe read_fix_str_pos        (it&, s, pstr*)     str             -1          0 или -2            
 //в сдучае неудачи итератор восстанавливают
-bpe read_fix_str            (it&, s)            str             -1          0 или -2        7   OK
-bpe read_fix_str            (it&, s, pstr*)     str             -1          0 или -2        2   OK
-bpe read_fix_char           (it&, c)            c               -1          0 или -2        3   OK
-bpe read_fix_char           (it&, c, pstr*)     c               -1          0 или -2        7   OK
-bpe read_charclass          (it&, is)           [ ]             -1          0 или -2            OK
-bpe read_charclass          (it&, spn)          [ ]             -1          0 или -2            OK
-bpe read_charclass          (it&, bspn)         [ ]             -1          0 или -2            OK
-bpe read_charclass_c        (it&, is, ch*)      [ ]             -1          0 или -2            OK
-bpe read_charclass_c        (it&, spn, ch*)     [ ]             -1          0 или -2        1   OK
-bpe read_charclass_c        (it&, bspn, ch*)    [ ]             -1          0 или -2            OK
-bpe read_charclass_s        (it&, is, pstr*)    [ ]             -1          0 или -2            OK
-bpe read_charclass_s        (it&, spn, pstr*)   [ ]             -1          0 или -2        1   OK
-bpe read_charclass_s        (it&, bspn, pstr*)  [ ]             -1          0 или -2        5   OK
-bpe read_c                  (it&, ch*)          .               -1          0               1   OK
-bpe read_c                  (it&, ch*, pstr*)   .               -1          0               4   OK
+bpe read_fix_str            (it&, s)            str             -1          0 или -2        7   
+bpe read_fix_str            (it&, s, pstr*)     str             -1          0 или -2        2   
+bpe read_fix_char           (it&, c)            c               -1          0 или -2        3   
+bpe read_fix_char           (it&, c, pstr*)     c               -1          0 или -2        7   
+bpe read_charclass    (it&, is/spn/bspn)        [ ]             -1          0 или -2            
+bpe read_charclass_c  (it&, is/spn/bspn, ch*)   [ ]             -1          0 или -2        1   
+bpe read_charclass_s  (it&, is/spn/bspn, pstr*) [ ]             -1          0 или -2        6   
+bpe read_c                  (it&, ch*)          .               -1          0               1   
+bpe read_c                  (it&, ch*, pstr*)   .               -1          0               4   
 //в сдучае неудачи итератор НЕ восстанавливают
-bpe read_while_charclass    (it&, is)           [ ]*            -(1+len)    len                 OK
-bpe read_while_charclass    (it&, spn)          [ ]*            -(1+len)    len             2   OK
-bpe read_while_charclass    (it&, bspn)         [ ]*            -(1+len)    len                 OK
-bpe read_while_charclass    (it&, is, pstr*)    [ ]*            -(1+len)    len                 OK
-bpe read_while_charclass    (it&, spn, pstr*)   [ ]*            -(1+len)    len                 OK
-bpe read_while_charclass    (it&, bspn, pstr*)  [ ]*            -(1+len)    len             1   OK
-bpe read_until_charclass    (it&, is)           .*[ ]<-         -(1+len)    len                 OK
-bpe read_until_charclass    (it&, spn)          .*[ ]<-         -(1+len)    len             1   OK
-bpe read_until_charclass    (it&, bspn)         .*[ ]<-         -(1+len)    len                 OK
-bpe read_until_charclass    (it&, is, pstr*)    .*[ ]<-         -(1+len)    len                 OK
-bpe read_until_charclass    (it&, spn, pstr*)   .*[ ]<-         -(1+len)    len             2   OK
-bpe read_until_charclass    (it&, bspn, pstr*)  .*[ ]<-         -(1+len)    len                 OK
-bpe read_until_char         (it&, c)            .*c             -(1+len)    len                 OK
-bpe read_until_char         (it&, c, pstr*)     .*c             -(1+len)    len                 OK
+bpe read_while_charclass    (it&, is)           [ ]*            -(1+len)    len                 
+bpe read_while_charclass    (it&, spn)          [ ]*            -(1+len)    len             2   
+bpe read_while_charclass    (it&, bspn)         [ ]*            -(1+len)    len                 
+bpe read_while_charclass    (it&, is, pstr*)    [ ]*            -(1+len)    len                 
+bpe read_while_charclass    (it&, spn, pstr*)   [ ]*            -(1+len)    len                 
+bpe read_while_charclass    (it&, bspn, pstr*)  [ ]*            -(1+len)    len             1   
+bpe read_until_charclass    (it&, is)           .*[ ]<-         -(1+len)    len                 
+bpe read_until_charclass    (it&, spn)          .*[ ]<-         -(1+len)    len             1   
+bpe read_until_charclass    (it&, bspn)         .*[ ]<-         -(1+len)    len                 
+bpe read_until_charclass    (it&, is, pstr*)    .*[ ]<-         -(1+len)    len                 
+bpe read_until_charclass    (it&, spn, pstr*)   .*[ ]<-         -(1+len)    len             2   
+bpe read_until_charclass    (it&, bspn, pstr*)  .*[ ]<-         -(1+len)    len                 
+bpe read_until_char         (it&, c)            .*c             -(1+len)    len                 
+bpe read_until_char         (it&, c, pstr*)     .*c             -(1+len)    len                 
 
-bpe read_until_str          (it&, s)            .*str           -(1+len)    len             2   OK
-bpe read_until_str          (it&, s, pstr*)     .*str           -(1+len)    len             1   OK
-bpe read_until_pattern      (it&, pf)           .*( )           -(1+len)    len                 OK
-bpe read_until_pattern      (it&, pf, rez*)     .*( )           -(1+len)    len                 OK
-bpe read_until_pattern_s    (it&, pf, pstr*)    .*( )           -(1+len)    len                 OK
-bpe read_until_pattern_s    (it&, pf, pstr*, rez*)  .*( )       -(1+len)    len                 OK
+bpe read_until_str          (it&, s)            .*str           -(1+len)    len             2   
+bpe read_until_str          (it&, s, pstr*)     .*str           -(1+len)    len             1   
+bpe read_until_pattern      (it&, pf)           .*( )           -(1+len)    len                 
+bpe read_until_pattern      (it&, pf, rez*)     .*( )           -(1+len)    len                 
+bpe read_until_pattern_s    (it&, pf, pstr*)    .*( )           -(1+len)    len                 
+bpe read_until_pattern_s    (it&, pf, pstr*, rez*)  .*( )       -(1+len)    len                 
 */
 /* ? интересно, а что эффективней:
  * проходиться по потоку за 1 проход, добавляя в строку символы
@@ -408,6 +430,7 @@ bpe read_until_pattern_s    (it&, pf, pstr*, rez*)  .*( )       -(1+len)    len 
  * что бы он при вызове x++ и если результат не используется, использовал вызов ++x
  * или это на другом уровне происходит оптимизация
  */
+//??? а как лучше передавать функциональные объекты: по значению или по ссылке???
  /* todo:
   * сделать варианты read_while и read_until функций, берущих вместо указателя на строку,
   * указатель на итератор и лимит записанных символов
@@ -572,124 +595,52 @@ bpe read_until_pattern_s    (it&, pf, pstr*, rez*)  .*( )       -(1+len)    len 
 	
 	/*
 	 * charclass(it_t & it, const class_t & is)
-	 * если is(.) возвращает true от указываемого итератором символа, то сдвигает итератор на 1 позицию
+	 * если is_charclass(is, . ) возвращает true от указываемого итератором символа, то сдвигает итератор на 1 позицию
 	 *
 	 * если итератор в состоянии atend(), возвращает -1
-	 * если is(.) возвращает false от указываемого итератором символа, то возвращает -2, и итератор не двигает
+	 * если is_charclass(is, . ) возвращает false от указываемого итератором символа, то возвращает -2, и итератор не двигает
 	 */
 	template<typename it_t, typename class_t> inline
 	base_parse_error 
 	read_charclass(it_t & it, const class_t & is){
 		if(atend(it)) return -1;
-		if(!is(*it))  return -2;
+		if(!is_charclass(is,*it))  return -2;
 		it++;
 		return 0;
 	}
 
-	template<typename it_t> inline
-	base_parse_error 
-	read_charclass(it_t & it, basic_span<char_type<it_t>> s){
-		if(atend(it)) return -1;
-		while(*s.s)
-			if(*it==*s.s++){
-				it++;
-				return 0;
-			}
-		return -2;
-	}
-		
-	template<typename it_t> inline
-	base_parse_error 
-	read_charclass(it_t & it, basic_bispan<char_type<it_t>> s){
-		if(atend(it)) return -1;
-		while(*s.s)
-			if(*s.s++<=*it && *it<=*s.s++){
-				it++;
-				return 0;
-			}
-		return -2;
-	}
-		
 	/*
 	 * charclass_s(it_t & it, const class_t & is, pstr_t * pstr)
-	 * если is(.) возвращает true от указываемого итератором символа, то считывает 1 символ
+	 * если is_charclass(is, . ) возвращает true от указываемого итератором символа, то считывает 1 символ
 	 *
 	 * если итератор в состоянии atend(), возвращает -1
-	 * если is(.) возвращает false от указываемого итератором символа, то возвращает -2, и символ не считывает
+	 * если is_charclass(is, . ) возвращает false от указываемого итератором символа, то возвращает -2, и символ не считывает
 	 */
 	template<typename it_t, typename class_t, typename str_t> inline
 	base_parse_error 
 	read_charclass_s(it_t & it, const class_t & is, str_t * pstr){
 		if(atend(it)) return -1;
-		if(!is(*it))  return -2;
+		if(!is_charclass(is,*it))  return -2;
 		*pstr += *it++;
 		return 0;
 	}
 
-	template<typename it_t, typename str_t> inline
-	base_parse_error 
-	read_charclass_s(it_t & it, basic_span<char_type<it_t>> s, str_t * pstr){
-		if(atend(it)) return -1;
-		while(*s.s)
-			if(*it == *s.s++){
-				*pstr += *it++;
-				return 0;
-			}
-		return -2;
-	}
-		
-	template<typename it_t, typename str_t> inline
-	base_parse_error 
-	read_charclass_s(it_t & it, basic_bispan<char_type<it_t>> s, str_t * pstr){
-		if(atend(it)) return -1;
-		while(*s.s)
-			if(*s.s++<=*it && *it<=*s.s++){
-				*pstr += *it++;
-				return 0;
-			}
-		return -2;
-	}
-		
 	/*
 	 * charclass_c(it_t & it, const class_t & is, ch_t * ch)
-	 * если is(.) возвращает true от указываемого итератором символа, то считывает 1 символ
+	 * если is_charclass(is, . ) возвращает true от указываемого итератором символа, то считывает 1 символ
 	 *
 	 * если итератор в состоянии atend(), возвращает -1
-	 * если is(.) возвращает false от указываемого итератором символа, то возвращает 1, и символ не считывает
+	 * если is_charclass(is, . ) возвращает false от указываемого итератором символа, то возвращает 1, и символ не считывает
 	 */
 	template<typename it_t, typename class_t, typename ch_t> inline
 	base_parse_error 
 	read_charclass_c(it_t & it, const class_t & is, ch_t * pch){
 		if(atend(it)) return -1;
-		if(!is(*it))  return -2;
+		if(!is_charclass(is,*it))  return -2;
 		*pch = *it++;
 		return 0;
 	}
 	
-	template<typename it_t, typename ch_t> inline
-	base_parse_error 
-	read_charclass_c(it_t & it, basic_span<char_type<it_t>> s, ch_t * pch){
-		if(atend(it)) return -1;
-		while(*s.s)
-			if(*it == *s.s++){
-				*pch = *it++;
-				return 0;
-			}
-		return -2;
-	}
-		
-	template<typename it_t, typename ch_t> inline
-	base_parse_error 
-	read_charclass_c(it_t & it, basic_bispan<char_type<it_t>> s, ch_t * pch){
-		if(atend(it)) return -1;
-		while(*s.s)
-			if(*s.s++<=*it && *it<=*s.s++){
-				*pch = *it++;
-				return 0;
-			}
-		return -2;
-	}
-
 	/*
 	 * read_c(it_t & it, ch_t * c)
 	 * считывает 1 символ
@@ -716,9 +667,9 @@ bpe read_until_pattern_s    (it&, pf, pstr*, rez*)  .*( )       -(1+len)    len 
 	 * until_char(it_t & it, ch_t ch)
 	 * сдвигает указатель до тех пор, пока (не встретится заданный символ) или конец файла
 	 * until_charclass(it_t & it, const class_t & is)
-	 * сдвигает указатель до тех пор, пока (is(.) возвращает false) или не встретился конец файла
+	 * сдвигает указатель до тех пор, пока (is_charclass(is, . ) возвращает false) или не встретился конец файла
 	 * while_charclass(it_t & it, const class_t & is)
-	 * сдвигает указатель до тех пор, пока (is(.) возвращает true) или не встретился конец файла
+	 * сдвигает указатель до тех пор, пока (is_charclass(is, . ) возвращает true) или не встретился конец файла
 	 *
 	 * если встретился конец файла - возвращает -(1 + размер считанного)
 	 * и итератор указывает на конец файла
@@ -746,7 +697,7 @@ bpe read_until_pattern_s    (it&, pf, pstr*, rez*)  .*( )       -(1+len)    len 
 	read_until_charclass(it_t & it, const class_t & is){
 		int i=0;
 		while(!atend(it))
-			if(is(*it))
+			if(is_charclass(is,*it))
 				return i;
 			else{
 				it++;
@@ -754,43 +705,23 @@ bpe read_until_pattern_s    (it&, pf, pstr*, rez*)  .*( )       -(1+len)    len 
 			}
 		return -(1+i);
 	}
-	
+	/* for future specialization
 			template<typename it_t> inline
 			base_parse_error 
 			read_until_charclass(it_t & it, basic_span<char_type<it_t>> s){
-				int i=0;
-				while(!atend(it)){
-					const char_type<it_t> * ss=s.s;
-					while(*ss)
-						if(*it==*ss++)
-							return i;
-					it++;
-					i++;
-				}
-				return -(1+i);
 			}
 
 			template<typename it_t> inline
 			base_parse_error 
 			read_until_charclass(it_t & it, basic_bispan<char_type<it_t>> s){
-				int i=0;
-				while(!atend(it)){
-					const char_type<it_t> * ss=s.s;
-					while(*ss)
-						if(*ss++<=*it && *it<=*ss++)
-							return i;
-					it++;
-					i++;
-				}
-				return -(1+i);
 			}
-
+	*/
 	template<typename it_t, typename class_t> inline
 	base_parse_error 
 	read_while_charclass(it_t & it, const class_t & is){
 		int i=0;
 		while(!atend(it))
-			if(!is(*it))
+			if(!is_charclass(is,*it))
 				return i;
 			else{
 				it++;
@@ -798,50 +729,24 @@ bpe read_until_pattern_s    (it&, pf, pstr*, rez*)  .*( )       -(1+len)    len 
 			}
 		return -(1+i);
 	}
-	
+	/* for future specialization
 			template<typename it_t> inline
 			base_parse_error 
 			read_while_charclass(it_t & it, basic_span<char_type<it_t>> s){
-				int i=0;
-				while(!atend(it)){
-					const char_type<it_t> * ss=s.s;
-					while(*ss)
-						if(*it==*ss++){
-							it++;
-							i++;
-							goto met;
-						}
-					return i;
-				met:;
-				}
-				return -(1+i);
 			}
 
 			template<typename it_t> inline
 			base_parse_error 
 			read_while_charclass(it_t & it, basic_bispan<char_type<it_t>> s){
-				int i=0;
-				while(!atend(it)){
-					const char_type<it_t> * ss=s.s;
-					while(*ss)
-						if(*ss++<=*it && *it<=*ss++){
-							it++;
-							i++;
-							goto met;
-						}
-					return i;
-				met:;
-				}
-				return -(1+i);
 			}
-
+	*/
 	/*
 	 * until_char(it_t & it, ch_t ch, str_t * pstr)
 	 * считывает строку, до тех пор пока не встретится заданный символ или конец файла
 	 * until_charclass(it_t & it, const class_t & is, str_t * pstr)
-	 * считывает строку, пока is(.) возвращает false от указываемого итератором символа или не встретился конец файла
+	 * считывает строку, пока is_charclass(is, . ) возвращает false от указываемого итератором символа или не встретился конец файла
 	 * while_charclass(it_t & it, const class_t & is, str_t * pstr)
-	 * считывает строку, пока is(.) возвращает true от указываемого итератором символа или не встретился конец файла
+	 * считывает строку, пока is_charclass(is, . ) возвращает true от указываемого итератором символа или не встретился конец файла
 	 *
 	 * если встретился конец файла - возвращает -(1+число помещенных в строку символов)
 	 * и итератор указывает на конец файла
@@ -871,7 +776,7 @@ bpe read_until_pattern_s    (it&, pf, pstr*, rez*)  .*( )       -(1+len)    len 
 	read_until_charclass(it_t & it, const class_t & is, str_t * pstr){
 		int i=0;
 		while(!atend(it))
-			if(is(*it))
+			if(is_charclass(is,*it))
 				return i;
 			else{
 				*pstr += *it++;
@@ -879,43 +784,23 @@ bpe read_until_pattern_s    (it&, pf, pstr*, rez*)  .*( )       -(1+len)    len 
 			}
 		return -(1+i);
 	}
-
+	/* for future specialization
 			template<typename it_t, typename str_t> inline
 			base_parse_error 
 			read_until_charclass(it_t & it, basic_span<char_type<it_t>> s, str_t * pstr){
-				int i=0;
-				while(!atend(it)){
-					const char_type<it_t> * ss=s.s;
-					while(*ss)
-						if(*it==*ss++)
-							return i;
-					*pstr += *it++;
-					i++;
-				}
-				return -(1+i);
 			}
 
 			template<typename it_t, typename str_t> inline
 			base_parse_error 
 			read_until_charclass(it_t & it, basic_bispan<char_type<it_t>> s, str_t * pstr){
-				int i=0;
-				while(!atend(it)){
-					const char_type<it_t> * ss=s.s;
-					while(*ss)
-						if(*ss++<=*it && *it<=*ss++)
-							return i;
-					*pstr += *it++;
-					i++;
-				}
-				return -(1+i);
 			}
-
+	*/
 	template<typename it_t, typename class_t, typename str_t> inline
 	base_parse_error 
 	read_while_charclass(it_t & it, const class_t & is, str_t * pstr){
 		int i=0;
 		while(!atend(it))
-			if(!is(*it))
+			if(!is_charclass(is,*it))
 				return i;
 			else{
 				*pstr += *it++;
@@ -923,42 +808,17 @@ bpe read_until_pattern_s    (it&, pf, pstr*, rez*)  .*( )       -(1+len)    len 
 			}
 		return -(1+i);
 	}
-
+	/* for future specialization
 			template<typename it_t, typename str_t> inline
 			base_parse_error 
 			read_while_charclass(it_t & it, basic_span<char_type<it_t>> s, str_t * pstr){
-				int i=0;
-				while(!atend(it)){
-					const char_type<it_t> * ss=s.s;
-					while(*ss)
-						if(*it==*ss++){
-							*pstr += *it++;
-							i++;
-							goto met;
-						}
-					return i;
-				met:;
-				}
-				return -(1+i);
 			}
 
 			template<typename it_t, typename str_t> inline
 			base_parse_error 
 			read_while_charclass(it_t & it, basic_bispan<char_type<it_t>> s, str_t * pstr){
-				int i=0;
-				while(!atend(it)){
-					const char_type<it_t> * ss=s.s;
-					while(*ss)
-						if(*ss++<=*it && *it<=*ss++){
-							*pstr += *it++;
-							i++;
-							goto met;
-						}
-					return i;
-				met:;
-				}
-				return -(1+i);
 			}
+		*/
 //}
 //{======================= until_str, until_pattern
 	/*
@@ -1083,33 +943,33 @@ span        spn  //см выше
 bispan      bspn  //см выше
 func_obj    err pf(it*) //наподобие int read_spc(it*)
 func_obj    err pf(it*, rez*)
-.                                                                                                   специализация для
-len - кол-во символов, добавлненных в *pstr                                                         [w]char char16/32   stream_string
-.                                                               возвращаемое значение в случае  реализованность 
+.                                                                                               специализация для
+len - кол-во символов, добавлненных в *pstr                                                     [w]char char16/32   forward_stream
+.                                                               возвращаемое значение в случае  
 название                    аргументы           рег.выр.        если EOF    если не EOF     статистика использования
-bpe read_line               (it&, s)            .*[\r\n]<-      -1 или len  len                 OK
-bpe read_line               (it&)               .*[\r\n]<-      -1 или len  len             1   OK
-bpe start_read_line         (it&)               .*(\n|\r\n?)    -1          0 или 1         8   OK
+bpe read_line               (it&, s)            .*[\r\n]<-      -1 или len  len                 
+bpe read_line               (it&)               .*[\r\n]<-      -1 или len  len             1   
+bpe start_read_line         (it&)               .*(\n|\r\n?)    -1          0 или 1         8   
 <- - говорит о том, что что после прочтения последнего символа итератор стоит не после него а на нем
 
-bpe read_spc                (it&)               [:space:]       -1          0 или -2            OK
-bpe read_spcs               (it&)               [:space:]*      -(1+len)    len             5   OK
-bpe read_s_fix_str          (it&, s)            [:space:]*str   -1          0 или -2        1   OK
-bpe read_s_fix_str          (it&, s, pstr*)     [:space:]*str   -1          0 или -2            OK
-bpe read_s_fix_char         (it&, c)            [:space:]*c     -1          0 или -2        8   OK
-bpe read_s_fix_char         (it&, c, pstr*)     [:space:]*c     -1          0 или -2            OK
-bpe read_s_charclass        (it&, is)           [:space:][ ]    -1          0 или -2            OK
-bpe read_s_charclass_s      (it&, is, pstr*)    [:space:][ ]    -1          0 или -2            OK
-bpe read_s_charclass_c      (it&, is, pc*)      [:space:][ ]    -1          0 или -2        2   OK
-bpe read_blank              (it&)               [:blank:]       -1          0 или -2            OK
-bpe read_blanks             (it&)               [:blank:]*      -(1+len)    len             1   OK
-bpe read_bl_fix_str         (it&, s)            [:blank:]*str   -1          0 или -2            OK
-bpe read_bl_fix_str         (it&, s, pstr*)     [:blank:]*str   -1          0 или -2            OK
-bpe read_bl_fix_char        (it&, c)            [:blank:]*c     -1          0 или -2            OK
-bpe read_bl_fix_char        (it&, c, pstr*)     [:blank:]*c     -1          0 или -2            OK
-bpe read_bl_charclass       (it&, is)           [:blank:][ ]    -1          0 или -2            OK
-bpe read_bl_charclass_s     (it&, is, pstr*)    [:blank:][ ]    -1          0 или -2            OK
-bpe read_bl_charclass_c     (it&, is, pc*)      [:blank:][ ]    -1          0 или -2            OK
+bpe read_spc                (it&)               [:space:]       -1          0 или -2            
+bpe read_spcs               (it&)               [:space:]*      -(1+len)    len             5   
+bpe read_s_fix_str          (it&, s)            [:space:]*str   -1          0 или -2        1   
+bpe read_s_fix_str          (it&, s, pstr*)     [:space:]*str   -1          0 или -2            
+bpe read_s_fix_char         (it&, c)            [:space:]*c     -1          0 или -2        8   
+bpe read_s_fix_char         (it&, c, pstr*)     [:space:]*c     -1          0 или -2            
+bpe read_s_charclass        (it&, is)           [:space:][ ]    -1          0 или -2            
+bpe read_s_charclass_s      (it&, is, pstr*)    [:space:][ ]    -1          0 или -2            
+bpe read_s_charclass_c      (it&, is, pc*)      [:space:][ ]    -1          0 или -2        2   
+bpe read_blank              (it&)               [:blank:]       -1          0 или -2            
+bpe read_blanks             (it&)               [:blank:]*      -(1+len)    len             1   
+bpe read_bl_fix_str         (it&, s)            [:blank:]*str   -1          0 или -2            
+bpe read_bl_fix_str         (it&, s, pstr*)     [:blank:]*str   -1          0 или -2            
+bpe read_bl_fix_char        (it&, c)            [:blank:]*c     -1          0 или -2            
+bpe read_bl_fix_char        (it&, c, pstr*)     [:blank:]*c     -1          0 или -2            
+bpe read_bl_charclass       (it&, is)           [:blank:][ ]    -1          0 или -2            
+bpe read_bl_charclass_s     (it&, is, pstr*)    [:blank:][ ]    -1          0 или -2            
+bpe read_bl_charclass_c     (it&, is, pc*)      [:blank:][ ]    -1          0 или -2            
 */
 //{======================= line, start_read_line, spc, spcs, s_fix_str, s_fix_char, bln, blns, b_fix_str, b_fix_char
 	/*
@@ -1154,7 +1014,7 @@ bpe read_bl_charclass_c     (it&, is, pc*)      [:blank:][ ]    -1          0 и
 		typedef char_type<it_t> ch_t;
 		read_line(it);
 		ch_t c;
-		ifnot(read_charclass_c(it,make_spn_crlf<char_type<it_t>>(),&c))
+		if(!read_charclass_c(it,make_spn_crlf<char_type<it_t>>(),&c))
 			return -1;
 		if(c==(ch_t)'\n')
 			return 0;
@@ -1290,19 +1150,19 @@ int_t может быть : long, long long, unsigned long, unsigned long long -
 [:digit:]   ::= [0-"$(($ss-1))"]
 sign        ::= ('+'|'-')
 bpe         ::= spcs[sign]spcs[:digit:]+
-.                                                                                                                   специализация для
-.                                                                                                                   [w]char char16/32   stream_string     
-.                                                                           возвращаемое значение в случае  реализованность     
+.                                                                                                           специализация для
+.                                                                                                           [w]char char16/32   forward_stream
+.                                                                           возвращаемое значение в случае       
 название                аргументы               рег.выр.                    неудача переполнение    статистика использования
-bpe read_digit          (it&, int ss, int_t*)   [:digit:]                   -2       -1(EOF)        1       OK
-bpe read_uint           (it&, int ss, int_t*)   [:digit:]+                  -2       -1             1       OK
-bpe read_sign_uint      (it&, int ss, int_t*)   [sign][:digit:]+            -2       -1                     OK
-bpe read_sign_s_uint    (it&, int ss, int_t*)   [sign]spcs[:digit:]+        -2       -1             1       OK
-bpe read_int            (it&, int ss, int_t*)   spcs[sign]spcs[:digit:]+    -2       -1             1       OK      OK
-bpe read_dec            (it&, int_t*)           int#[:digit:]=[0-9]         -2       -1             1       OK      OK
-bpe read_hex            (it&, int_t*)           int#[:digit:]=[:xdigit:]    -2       -1                     OK      OK
-bpe read_oct            (it&, int_t*)           int#[:digit:]=[0-7]         -2       -1                     OK      OK
-bpe read_bin            (it&, int_t*)           int#[:digit:]=[01]          -2       -1                     OK      OK
+bpe read_digit          (it&, int ss, int_t*)   [:digit:]                   -2       -1(EOF)        1       
+bpe read_uint           (it&, int ss, int_t*)   [:digit:]+                  -2       -1             1       
+bpe read_sign_uint      (it&, int ss, int_t*)   [sign][:digit:]+            -2       -1                     
+bpe read_sign_s_uint    (it&, int ss, int_t*)   [sign]spcs[:digit:]+        -2       -1             1       
+bpe read_int            (it&, int ss, int_t*)   spcs[sign]spcs[:digit:]+    -2       -1             1       OK
+bpe read_dec            (it&, int_t*)           int#[:digit:]=[0-9]         -2       -1             1       OK
+bpe read_hex            (it&, int_t*)           int#[:digit:]=[:xdigit:]    -2       -1                     OK
+bpe read_oct            (it&, int_t*)           int#[:digit:]=[0-7]         -2       -1                     OK
+bpe read_bin            (it&, int_t*)           int#[:digit:]=[01]          -2       -1                     OK
  */
 //{======================= digit, uint, sign_uint, sign_s_uint, base_parse_error, dec, hex, oct, bin, 
 	/*
@@ -1356,7 +1216,7 @@ bpe read_bin            (it&, int_t*)           int#[:digit:]=[01]          -2  
 	base_parse_error 
 	read_uint(it_t & it, int ss, int_t * prez){
 		int_t premax = (numeric_limits<int_t>::max()-ss+1)/ss;
-		ifnot(read_digit(it,ss,prez))
+		if(!read_digit(it,ss,prez))
 			return -2;
 		int_t tmp;
 		while(read_digit(it,ss,&tmp)){
@@ -1520,10 +1380,10 @@ bpe read_loc_ifloat     (it*, flt_t*)
 	base_parse_error
 	input_fix_str(it_t & it, const ch_t * s){
 		if(!*s) return 0;
-		ifnot(read_fix_char(it,*s++))
+		if(!read_fix_char(it,*s++))
 			return -1;
 		auto err= read_fix_str_pos(it,s);
-		ifnot(err)	throw err;
+		if(!err)	throw err;
 	}
 
 	template<typename it_t, typename ch_t> inline
