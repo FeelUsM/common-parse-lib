@@ -45,10 +45,10 @@ namespace str{
 	(true, new file_on_FILE_stringbuf(stdin))
 #endif
 	;
-	//интересно, чем следующие конструкции отличаются?
-	#define	strin STREAMin.iter()
-	//STRIN_EXTERN forward_stream<str_FILE_buffer>::iterator & strin = STREAMin.internal_iterator();
-	inline int __set01(typename forward_stream<adressed_buffer>::iterator & it){
+	//интересно, чем следующие конструкции отличаются? - namespace-ом
+	//#define	strin STREAMin.iter()
+	STRIN_EXTERN forward_adressed_stream::iterator & strin = STREAMin.iter();
+	inline int __set01(typename forward_adressed_stream::iterator & it){
 		set_linecol(it,linecol(0,1));
 		return 0;
 	}
