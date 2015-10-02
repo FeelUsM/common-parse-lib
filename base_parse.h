@@ -1164,7 +1164,7 @@ bpe read_hex            (it&, int_t*)           int#[:digit:]=[:xdigit:]    -2  
 bpe read_oct            (it&, int_t*)           int#[:digit:]=[0-7]         -2       -1                     OK
 bpe read_bin            (it&, int_t*)           int#[:digit:]=[01]          -2       -1                     OK
  */
-//{======================= digit, uint, sign_uint, sign_s_uint, base_parse_error, dec, hex, oct, bin, 
+//{======================= digit, uint, sign_uint, sign_s_uint, int, dec, hex, oct, bin, 
 	/*
 	 * считывает 1 цифру в заданной системе счисления (СС) в ASCII-совместимой кодировке
 	 * CC - от 2 до 35(буква Z)
