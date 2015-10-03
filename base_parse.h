@@ -119,6 +119,13 @@ template<typename ch_t>
 struct basic_span{
 	const ch_t * s;
 	basic_span(const ch_t * ss) :s(ss) {}
+	bool operator()(ch_t c)const{
+		const ch_t * q=s;
+		while(*q)
+			if(c==*q++)
+				return true;
+		return false;
+	}
 	//basic_span_string<ch_t> str(){	return s;	}
 	//explicit basic_span(const basic_span_string<ch_t> & str) :s(str.c_str()) {}
 };
@@ -153,6 +160,13 @@ template<typename ch_t>
 struct basic_bispan{
 	const ch_t * s;
 	basic_bispan(const ch_t * ss) :s(ss) {}
+	bool operator()(ch_t c)const{
+		const ch_t * q=s;
+		while(*q)
+			if(*q++<=c && c<=*q++)
+				return true;
+		return false;
+	}
 	//basic_bispan_string<ch_t> str(){	return s;	}
 	//explicit basic_bispan(const basic_bispan_string<ch_t> & str) :s(str.c_str()) {}
 };
@@ -225,35 +239,6 @@ class basic_span_string{
 	
 };
 
-/* ТАБЛИЧКА
-bool is_charclass            (is, c)            
-bool is_charclass            (spn, c)            
-bool is_charclass            (bspn, c)           
-*/
-	template<typename ch_t, class fun_t> inline
-	bool 
-	is_charclass(const fun_t & fun, ch_t c){
-		return fun(c);
-	}
-		
-	template<typename ch_t> inline
-	bool 
-	is_charclass(basic_span<ch_t> s, ch_t c){
-		while(*s.s)
-			if(c==*s.s++)
-				return true;
-		return false;
-	}
-		
-	template<typename ch_t> inline
-	bool 
-	is_charclass(basic_bispan<ch_t> s, ch_t c){
-		while(*s.s)
-			if(*s.s++<=c && c<=*s.s++)
-				return true;
-		return false;
-	}
-		
 //}
 
 //{ ОШИБКИ
@@ -705,7 +690,7 @@ bpe read_until_pattern_s    (it&, pf, pstr*, rez*)  .*( )       -(1+len)    len
 	base_parse_error 
 	read_charclass(it_t & it, const class_t & is){
 		if(atend(it)) return -1;
-		if(!is_charclass(is,*it))  return -2;
+		if(!is(*it))  return -2;
 		it++;
 		return 0;
 	}
@@ -721,7 +706,7 @@ bpe read_until_pattern_s    (it&, pf, pstr*, rez*)  .*( )       -(1+len)    len
 	base_parse_error 
 	read_charclass_s(it_t & it, const class_t & is, str_t * pstr){
 		if(atend(it)) return -1;
-		if(!is_charclass(is,*it))  return -2;
+		if(!is(*it))  return -2;
 		*pstr += *it++;
 		return 0;
 	}
@@ -737,7 +722,7 @@ bpe read_until_pattern_s    (it&, pf, pstr*, rez*)  .*( )       -(1+len)    len
 	base_parse_error 
 	read_charclass_c(it_t & it, const class_t & is, ch_t * pch){
 		if(atend(it)) return -1;
-		if(!is_charclass(is,*it))  return -2;
+		if(!is(*it))  return -2;
 		*pch = *it++;
 		return 0;
 	}
@@ -840,7 +825,7 @@ operator>>(it_err<it_t> l, const char_type<it_t> * s){
 	read_until_charclass(it_t & it, const class_t & is){
 		int i=0;
 		while(!atend(it))
-			if(is_charclass(is,*it))
+			if(is(*it))
 				return i;
 			else{
 				it++;
@@ -864,7 +849,7 @@ operator>>(it_err<it_t> l, const char_type<it_t> * s){
 	read_while_charclass(it_t & it, const class_t & is){
 		int i=0;
 		while(!atend(it))
-			if(!is_charclass(is,*it))
+			if(!is(*it))
 				return i;
 			else{
 				it++;
@@ -919,7 +904,7 @@ operator>>(it_err<it_t> l, const char_type<it_t> * s){
 	read_until_charclass(it_t & it, const class_t & is, str_t * pstr){
 		int i=0;
 		while(!atend(it))
-			if(is_charclass(is,*it))
+			if(is(*it))
 				return i;
 			else{
 				*pstr += *it++;
@@ -943,7 +928,7 @@ operator>>(it_err<it_t> l, const char_type<it_t> * s){
 	read_while_charclass(it_t & it, const class_t & is, str_t * pstr){
 		int i=0;
 		while(!atend(it))
-			if(!is_charclass(is,*it))
+			if(!is(*it))
 				return i;
 			else{
 				*pstr += *it++;
