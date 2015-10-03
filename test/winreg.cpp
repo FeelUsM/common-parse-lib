@@ -55,7 +55,7 @@ const char * read_file(it_t & it, string * ps){
 			ifnot(err=read_until_charclass(it,span("\"\\"),ps))
 				return "неожиданный конец файла";
 			char c;
-			ifnot(err=read_c(it,&c))
+			ifnot(err=read_ch(it,&c))
 				return "неожиданный конец файла";
 			if(c=='"'){
 				*ps +='"';
@@ -63,7 +63,7 @@ const char * read_file(it_t & it, string * ps){
 			}
 			else{//c=='\\'
 				*ps +='\\';
-				ifnot(read_c(it,&c))
+				ifnot(read_ch(it,&c))
 					return "неожиданный конец файла";
 				switch(c){
 					case'"': *ps +='"'; break;
@@ -91,10 +91,10 @@ const char * read_string(it_t & it, string * ps){
 			return "неожиданный конец файла";
 		//cerr <<"read_until_charclass = " <<err <<endl;
 		//cerr << ps->size() <<endl;
-		//dump(it,"перед read_c:\n");
+		//dump(it,"перед read_ch:\n");
 		char c;
-		ifnot(err=read_c(it,&c)){
-			//cerr <<"read_c = " <<err <<endl;
+		ifnot(err=read_ch(it,&c)){
+			//cerr <<"read_ch = " <<err <<endl;
 			return "неожиданный конец файла";
 		}
 		if(c=='"'){
@@ -103,7 +103,7 @@ const char * read_string(it_t & it, string * ps){
 		}
 		else{//c=='\\'
 			*ps +='\\';
-			ifnot(read_c(it,&c))
+			ifnot(read_ch(it,&c))
 				return "неожиданный конец файла";
 			switch(c){
 				case'"': *ps +='"'; break;

@@ -286,7 +286,7 @@ auto reifnot(it_t & it, const fun_t & fun) //restore if not
 //теже ваши операторы && и ||, только с short circuiting
 #define DECLARE_AND_OR_error_operators_for_short_circuiting(type)\
 template<class fun_t>\
-auto operator&&(type l,const fun_t & fun)\
+auto operator&&(const type & l,const fun_t & fun)\
 -> decltype(l&&fun()){\
 	if(l){\
 		return l&&fun();/*true && true - в принципе не игрет роли, но там могут "складываться" предупреждения*/\
@@ -296,7 +296,7 @@ auto operator&&(type l,const fun_t & fun)\
 	}\
 }\
 template<class fun_t>\
-auto operator||(type l,const fun_t & fun)\
+auto operator||(const type & l,const fun_t & fun)\
 -> decltype(l||fun()){\
 	if(l){\
 		return l;/*false && false - в принципе не игрет роли, но там могут "складываться" ошибки*/\
@@ -317,7 +317,7 @@ public:
 	constructor()=default;
 	constructor(bool x):_code(x?0:-1){}
 	constructor(int c):_code(c){}
-	operator bool(){	return _code>=0;	}
+	operator bool()const{	return _code>=0;	}
 		//сделать в любом случае true
 	my_t & reset()	{	_code=0;	return *this;	}
 		//+len -> +len-x - если требуется прочитать x или более символов
@@ -329,7 +329,7 @@ public:
 #undef constructor
 };
 #define DECLARE_AND_OR_default_error_operators(type)\
-type operator&&(type l, type r){\
+type operator&&(const type & l, const type & r){\
 	if(l)	\
 		if(r)	\
 			return r;	/*TT*/\
@@ -352,9 +352,111 @@ type operator||(type l, type r){\
 			return r;	/*FT*/\
 		else	\
 			return r;	/*FF*/\
-}
+}\
+//end macro
 DECLARE_AND_OR_default_error_operators(base_parse_error)
 DECLARE_AND_OR_error_operators_for_short_circuiting(base_parse_error)
+
+template <class it_t>
+struct it_err : public base_parse_error{
+	it_t & it;
+	template <class X>
+	it_err(it_t & i, X e=true):base_parse_error(e),it(i){}
+	base_parse_error err()const{	
+		return (base_parse_error)*this;	
+	}
+	it_err & set_err(base_parse_error e){	
+		base_parse_error::operator=(e);	return *this;	
+	}
+};
+template<class it_t> inline
+	it_err<it_t>
+read(it_t & it){	return it_err<it_t>(it,true);	}
+
+template<class it_t, class fun_t> inline
+	it_err<it_t>
+operator>>(it_err<it_t> l, fun_t fun){
+	if(l)
+		l.set_err(l&&fun(l.it));
+	return l;
+}
+#define CAT2(x,y)	x##y
+#define DECLARE_SHORT_READING_0(a0,a0_templ)\
+struct a0_templ{\
+	template<class it_t>\
+	auto operator()(it_t & it)\
+	->decltype(CAT2(read_,a0)(it)){\
+		return CAT2(read_,a0)(it);\
+	}\
+};\
+a0_templ a0(){\
+	return a0_templ();\
+}\
+//end macro
+#define DECLARE_SHORT_READING_1(a1,a1_templ)\
+template <class X1>\
+struct a1_templ{\
+	X1 x1;\
+	a1_templ(X1 xx1):x1(xx1){}\
+	template<class it_t>\
+	auto operator()(it_t & it)\
+	->decltype(CAT2(read_,a1)(it,x1)){\
+		return CAT2(read_,a1)(it,x1);\
+	}\
+};\
+template <class X1>\
+a1_templ<X1> a1(X1 x1){\
+	return a1_templ<X1>(x1);\
+}\
+//end macro
+#define DECLARE_SHORT_READING_2(a1,a2_templ)\
+template <class X1, class X2>\
+struct a2_templ{\
+	X1 x1;	X2 x2;\
+	a2_templ(X1 xx1, X2 xx2):x1(xx1),x2(xx2){}\
+	template<class it_t>\
+	auto operator()(it_t & it)\
+	->decltype(CAT2(read_,a1)(it,x1,x2)){\
+		return CAT2(read_,a1)(it,x1,x2);\
+	}\
+};\
+template <class X1, class X2>\
+a2_templ<X1,X2> a1(X1 x1, X2 x2){\
+	return a2_templ<X1,X2>(x1,x2);\
+}\
+//end macro
+#define DECLARE_SHORT_READING_3(a1,a2_templ)\
+template <class X1, class X2, class X3>\
+struct a2_templ{\
+	X1 x1;	X2 x2;	X3 x3;\
+	a2_templ(X1 xx1, X2 xx2, X3 xx3):x1(xx1),x2(xx2),x3(xx3){}\
+	template<class it_t>\
+	auto operator()(it_t & it)\
+	->decltype(CAT2(read_,a1)(it,x1,x2,x3)){\
+		return CAT2(read_,a1)(it,x1,x2,x3);\
+	}\
+};\
+template <class X1, class X2, class X3>\
+a2_templ<X1,X2,X3> a1(X1 x1, X2 x2, X3 x3){\
+	return a2_templ<X1,X2,X3>(x1,x2,x3);\
+}\
+//end macro
+#define DECLARE_SHORT_READING_4(a1,a2_templ)\
+template <class X1, class X2, class X3, class X4>\
+struct a2_templ{\
+	X1 x1;	X2 x2;	X3 x3;	X4 x4;\
+	a2_templ(X1 xx1, X2 xx2, X3 xx3, X4 xx4):x1(xx1),x2(xx2),x3(xx3),x4(xx4){}\
+	template<class it_t>\
+	auto operator()(it_t & it)\
+	->decltype(CAT2(read_,a1)(it,x1,x2,x3,x4)){\
+		return CAT2(read_,a1)(it,x1,x2,x3,x4);\
+	}\
+};\
+template <class X1, class X2, class X3, class X4>\
+a2_templ<X1,X2,X3,X4> a1(X1 x1, X2 x2, X3 x3, X4 x4){\
+	return a2_templ<X1,X2,X3,X4>(x1,x2,x3,x4);\
+}\
+//end macro
 //}
 
 /* ТАБЛИЧКА
@@ -394,8 +496,8 @@ bpe read_fix_char           (it&, c, pstr*)     c               -1          0 и
 bpe read_charclass    (it&, is/spn/bspn)        [ ]             -1          0 или -2            
 bpe read_charclass_c  (it&, is/spn/bspn, ch*)   [ ]             -1          0 или -2        1   
 bpe read_charclass_s  (it&, is/spn/bspn, pstr*) [ ]             -1          0 или -2        6   
-bpe read_c                  (it&, ch*)          .               -1          0               1   
-bpe read_c                  (it&, ch*, pstr*)   .               -1          0               4   
+bpe read_ch                 (it&, ch*)          .               -1          0               1   
+bpe read_ch                 (it&, ch*, pstr*)   .               -1          0               4   
 //в сдучае неудачи итератор НЕ восстанавливают
 bpe read_while_charclass    (it&, is)           [ ]*            -(1+len)    len                 
 bpe read_while_charclass    (it&, spn)          [ ]*            -(1+len)    len             2   
@@ -527,14 +629,13 @@ bpe read_until_pattern_s    (it&, pf, pstr*, rez*)  .*( )       -(1+len)    len
 	template<typename it_t, typename ch_t> inline
 	base_parse_error 
 	read_fix_str_pos(it_t & it, const ch_t * s){
-		int i=0;
 		while(!atend(it))
 			if(!*s)
 				return 0;
 			else if(*it!=*s)
 				return -2;
 			else
-				it++, s++, i++;
+				it++, s++;
 		if(!*s) return 0;
 		return -1;
 	}
@@ -543,7 +644,7 @@ bpe read_until_pattern_s    (it&, pf, pstr*, rez*)  .*( )       -(1+len)    len
 	base_parse_error 
 	read_fix_str_pos(it_t & it, const ch_t * s, str_t * pstr)
 	{
-		RETURN_IFNOT(read_fix_str(it, s))
+		RETURN_IFNOT(read_fix_str_pos(it, s))
 		*pstr+=s;
 		return 0;
 	}
@@ -649,18 +750,60 @@ bpe read_until_pattern_s    (it&, pf, pstr*, rez*)  .*( )       -(1+len)    len
 	 */
 	template<typename it_t, typename ch_t> inline
 	base_parse_error 
-	read_c(it_t & it, ch_t * c){
+	read_ch(it_t & it, ch_t * c){
 		if(atend(it))   return -1;
 		*c = *it++;
 		return 0;
 	}
 	template<typename it_t, typename ch_t, class str_t> inline
 	base_parse_error 
-	read_c(it_t & it, ch_t * pc, str_t * pstr){
-		RETURN_IFNOT(read_c(it,pc));
+	read_ch(it_t & it, ch_t * pc, str_t * pstr){
+		RETURN_IFNOT(read_ch(it,pc));
 		*pstr += *pc;
 		return 0;
 	}
+
+DECLARE_SHORT_READING_0(until_eof,until_eof_templ)
+DECLARE_SHORT_READING_1(until_eof,until_eof_templ2)
+DECLARE_SHORT_READING_1(fix_length,fix_length_templ)
+DECLARE_SHORT_READING_2(fix_length,fix_length_templ2)
+DECLARE_SHORT_READING_1(fix_str_pos,fix_str_pos_templ)
+DECLARE_SHORT_READING_2(fix_str_pos,fix_str_pos_templ2)
+DECLARE_SHORT_READING_1(fix_str,fix_str_templ)
+DECLARE_SHORT_READING_2(fix_str,fix_str_templ2)
+DECLARE_SHORT_READING_1(fix_char,fix_char_templ)
+DECLARE_SHORT_READING_2(fix_char,fix_char_templ2)
+DECLARE_SHORT_READING_1(charclass,charclass_templ)
+DECLARE_SHORT_READING_2(charclass_s,charclass_s_templ)
+DECLARE_SHORT_READING_2(charclass_c,charclass_c_templ)
+DECLARE_SHORT_READING_1(ch,ch_templ)
+DECLARE_SHORT_READING_2(ch,ch_templ2)
+
+template<class it_t> inline
+	it_err<it_t>
+operator>>(it_err<it_t> l, char c){
+	return l>>fix_char(c);
+}
+template<class it_t> inline
+	it_err<it_t>
+operator>>(it_err<it_t> l, wchar_t c){
+	return l>>fix_char(c);
+}
+template<class it_t> inline
+	it_err<it_t>
+operator>>(it_err<it_t> l, char16_t c){
+	return l>>fix_char(c);
+}
+template<class it_t> inline
+	it_err<it_t>
+operator>>(it_err<it_t> l, char32_t c){
+	return l>>fix_char(c);
+}
+template<class it_t> inline
+	it_err<it_t>
+operator>>(it_err<it_t> l, const char_type<it_t> * s){
+	return l>>fix_str(s);
+}
 //}
 //{======================= until_char, until_charclass, while_charclass
 	/*
@@ -819,6 +962,12 @@ bpe read_until_pattern_s    (it&, pf, pstr*, rez*)  .*( )       -(1+len)    len
 			read_while_charclass(it_t & it, basic_bispan<char_type<it_t>> s, str_t * pstr){
 			}
 		*/
+DECLARE_SHORT_READING_0(until_char,until_char_templ)
+DECLARE_SHORT_READING_1(until_char,until_char_templ2)
+DECLARE_SHORT_READING_0(until_charclass,until_charclass_templ)
+DECLARE_SHORT_READING_1(until_charclass,until_charclass_templ2)
+DECLARE_SHORT_READING_0(while_charclass,while_charclass_templ)
+DECLARE_SHORT_READING_1(while_charclass,while_charclass_templ2)
 //}
 //{======================= until_str, until_pattern
 	/*
@@ -933,7 +1082,12 @@ bpe read_until_pattern_s    (it&, pf, pstr*, rez*)  .*( )       -(1+len)    len
 		}
 		return -(1+i);
 	}
-
+DECLARE_SHORT_READING_1(until_str,until_str_templ)
+DECLARE_SHORT_READING_2(until_str,until_str_templ2)
+DECLARE_SHORT_READING_1(until_pattern,until_pattern_templ)
+DECLARE_SHORT_READING_2(until_pattern,until_pattern_templ2)
+DECLARE_SHORT_READING_2(until_pattern_s,until_pattern_s_templ)
+DECLARE_SHORT_READING_3(until_pattern_s,until_pattern_s_templ2)
 //}
 /* ТАБЛИЧКА
 ch_t        c
@@ -1144,6 +1298,12 @@ bpe read_bl_charclass_c     (it&, is, pc*)      [:blank:][ ]    -1          0 и
 		return read_charclass_c(it,cl,pc);
 	}
 
+DECLARE_SHORT_READING_0(line,line_templ)
+DECLARE_SHORT_READING_1(line,line_templ1)
+DECLARE_SHORT_READING_0(spc,spc_templ)
+DECLARE_SHORT_READING_0(spcs,spcs_templ)
+DECLARE_SHORT_READING_0(blank,blank_templ)
+DECLARE_SHORT_READING_0(blanks,blanks_templ)
 //}
 /* ТАБЛИЧКА
 int_t может быть : long, long long, unsigned long, unsigned long long - для специализаций
@@ -1338,6 +1498,14 @@ bpe read_bin            (it&, int_t*)           int#[:digit:]=[01]          -2  
 	read_bin(it_t & it, int_t * prez){
 		return read_int(it,2,prez);
 	}
+DECLARE_SHORT_READING_2(digit,digit_templ)
+DECLARE_SHORT_READING_2(sign_uint,sign_uint_templ)
+DECLARE_SHORT_READING_2(sign_s_uint,sign_s_uint_templ)
+//DECLARE_SHORT_READING_2(int,int_templ)
+DECLARE_SHORT_READING_1(dec,dec_templ)
+DECLARE_SHORT_READING_1(oct,oct_templ)
+DECLARE_SHORT_READING_1(hex,hex_templ)
+DECLARE_SHORT_READING_1(bin,bin_templ)
 //}
 /* todo придумать рег.выр-я
 flt_t может быть : float, double, long double

@@ -42,11 +42,11 @@ using std::swap;
 #define DEBUG_stream(MES)	//(std::cerr MES <<std::endl)//поток и его внутренний итератор
 
 //{ debug declarations
-struct hex{
+struct _hex{
 	const void * x;
-	hex(const void * m):x(m){}
+	_hex(const void * m):x(m){}
 };
-std::ostream & operator<<(std::ostream & str, hex h){
+std::ostream & operator<<(std::ostream & str, _hex h){
 	if(h.x)
 		return str << std::setw(8)<<std::hex<<(unsigned int)h.x<<std::dec;
 	else
@@ -352,7 +352,7 @@ template <typename ch_t, int buf_size, class alloc_t>
 std::ostream & operator<<(std::ostream & str, const basic_simple_buffer<ch_t,buf_size,alloc_t> & b){
 	str <<"буфер "
 		<<"#" <<b._nomber
-		<<"[" <<hex(&b) <<"]";
+		<<"[" <<_hex(&b) <<"]";
 	if(b._begin){
 		str <<"(" <<b._iterator_counter <<")"
 			<<"[" <<b._end-b._begin <<"]"

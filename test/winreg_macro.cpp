@@ -50,10 +50,10 @@ read_file(it_t & it, string * ps){
 		while(true){
 			char c;
 			RETURN_IFNOT(read_until_charclass(it,span("\"\\"),ps)>>str_error("неожиданный конец файла"));
-			RETURN_IFNOT(read_c(it,&c,ps)>>str_error("неожиданный конец файла"));
+			RETURN_IFNOT(read_ch(it,&c,ps)>>str_error("неожиданный конец файла"));
 			if(c=='"')	break;
 			else{
-				RETURN_IFNOT(read_c(it,&c,ps)>>str_error("неожиданный конец файла"));
+				RETURN_IFNOT(read_ch(it,&c,ps)>>str_error("неожиданный конец файла"));
 				switch(c){
 					case'"': 
 					case'\\': 	break;
@@ -74,10 +74,10 @@ read_string(it_t & it, string * ps){
 	while(true){
 		char c;
 		RETURN_IFNOT(read_until_charclass(it,span("\"\\"),ps)>>str_error("неожиданный конец файла"));
-		RETURN_IFNOT(read_c(it,&c,ps)>>str_error("неожиданный конец файла"));
+		RETURN_IFNOT(read_ch(it,&c,ps)>>str_error("неожиданный конец файла"));
 		if(c=='"')	break;
 		else{
-			RETURN_IFNOT(read_c(it,&c,ps)>>str_error("неожиданный конец файла"));
+			RETURN_IFNOT(read_ch(it,&c,ps)>>str_error("неожиданный конец файла"));
 			switch(c){
 				case'"': 
 				case'\\': 	break;
