@@ -249,7 +249,7 @@ int main2(int argc, const char * argv[]){
 	}
 	else{
 		pit = &strin;
-		start_read_line(*pit);
+		read_start_line(*pit);
 	}
 	const char * err;
 	//dump(*pit,"dump:\n");
@@ -284,7 +284,7 @@ int main3(int argc, const char * argv[]){
 		return submain(stream.iter());
 	}
 	else{
-		start_read_line(strin);
+		read_start_line(strin);
 		return submain(strin);
 	}
 	return 0;

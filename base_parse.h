@@ -347,6 +347,9 @@ struct it_err : public base_parse_error{
 	it_t & it;
 	template <class X>
 	it_err(it_t & i, X e=true):base_parse_error(e),it(i){}
+	base_parse_error * p_err(){	
+		return (base_parse_error*)this;	
+	}
 	base_parse_error err()const{	
 		return (base_parse_error)*this;	
 	}
@@ -365,6 +368,10 @@ operator>>(it_err<it_t> l, fun_t fun){
 		l.set_err(l&&fun(l.it));
 	return l;
 }
+
+//хочу шаблонные лямбда-функции
+#define METHOD(it,fun,met)	[=](decltype(it) & it){	return fun(it).met;	}
+
 #define CAT2(x,y)	x##y
 #define DECLARE_SHORT_READING_0(a0,a0_templ)\
 struct a0_templ{\
@@ -947,12 +954,12 @@ operator>>(it_err<it_t> l, const char_type<it_t> * s){
 			read_while_charclass(it_t & it, basic_bispan<char_type<it_t>> s, str_t * pstr){
 			}
 		*/
-DECLARE_SHORT_READING_0(until_char,until_char_templ)
-DECLARE_SHORT_READING_1(until_char,until_char_templ2)
-DECLARE_SHORT_READING_0(until_charclass,until_charclass_templ)
-DECLARE_SHORT_READING_1(until_charclass,until_charclass_templ2)
-DECLARE_SHORT_READING_0(while_charclass,while_charclass_templ)
-DECLARE_SHORT_READING_1(while_charclass,while_charclass_templ2)
+DECLARE_SHORT_READING_1(until_char,until_char_templ)
+DECLARE_SHORT_READING_2(until_char,until_char_templ2)
+DECLARE_SHORT_READING_1(until_charclass,until_charclass_templ)
+DECLARE_SHORT_READING_2(until_charclass,until_charclass_templ2)
+DECLARE_SHORT_READING_1(while_charclass,while_charclass_templ)
+DECLARE_SHORT_READING_2(while_charclass,while_charclass_templ2)
 //}
 //{======================= until_str, until_pattern
 	/*
@@ -1149,7 +1156,7 @@ bpe read_bl_charclass_c     (it&, is, pc*)      [:blank:][ ]    -1          0 и
 	 */
 	template<typename it_t> inline
 	base_parse_error 
-	start_read_line(it_t & it){
+	read_start_line(it_t & it){
 		typedef char_type<it_t> ch_t;
 		read_line(it);
 		ch_t c;
@@ -1285,6 +1292,7 @@ bpe read_bl_charclass_c     (it&, is, pc*)      [:blank:][ ]    -1          0 и
 
 DECLARE_SHORT_READING_0(line,line_templ)
 DECLARE_SHORT_READING_1(line,line_templ1)
+DECLARE_SHORT_READING_0(start_line,start_line_templ)
 DECLARE_SHORT_READING_0(spc,spc_templ)
 DECLARE_SHORT_READING_0(spcs,spcs_templ)
 DECLARE_SHORT_READING_0(blank,blank_templ)

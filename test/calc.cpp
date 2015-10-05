@@ -122,7 +122,7 @@ int main()
 		try{
 			while(!atend(strin)){
 				cout <<"введите арифметическое выражение с целыми числами, заканчивающееся символами 'end'" <<endl;
-				start_read_line(strin);
+				read_start_line(strin);
 				const char * err;
 				double rez=0;
 				err=read_sum(strin,&rez);

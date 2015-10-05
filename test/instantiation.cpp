@@ -85,7 +85,7 @@ namespace str{
 	template base_parse_error read_bl_charclass_s<const char*,bool(&)(char),string>(const char*& it, bool(&)(char), string * ps);
 	template base_parse_error read_bl_charclass_c<wchar_t*,bool(&)(wchar_t),wchar_t>(wchar_t*& it, bool(&)(wchar_t), wchar_t * pc);
 	template base_parse_error read_line<char16_t*,u16string>(char16_t*& it, u16string * ps);
-	template base_parse_error start_read_line<const char32_t*>(const char32_t*& it);
+	template base_parse_error read_start_line<const char32_t*>(const char32_t*& it);
 	//todo разобраться с преобразованием символов на этапе компиляции между char, wchar_t, char16_t  и char32_t
 	//это в start_read_line и в span-ах
 	
