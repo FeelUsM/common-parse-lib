@@ -3,12 +3,6 @@
 #define FORWARD_STREAM_H
 
 /*
- * я тут обратил внимание, что использование этого потока оправдано,
- * только если используются базовые алгоритмы read_fix_str, read_until_str и read_until_pattern
- * или происходит копирование итераторов
- */
-
-/*
 todo:
 перекодировка
 файлы на фаловых дескрипторах unix
@@ -40,6 +34,7 @@ using std::swap;
 #define DEBUG_buffer(MES)	//(std::cerr MES <<std::endl)//простой буфер: создание и удаление валидных
 #define DEBUG_addrs(MES)	//(std::cerr MES <<std::endl)//адресуемые буферы: создания и изменения адресов
 #define DEBUG_stream(MES)	//(std::cerr MES <<std::endl)//поток и его внутренний итератор
+#define DEBUG_memory(MES)	//(std::cerr MES <<std::endl)//адреса (пока не реализован)
 
 //{ debug declarations
 struct _hex{
@@ -345,9 +340,14 @@ template<class buf_t>
 class _forward_stream_iterator;
 
 //{DEBUG basic_simple_buffer
+int gebug_buffer_help(){
+	DEBUG_buffer(<<"буфер #№[адрес структуры] (кол-во итераторов) [размер буфера] 'первые 10 символов содержимого' end?"
+	<<std::endl<<"----");
+	return 0;
+}
+int gebug_buffer_help_value = gebug_buffer_help();
 template <typename ch_t, int buf_size, class alloc_t>
 class basic_simple_buffer ;
-//буфер #№[адрес структуры] (кол-во итераторов) [размер буфера] 'первые 10 символов содержимого' end?
 template <typename ch_t, int buf_size, class alloc_t>
 std::ostream & operator<<(std::ostream & str, const basic_simple_buffer<ch_t,buf_size,alloc_t> & b){
 	str <<"буфер "
@@ -461,6 +461,7 @@ public:
 		alloc_t().deallocate(_begin,buf_size);	
 		_begin = 0;
 		_iterator_counter = 0;
+		//DEBUG_buffer(<<*this<<" - разрушили");
 	}
 
 		//COPYING
@@ -474,7 +475,7 @@ public:
 		_end			= r._end;
 		_atend			= r._atend;
 		r._begin=0;
-		//DEBUG_buffer(<<*this <<" - сконструирован из - " <<r);
+		DEBUG_buffer(<<*this<<" - сконструирован перемещением из "<<r);
 	}
 #undef constructor
 }; //CLASS simple_buffer
@@ -502,10 +503,16 @@ void advance(_forward_stream_const_iterator<buf_t> & it,
 	typename std::iterator_traits<_forward_stream_const_iterator<buf_t>>::difference_type);
 	
 //{DEBUG _forward_stream_const_iterator
+int debug_iter_help(){
+	DEBUG_iterator(<<"итератор [адрес](№ буфера(кол-во итераторов на этом буфере), смещение (указываемый символ..ы.))/инвалидный"
+	<<std::endl<<"----");
+	return 0;
+}
+int debug_iter_help_value = debug_iter_help();
 template <typename buf_t>
 std::ostream & operator<<(std::ostream & str, const _forward_stream_const_iterator<buf_t> & b){
 	str <<"итератор "
-		<<"[" <<hex(&b) <<"]";
+		<<"[" <<_hex(&b) <<"]";
 	if(b.point){
 		str <<"(" <<b.itbuf->nomber() 			<<"(" <<b.buf_iterator_counter() <<")"
 			<<"," <<b.point-b.itbuf->begin() 	<<"('" <<dump(b.point,1) <<"'))";
@@ -536,18 +543,18 @@ class _forward_stream_const_iterator
 	typedef typename list<buf_t>::iterator 			super_iterator;
 		//FRIENDS
 	friend bool 
-	atend<buf_t>(const my_t & );
+		atend<buf_t>(const my_t & );
 	friend 
-	typename std::iterator_traits<my_t>::difference_type
-	distance<buf_t>(const my_t & first, const my_t & last);
+		typename std::iterator_traits<my_t>::difference_type
+		distance<buf_t>(const my_t & first, const my_t & last);
 	friend bool 
-	advance_or_end<buf_t>(my_t & it, typename buf_t::difference_type);
+		advance_or_end<buf_t>(my_t & it, typename buf_t::difference_type);
 	friend void 
-	advance<buf_t>(my_t & it, typename buf_t::difference_type);
+		advance<buf_t>(my_t & it, typename buf_t::difference_type);
 	friend void 
-	swap<buf_t>(my_t & it1, my_t & it2);
+		swap<buf_t>(my_t & it1, my_t & it2);
 	friend
-	std::ostream & operator<< <buf_t>(std::ostream & str, const my_t & b);
+		std::ostream & operator<< <buf_t>(std::ostream & str, const my_t & b);
 	
 protected:	//DATA
 	ch_t * 			point;//==0 <=> atend <=>(def) инвалидный
@@ -560,21 +567,32 @@ public:	//GETTERS - только ради получения доступа на
 	ch_t * 			get_endbuf()const	{	return endbuf;	}
 	super_iterator 	get_itbuf()const	{	return itbuf;	}
 		//CONSTRUCTION, DESTRUCTION
-	explicit // создает итератор, указывающий на начало буфера
-	constructor(super_iterator sit): point(sit->begin()), endbuf(sit->end()), itbuf(sit) {
-		itbuf->_iterator_counter++;
-		DEBUG_iterator(<<*this <<" - сконструировали от super_iterator'а");
+	void destroy(){
+			DEBUG_iterator(<<*this <<" - разрушаем");
+		if(!point)	return;
+		if(--itbuf->_iterator_counter ==0)
+			itbuf->base()->del_buf_request(itbuf);
+		point=0;
+		//DEBUG_iterator(<<*this <<" - разрушили");
+	}
+	// устанавливает итератор на начало буфера
+	my_t & set_on_start_of_buffer(super_iterator sit)	{
+		//можно оптимизировать
+		destroy();
+		point=sit->begin();
+		endbuf=sit->end();
+		itbuf=sit;
+		if(point)
+			itbuf->_iterator_counter++;
+		DEBUG_iterator(<<*this <<" - установили на начало " <<*sit);
+		return *this;
 	}
 
 	constructor()					: point(0)	{
 		DEBUG_iterator(<<*this <<" - сконструировали по умолчанию");
 	}
 	~constructor(){
-		DEBUG_iterator(<<*this <<" - разрушаем");
-		if(!point)	return;
-		if(--itbuf->_iterator_counter ==0)
-			itbuf->base()->del_buf_request(itbuf);
-		point=0;
+		destroy();
 	}
 		
 		//COPYING
@@ -585,7 +603,7 @@ public:	//GETTERS - только ради получения доступа на
 	}
 	my_t & operator=(const my_t & r)	{
 		//можно оптимизировать
-		this->~my_t();
+		destroy();
 		point=r.point;
 		endbuf=r.endbuf;
 		itbuf=r.itbuf;
@@ -614,7 +632,7 @@ public:	//GETTERS - только ради получения доступа на
 		if(++point ==endbuf){	//конец буфера
 			DEBUG_iterator(<<*this <<"в начале прыжка");
 			if(itbuf->eof()){	//конец файла
-				this->~_forward_stream_const_iterator();
+				destroy();
 				return *this;
 			}
 			typename buf_t::basic_type * mybase = itbuf->base();
@@ -624,7 +642,7 @@ public:	//GETTERS - только ради получения доступа на
 				nextbuf = mybase->add_buf();
 				if(nextbuf== mybase->pbufs()->end()){	//и вообще оказался неожиданный конец файла
 					itbuf->_atend = true;;
-					this->~_forward_stream_const_iterator();
+					destroy();
 					return *this;
 				}
 			}
@@ -865,7 +883,7 @@ class basic_adressed_buffer : public basic_simple_buffer<ch_t,buf_size,alloc_t>
 			str<<"void";
 		else
 			for(typename NLs_type::const_iterator it=NLs.begin(); it!=NLs.end(); it++)
-				str <<"," <<it->first-parent_t::begin() <<"("<<it->second <<")";
+				str <<"," <<it->first - parent_t::begin() <<"("<<it->second <<")";
 		return str;
 	}
 	NLs_type NLs;
@@ -1009,7 +1027,7 @@ public:
 template <typename buf_t>
 std::ostream & operator<<(std::ostream & str, const forward_stream<buf_t> & s){
 	for(auto i = s.cbufs().begin(); i!=s.cbufs().end(); i++)
-		str <<" |" << *i;
+		str <<",#" << i->nomber()<<"["<<_hex(&*i)<<"]";
 	return str;
 }
 // ----****----		
@@ -1046,7 +1064,7 @@ private: //{
 	//bool _has_internal_file; //todo сделать internal file
 
 	/*
-	 * итераторы потока имеют итераторы этого контейнера
+	 * итераторы потока имеют итераторы этого (list<buf_t> _bufs) контейнера
 	 * и если это будет deque, то там возможно перераспределение памяти
 	 * и в этом случае все итераторы контейнера станут недействительными
 	 * 
@@ -1077,9 +1095,11 @@ public:
 		DEBUG_stream(<<"stream: сейчас будет добавлен буфер:");
 		_bufs.push_back(buf_t(this,_file,ppb->tail(),ppb->nomber()+1));
 		typename list<buf_t>::iterator pb= --_bufs.end();//поинтер на текущий буфер
+		DEBUG_stream(<<"состав потока: "<<*this);
 		if(pb->size()==0)//внезапный конец файла
 		{
 			_bufs.pop_back();
+			DEBUG_stream(<<"внезапный конец файла: состав потока: "<<*this);
 			return _bufs.end();
 		}
 		return pb;
@@ -1090,6 +1110,7 @@ public:
 		if(itbuf==_bufs.begin())
 			while(_bufs.begin()!=_bufs.end() && _bufs.begin()->is_free())
 				_bufs.pop_front();
+		DEBUG_stream(<<"состав потока после удаления буферов: "<<*this);
 	}
 	
 		//CONSTRUCTION AND DESTRUCTION
@@ -1111,7 +1132,7 @@ public:
 				_iterator = iterator();
 			}
 			else
-				_iterator = iterator(_bufs.begin());//он сам сконструируется от итераора на буфер
+				_iterator.set_on_start_of_buffer(_bufs.begin());//он сам сконструируется от итераора на буфер
 			DEBUG_stream( << "forward_stream ("<<*this<<")- сконструирован" );
 		}
 	}
@@ -1128,10 +1149,10 @@ public:
 	 * итерторы дошедшие до конца с потоком не связаны
 	 */
 	~constructor()	{
-		_iterator.~iterator();
+		_iterator.destroy();
 		DEBUG_stream(
 			<< "internal _iterator"
-			<<"["<<hex(&_iterator)<<"]"
+			<<"["<<_hex(&_iterator)<<"]"
 			<<" - разрушен"
 		);
 		del_buf_request(_bufs.begin());

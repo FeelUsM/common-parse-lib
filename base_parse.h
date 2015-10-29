@@ -245,11 +245,11 @@ class basic_span_string{
 #define RETURN_IFNOT(expr)	{	auto err=expr;	if(!(err))return err;	}
 
 //выражение передаем в другую функцию, что бы та его выполнила или не выполнила
-#define E2F_cyrq(expr,...)			[__VA_ARGS__]	()					{return expr;}
-#define E2F_it_cyrq(it,expr,...)	[__VA_ARGS__]	(decltype(it) & it)	{return expr;}
+#define E2F_cyrq(expr,...)					[__VA_ARGS__]	()							{return expr;}
+#define E2F_it_cyrq(it_from,it,expr,...)	[__VA_ARGS__]	(decltype(it_from) & it)	{return expr;}
 //наверно после оптимизации взятие всех переменных по ссылке в лямбда-функцию - будет нормально
-#define E2F(expr)					[&]				()					{return expr;}
-#define E2F_it(it,expr)				[&]				(decltype(it) & it)	{return expr;}
+#define E2F(expr)					[&]		()							{return expr;}
+#define E2F_it(it_from,it,expr)		[&]		(decltype(it_from) & it)	{return expr;}
 
 template<class it_t, class fun_t>
 auto reifnot(it_t & it, const fun_t & fun) //restore if not
@@ -260,9 +260,9 @@ auto reifnot(it_t & it, const fun_t & fun) //restore if not
 	it = tmp;
 	return err;
 }
-#define reifnot_CYRQ(it,expr,...)	reifnot(it,E2F_it_cyrq	(it,expr,__VA_ARGS__))
-#define reifnot_E(it,expr)			reifnot(it,E2F_it		(it,expr))
-#define reifnot_E2F(it,expr)			E2F(reifnot_E(it,expr))
+#define reifnot_CYRQ(it_from,it,expr,...)	reifnot(it_from,E2F_it_cyrq	(it_from,it,expr,__VA_ARGS__))
+#define reifnot_E(it_from,it,expr)			reifnot(it_from,E2F_it		(it_from,it,expr))
+#define reifnot_E2F(it_from,it,expr)		E2F(reifnot_E(it_from,it,expr))
 
 //синтаксический сахар
 #define OR(it,expr)	||reifnot_E2F(it,expr)
@@ -651,14 +651,14 @@ bpe read_until_pattern_s    (it&, pf, pstr*, rez*)  .*( )       -(1+len)    len
 	base_parse_error 
 	read_fix_str(it_t & it, const ch_t * s)
 	{
-		return reifnot_E(it,read_fix_str_pos(it, s));
+		return reifnot_E(it,it,read_fix_str_pos(it, s));
 	}
 
 	template<typename it_t, typename ch_t, class str_t> inline
 	base_parse_error 
 	read_fix_str(it_t & it, const ch_t * s, str_t * pstr)
 	{
-		return reifnot_E(it,read_fix_str_pos(it, s,pstr));
+		return reifnot_E(it,it,read_fix_str_pos(it, s,pstr));
 	}
 
 	/*
@@ -1368,14 +1368,20 @@ bpe read_bin            (it&, int_t*)           int#[:digit:]=[01]          -2  
 	template<typename it_t, typename int_t> inline
 	base_parse_error 
 	read_uint(it_t & it, int ss, int_t * prez){
-		int_t premax = (numeric_limits<int_t>::max()-ss+1)/ss;
+		int_t premax = numeric_limits<int_t>::max()/ss;
 		if(!read_digit(it,ss,prez))
 			return -2;
 		int_t tmp;
 		while(read_digit(it,ss,&tmp)){
 			if(*prez>premax)
 				return -1;
-			*prez *= ss;
+			else if(*prez==premax){
+				*prez *= ss;
+				if(*prez>numeric_limits<int_t>::max()-tmp)
+					return -1;
+			}
+			else
+				*prez *= ss;
 			*prez += tmp;
 		}
 		return 0;
