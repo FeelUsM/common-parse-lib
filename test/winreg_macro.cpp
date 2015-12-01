@@ -8,7 +8,7 @@
 #include <iostream>
 #include "../forward_stream.h"
 #include "../base_parse.h"
-#define one_source
+#define ONE_SOURCE
 #include "../strin.h"
 
 using namespace str;

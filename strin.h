@@ -5,7 +5,7 @@
 #include "base_parse.h"
 #include "forward_stream.h"
 
-#ifdef one_source
+#ifdef ONE_SOURCE
 #	define STRIN_EXTERN
 #else
 #	define STRIN_EXTERN extern
@@ -41,7 +41,7 @@ namespace str{
 	 *	}
 	 */
 	STRIN_EXTERN forward_adressed_stream STREAMin
-#ifdef one_source
+#ifdef ONE_SOURCE
 	(true, new file_on_FILE_stringbuf(stdin))
 #endif
 	;
@@ -53,7 +53,7 @@ namespace str{
 		return 0;
 	}
 	STRIN_EXTERN int __unused_int 
-#ifdef one_source
+#ifdef ONE_SOURCE
 	= __set01(strin)
 #endif
 	;

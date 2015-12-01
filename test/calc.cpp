@@ -3,7 +3,7 @@
  * всё.
  */
 
-#define one_source//что бы не линковать strin.cpp
+#define ONE_SOURCE//что бы не линковать strin.cpp
 #include "../strin.h"
 
 /*
