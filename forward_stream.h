@@ -43,7 +43,7 @@ struct _hex{
 };
 std::ostream & operator<<(std::ostream & str, _hex h){
 	if(h.x)
-		return str << std::setw(8)<<std::hex<<(unsigned int)h.x<<std::dec;
+		return str << std::setw(8)<<std::hex<<(size_t)h.x<<std::dec;
 	else
 		return str<<'0';
 }
